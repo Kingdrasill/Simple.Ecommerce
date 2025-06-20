@@ -1,0 +1,28 @@
+﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace Simple.Ecommerce.Infra.Mapping
+{
+    public class CouponMapping : IEntityTypeConfiguration<Coupon>
+    {
+        public void Configure(EntityTypeBuilder<Coupon> builder)
+        {
+            builder.ToTable("Cupons");
+
+            builder.Property(c => c.Id).ValueGeneratedOnAdd();
+            builder.HasKey(c => c.Id);
+
+            builder.Property(c => c.Code).IsRequired();
+            builder.Property(c => c.IsUsed).IsRequired();
+            builder.Property(c => c.CreatedAt).IsRequired();
+            builder.Property(c => c.ExpirationAt).IsRequired();
+            builder.Property(c => c.UsedAt);
+            builder.Property(c => c.DiscountId).IsRequired();
+
+            builder.Property(c => c.Deleted).IsRequired();
+
+            builder.HasIndex(c => c.Code).IsUnique();
+        }
+    }
+}
