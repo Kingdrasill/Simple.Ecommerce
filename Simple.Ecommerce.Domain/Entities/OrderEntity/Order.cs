@@ -2,6 +2,7 @@
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
@@ -19,9 +20,9 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
         public decimal TotalPrice { get; private set; }
         public Address Address { get; private set; }
         public OrderType OrderType { get; private set; }
+        public PaymentMethod? PaymentMethod { get; private set; }
         public bool Confirmation { get; private set; }
         public string Status { get; private set; }
-        public string? PaymentMethod { get; private set; }
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
         [IgnoreDataMember, NotMapped]
@@ -33,7 +34,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        private Order(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, bool confirmation, string status, string? paymentMethod)
+        private Order(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, PaymentMethod? paymentMethod, bool confirmation, string status)
         {
             Id = id;
             OrderDate = orderDate;
@@ -49,21 +50,21 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        public Result<Order> Create(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, bool confirmation, string status, string? paymentMethod)
+        public Result<Order> Create(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, PaymentMethod? paymentMethod, bool confirmation, string status)
         {
-            return new OrderValidator().Validate(new Order(id, orderDate, userId, totalPrice, address, orderType, confirmation, status, paymentMethod));
+            return new OrderValidator().Validate(new Order(id, orderDate, userId, totalPrice, address, orderType, paymentMethod, confirmation, status));
         }
 
         public void Confirm()
         {
             Confirmation = true;
-            Status = "Confirmado";
+            Status = "Confirmed";
         }
 
         public void Cancel()
         {
             Confirmation = false;
-            Status = "Cancelado";
+            Status = "Canceled";
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

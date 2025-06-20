@@ -64,7 +64,6 @@ namespace Simple.Ecommerce.Infra
         }
 
         public DbSet<CacheFrequency> CacheFrequencies { get; set; }
-        public DbSet<OrderItem> CartItems { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Coupon> Coupons { get; set; }
         public DbSet<CredentialVerification> CredentialVerifications { get; set; }
@@ -74,6 +73,7 @@ namespace Simple.Ecommerce.Infra
         public DbSet<Login> Logins { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDiscount> OrderDiscounts { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<ProductDiscount> ProductDiscounts { get; set; }

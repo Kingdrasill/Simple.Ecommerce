@@ -2,7 +2,7 @@
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Simple.Ecommerce.Infra.Services.EventDispatcher
+namespace Simple.Ecommerce.Infra.Services.Dispatcher
 {
     public class DeleteEventDispatcher : IDeleteEventDispatcher
     {

@@ -3,7 +3,7 @@ using Simple.Ecommerce.Domain.Events.OrderEvent;
 using Simple.Ecommerce.Domain.Interfaces.OrderEvent;
 using Simple.Ecommerce.Domain.ReadModels;
 
-namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
+namespace Simple.Ecommerce.App.Handlers.OrderEvent
 {
     public class StockProjectionHandler : IOrderEventHandler<StockMovedEvent>
     {
@@ -18,8 +18,8 @@ namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
 
         public async Task Handle(StockMovedEvent @event)
         {
-            var stock = await _repository.GetByProductId(@event.ProductId)
-                         ?? new StockReadModel { ProductId = @event.ProductId };
+            var stock = await _repository.GetByProductId(@event.ProductId.ToString())
+                         ?? new StockReadModel { ProductId = @event.ProductId.ToString() };
 
             stock.QuantityAvailable -= @event.QuantityMoved;
             stock.LastUpdated = DateTime.UtcNow;
@@ -27,5 +27,4 @@ namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
             await _repository.Save(stock);
         }
     }
-
 }

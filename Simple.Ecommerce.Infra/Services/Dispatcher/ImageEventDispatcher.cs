@@ -1,8 +1,8 @@
 ﻿using ImageFile.Library.Core.Events;
 
-namespace Simple.Ecommerce.Infra.Services.ImageEventDispatcher
+namespace Simple.Ecommerce.Infra.Services.Dispatcher
 {
-    public class InMemoryEventDispatcher : IEventDispatcher
+    public class ImageEventDispatcher : IEventDispatcher
     {
         private readonly Dictionary<Type, List<Func<IDomainEvent, Task>>> _handlers = new();
 

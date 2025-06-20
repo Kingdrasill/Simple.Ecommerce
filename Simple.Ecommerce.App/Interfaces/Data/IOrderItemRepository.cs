@@ -1,5 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
+using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.Interfaces.Data
 {
@@ -9,5 +10,6 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseGetRepository<OrderItem>,
         IBaseListRepository<OrderItem>
     {
+        Task<Result<List<OrderItem>>> GetByOrderId(int orderId);
     }
 }

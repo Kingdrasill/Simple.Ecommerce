@@ -16,7 +16,6 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
         public int Quantity { get; set; }
         public int OrderId { get; private set; }
         public Order Order { get; private set; } = null!;
-
         [IgnoreDataMember, NotMapped]
         public decimal Total => Price * Quantity;
 

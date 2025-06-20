@@ -1,6 +1,12 @@
 ﻿using Cache.Library.Configuration;
 using Cache.Library.Core;
 using Cache.Library.Management;
+using ImageFile.Library.App;
+using ImageFile.Library.Core.Configuration;
+using ImageFile.Library.Core.Events;
+using ImageFile.Library.Core.Services;
+using ImageFile.Library.Infra.Cleaner;
+using ImageFile.Library.Infra.Resolver;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.App.Interfaces.ReadData;
@@ -25,32 +31,22 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Events.OrderEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Simple.Ecommerce.Domain.Interfaces.OrderEvent;
 using Simple.Ecommerce.Domain.Settings.EmailSettings;
 using Simple.Ecommerce.Domain.Settings.JwtSettings;
 using Simple.Ecommerce.Domain.Settings.MongoDbSettings;
 using Simple.Ecommerce.Domain.Settings.SmtpSettings;
 using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Infra.Handlers.DeletedEvent;
-using Simple.Ecommerce.Infra.Handlers.OrderEvent;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 using Simple.Ecommerce.Infra.ReadRepositories;
 using Simple.Ecommerce.Infra.Repositories;
 using Simple.Ecommerce.Infra.Repositories.Generic;
 using Simple.Ecommerce.Infra.Services.CacheFrequencyInitializer;
 using Simple.Ecommerce.Infra.Services.Cryptography;
+using Simple.Ecommerce.Infra.Services.Dispatcher;
 using Simple.Ecommerce.Infra.Services.Email;
-using Simple.Ecommerce.Infra.Services.EventDispatcher;
-using Simple.Ecommerce.Infra.Services.ImageEventDispatcher;
 using Simple.Ecommerce.Infra.Services.JwtToken;
-using ImageFile.Library.App;
-using ImageFile.Library.Core.Configuration;
-using ImageFile.Library.Core.Events;
-using ImageFile.Library.Core.Services;
-using ImageFile.Library.Infra.Cleaner;
-using ImageFile.Library.Infra.Resolver;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,9 +73,6 @@ namespace Simple.Ecommerce.Infra
 
             // Read Model Repositories
             AddReadModelRepositories(services, configuration);
-
-            // Projection Handlers
-            AddProjectionHandlers(services, configuration);
 
             // Image Service 
             AddImageService(services, configuration);
@@ -152,20 +145,9 @@ namespace Simple.Ecommerce.Infra
             services.AddSingleton<IUserOrderHistoryReadRepository, UserOrderHistoryReadRepository>();
         }
 
-        private static void AddProjectionHandlers(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddScoped<IOrderEventHandler<StockMovedEvent>, StockProjectionHandler>();
-            services.AddScoped<IOrderEventHandler<OrderPlacedEvent>, OrderSummaryProjectionHandler>();
-            services.AddScoped<IOrderEventHandler<OrderDeliveredEvent>, OrderSummaryProjectionHandler>();
-            services.AddScoped<IOrderEventHandler<OrderCanceledEvent>, OrderSummaryProjectionHandler>();
-            services.AddScoped<IOrderEventHandler<OrderPlacedEvent>, UserOrderHistoryProjectHandler>();
-
-            services.AddScoped<IEventBus, InMemoryEventBus>();
-        }
-
         private static void AddImageService(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<IEventDispatcher, InMemoryEventDispatcher>();
+            services.AddSingleton<IEventDispatcher, ImageEventDispatcher>();
 
             services.AddSingleton<IImageStorageService>(provider =>
             {

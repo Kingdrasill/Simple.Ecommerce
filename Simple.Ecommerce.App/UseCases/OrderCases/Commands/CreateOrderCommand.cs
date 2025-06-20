@@ -66,9 +66,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.TotalPrice,
                 address.GetValue(),
                 request.OrderType,
+                request.PaymentMethod,
                 false,
-                "Not Confirmed",
-                request.PaymentMethod
+                "Not Confirmed"
             );
             if (instance.IsFailure) 
             {

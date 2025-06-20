@@ -1,5 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.OrderItemObject;
 
@@ -12,8 +13,8 @@ namespace Simple.Ecommerce.Domain.Events.OrderEvent
         public DateTime OrderDate { get; set; }
         public string Status { get; set; }
         public OrderType OrderType { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
         public decimal TotalPrice { get; set; }
-        public string PaymentMethod { get; set; }
         public Address Address { get; set; }
         public List<OrderItemEntry> Items { get; set; }
 
@@ -25,7 +26,7 @@ namespace Simple.Ecommerce.Domain.Events.OrderEvent
             Status = order.Status;
             OrderType = order.OrderType;
             TotalPrice = order.TotalPrice;
-            PaymentMethod = order.PaymentMethod!;
+            PaymentMethod = order.PaymentMethod ?? PaymentMethod.Cash;
             Address = order.Address;
             Items = order.OrderItems.Select(ci => new OrderItemEntry()
             {

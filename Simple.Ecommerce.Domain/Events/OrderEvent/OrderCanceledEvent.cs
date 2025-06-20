@@ -2,7 +2,8 @@
 {
     public class OrderCanceledEvent
     {
-        public string OrderId { get; set; }
+        public int OrderId { get; set; }
+        public int UserId { get; set; }
         public string Reason { get; set; }
         public DateTime CanceledAt { get; set; }
     }

@@ -4,7 +4,7 @@ using Simple.Ecommerce.Domain.Interfaces.OrderEvent;
 using Simple.Ecommerce.Domain.ReadModels;
 using Simple.Ecommerce.Domain.ValueObjects.OrderItemObject;
 
-namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
+namespace Simple.Ecommerce.App.Handlers.OrderEvent
 {
     public class OrderSummaryProjectionHandler : 
         IOrderEventHandler<OrderPlacedEvent>,
@@ -42,7 +42,7 @@ namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
 
         public async Task Handle(OrderDeliveredEvent @event)
         {
-            var order = await _repository.GetByOrderId(@event.OrderId);
+            var order = await _repository.GetByOrderId(@event.OrderId.ToString());
             if (order == null) return;
 
             order.Status = "Delivered";
@@ -51,7 +51,7 @@ namespace Simple.Ecommerce.Infra.Handlers.OrderEvent
 
         public async Task Handle(OrderCanceledEvent @event)
         {
-            var order = await _repository.GetByOrderId(@event.OrderId);
+            var order = await _repository.GetByOrderId(@event.OrderId.ToString());
             if (order == null) return;
 
             order.Status = "Canceled";

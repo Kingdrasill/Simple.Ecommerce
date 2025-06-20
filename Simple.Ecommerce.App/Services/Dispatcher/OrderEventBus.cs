@@ -2,13 +2,13 @@
 using Simple.Ecommerce.Domain.Interfaces.OrderEvent;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Simple.Ecommerce.Infra.Services.EventDispatcher
+namespace Simple.Ecommerce.App.Services.Dispatcher
 {
-    public class InMemoryEventBus : IEventBus
+    public class OrderEventBus : IOrderEventBus
     {
         private readonly IServiceProvider _serviceProvider;
 
-        public InMemoryEventBus(
+        public OrderEventBus(
             IServiceProvider serviceProvider
         )
         {

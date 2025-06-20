@@ -30,7 +30,7 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 
         public async Task Handle(ProductDeletedEvent domainEvent)
         {
-            var cartItems = await _context.CartItems
+            var cartItems = await _context.OrderItems
                 .Where(ci => ci.ProductId == domainEvent.ProductId)
                 .ToListAsync();
 

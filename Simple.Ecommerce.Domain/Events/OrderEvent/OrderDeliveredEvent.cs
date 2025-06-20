@@ -2,7 +2,8 @@
 {
     public class OrderDeliveredEvent
     {
-        public string OrderId { get; set; }
+        public int OrderId { get; set; }
+        public int UserId { get; set; }
         public DateTime DeliveredAt { get; set; }
     }
 }

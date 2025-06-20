@@ -1,4 +1,5 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
@@ -41,6 +42,15 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<OrderItem>> Get(int id, bool NoTracking = true)
         {
             return await _getRepository.Get(_context, id, NoTracking);
+        }
+
+        public async Task<Result<List<OrderItem>>> GetByOrderId(int orderId)
+        {
+            var listOrderItem = await _context.OrderItems
+                .Where(oi => oi.OrderId == orderId && !oi.Deleted)
+                .ToListAsync();
+
+            return Result<List<OrderItem>>.Success(listOrderItem);
         }
 
         public async Task<Result<List<OrderItem>>> List()

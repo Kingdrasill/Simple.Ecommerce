@@ -24,8 +24,6 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
         [IgnoreDataMember, NotMapped]
         public ICollection<Review> Reviews { get; private set; }
         [IgnoreDataMember, NotMapped]
-        public ICollection<Address> Addresses { get; private set; }
-        [IgnoreDataMember, NotMapped]
         public ICollection<Order> Orders { get; private set; }
         [IgnoreDataMember, NotMapped]
         public ICollection<Login> Logins { get; private set; }
@@ -34,7 +32,6 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
         {
             UserAddresses = new HashSet<UserAddress>();
             Reviews = new HashSet<Review>();
-            Addresses = new HashSet<Address>();
             Orders = new HashSet<Order>();
             Logins = new HashSet<Login>();
         }
@@ -50,7 +47,6 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
 
             UserAddresses = new HashSet<UserAddress>();
             Reviews = new HashSet<Review>();
-            Addresses = new HashSet<Address>();
             Orders = new HashSet<Order>();
             Logins = new HashSet<Login>();
         }

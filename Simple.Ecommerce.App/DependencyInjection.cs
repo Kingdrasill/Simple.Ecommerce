@@ -5,6 +5,8 @@ using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.ReviewCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
+using Simple.Ecommerce.App.Interfaces.Commands.CategoryCommands;
+using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.CacheFrequencyQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.CategoryQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
@@ -38,9 +40,6 @@ using Simple.Ecommerce.App.UseCases.UserCases.Commands;
 using Simple.Ecommerce.App.UseCases.UserCases.Queries;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Simple.Ecommerce.App.Interfaces.Commands.CategoryCommands;
-using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
-using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
 
 namespace Simple.Ecommerce.App
 {
@@ -51,9 +50,11 @@ namespace Simple.Ecommerce.App
             IConfiguration configuration
         )
         {
-            // Cache Sender
-            services.AddScoped<ICacheHandler, CacheHandler>();
+            // Service Repository Resolver
             services.AddScoped<IRepositoryResolver, RepositoryResolver>();
+
+            // Cache Handler
+            services.AddScoped<ICacheHandler, CacheHandler>();
 
             // CacheFrequency Batch
             services.AddScoped<IListCacheFrequencyQuery, ListCacheFrequencyQuery>();
