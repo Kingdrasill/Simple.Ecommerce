@@ -10,14 +10,14 @@ using ImageFile.Library.Core.Services;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
-    public class DeletePhotoUserCommand : IDeletePhotoUserCommand
+    public class RemovePhotoUserCommand : IRemovePhotoUserCommand
     {
         private readonly IUserRepository _repository;
         private readonly IImageManager _imageManager;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
-        public DeletePhotoUserCommand(
+        public RemovePhotoUserCommand(
             IUserRepository repository, 
             IImageManager imageManager, 
             UseCache useCache, 

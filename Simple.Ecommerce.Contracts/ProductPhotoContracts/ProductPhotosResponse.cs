@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.Contracts.ProductPhotoContracts
     public record ProductPhotosResponse
     (
         int ProductId,
-        List<PhotoResponse> Photo
+        List<PhotoProductResponse> Photo
     );
 }

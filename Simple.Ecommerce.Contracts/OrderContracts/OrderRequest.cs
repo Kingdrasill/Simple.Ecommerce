@@ -1,16 +1,17 @@
 ﻿using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 
 namespace Simple.Ecommerce.Contracts.OrderContracts
 {
     public record OrderRequest
     (
-        DateTime OrderDate,
         int UserId,
-        decimal TotalPrice,
         OrderType OrderType,
-        string? PaymentMethod,
         AddressRequest Address,
+        PaymentMethod? PaymentMethod = null,
+        decimal? TotalPrice = null,
+        DateTime? OrderDate = null,
         int Id = 0
     );
 }

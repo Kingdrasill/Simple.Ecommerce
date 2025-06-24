@@ -4,11 +4,11 @@ using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
-    public class CartItemValidator : IBaseValidator<OrderItem>
+    public class OrderItemValidator : IBaseValidator<OrderItem>
     {
         private readonly ValidationBuilder _builder;
 
-        public CartItemValidator()
+        public OrderItemValidator()
         {
             _builder = new ValidationBuilder()
                 .AddNegativeValueDecimal(nameof(OrderItem.Price), typeof(OrderItem).Name)

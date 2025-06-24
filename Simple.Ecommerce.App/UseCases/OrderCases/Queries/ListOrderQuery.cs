@@ -33,8 +33,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
         {
             if (_useCache.Use)
             {
-                var cacheResponse = _cacheHandler.ListFromCache<Order, AddressResponse, OrderResponse>(nameof(Address),
-                    (cache, propName) => new AddressResponse(
+                var cacheResponse = _cacheHandler.ListFromCache<Order, OrderAddressResponse, OrderResponse>(nameof(Address),
+                    (cache, propName) => new OrderAddressResponse(
                         Convert.ToInt32(cache[$"{propName}_Number"]),
                         Convert.ToString(cache[$"{propName}_Street"])!,
                         Convert.ToString(cache[$"{propName}_Neighbourhood"])!,
@@ -45,14 +45,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     ),
                     (cache, address) => new OrderResponse(
                         Convert.ToInt32(cache["Id"]),
-                        Convert.ToDateTime(cache["OrderDate"]),
                         Convert.ToInt32(cache["UserId"]),
-                        Convert.ToDecimal(cache["TotalPrice"]),
                         (OrderType)Convert.ToInt32(cache["OrderType"])!,
+                        address,
+                        cache.GetNullablePaymentMethod("PaymentMethod"),
+                        cache.GetNullableDecimal("TotalPrice"),
+                        cache.GetNullableDateTime("OrderDate"),
                         Convert.ToBoolean(cache["Confirmation"]),
-                        Convert.ToString(cache["Status"])!,
-                        cache.GetNullableString("PaymentMethod"),
-                        address
+                        Convert.ToString(cache["Status"])!
                     ));
                 if (cacheResponse.IsSuccess)
                     return cacheResponse;
@@ -76,7 +76,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
             var response = new List<OrderResponse>();
             foreach (var order in listResult.GetValue())
             {
-                var addressResponse = new AddressResponse(
+                var addressResponse = new OrderAddressResponse(
                     order.Address.Number,
                     order.Address.Street,
                     order.Address.Neighbourhood,
@@ -88,14 +88,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 
                 response.Add(new OrderResponse(
                     order.Id,
-                    order.OrderDate,
                     order.UserId,
-                    order.TotalPrice,
                     order.OrderType,
-                    order.Confirmation,
-                    order.Status,
+                    addressResponse,
                     order.PaymentMethod,
-                    addressResponse
+                    order.TotalPrice,
+                    order.OrderDate,
+                    order.Confirmation,
+                    order.Status
                 ));
             }
 

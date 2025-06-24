@@ -61,12 +61,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
             var instance = new Order().Create(
                 request.Id,
-                request.OrderDate,
                 request.UserId,
-                request.TotalPrice,
-                address.GetValue(),
                 request.OrderType,
+                address.GetValue(),
                 request.PaymentMethod,
+                request.TotalPrice,
+                request.OrderDate,
                 false,
                 "Not Confirmed"
             );
@@ -86,7 +86,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<Order>();
 
-            var addressResponse = new AddressResponse(
+            var addressResponse = new OrderAddressResponse(
                 order.Address.Number,
                 order.Address.Street,
                 order.Address.Neighbourhood,
@@ -98,14 +98,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
             var response = new OrderResponse(
                 order.Id,
-                order.OrderDate,
                 order.UserId,
-                order.TotalPrice,
                 order.OrderType,
-                order.Confirmation,
-                order.Status,
+                addressResponse,
                 order.PaymentMethod,
-                addressResponse
+                order.TotalPrice,
+                order.OrderDate,
+                order.Confirmation,
+                order.Status
             );
 
             return Result<OrderResponse>.Success(response);

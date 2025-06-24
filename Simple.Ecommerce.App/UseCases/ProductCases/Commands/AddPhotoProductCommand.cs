@@ -84,7 +84,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<ProductPhoto>();
 
-            var photoResponse = new PhotoResponse(
+            var photoResponse = new PhotoProductResponse(
                 productPhoto.Photo.FileName,
                 productPhoto.Id
             );

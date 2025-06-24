@@ -32,7 +32,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
 
         public Result<OrderItem> Create(int id, int productId, decimal price, int quantity, int orderId)
         {
-            return new CartItemValidator().Validate(new OrderItem(id, productId, price, quantity, orderId));
+            return new OrderItemValidator().Validate(new OrderItem(id, productId, price, quantity, orderId));
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

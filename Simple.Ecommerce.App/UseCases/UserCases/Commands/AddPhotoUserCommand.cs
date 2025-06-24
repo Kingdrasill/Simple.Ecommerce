@@ -76,7 +76,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 
             var response = new UserPhotoResponse(
                 user.Id,
-                new PhotoResponse(
+                new PhotoUserResponse(
                     user.Photo!.FileName
                 )
             );

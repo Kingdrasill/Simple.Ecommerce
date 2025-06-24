@@ -1,6 +1,6 @@
 ﻿namespace Simple.Ecommerce.Contracts.AddressContracts
 {
-    public record AddressResponse
+    public record OrderAddressResponse
     (
         int Number,
         string Street,
@@ -8,7 +8,6 @@
         string City,
         string Country,
         string? Complement,
-        string CEP,
-        int? Id = null
+        string CEP
     );
 }

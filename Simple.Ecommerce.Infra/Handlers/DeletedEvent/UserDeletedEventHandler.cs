@@ -7,6 +7,7 @@ using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {
@@ -56,6 +57,15 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                 userAddress.MarkAsDeleted(raiseEvent: false);
             }
 
+            var userCards = await _context.UserCards
+                .Where(uc => uc.UserId == domainEvent.UserId)
+                .ToListAsync();
+
+            foreach (var userCard in userCards)
+            {
+                userCard.MarkAsDeleted(raiseEvent: false);
+            }
+
             var reviews = await _context.Reviews
                 .Where(r => r.UserId == domainEvent.UserId)
                 .ToListAsync();
@@ -73,6 +83,8 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                     _cacheHandler.SetItemStale<Order>();
                 if (userAddresses.Any())
                     _cacheHandler.SetItemStale<UserAddress>();
+                if (userCards.Any())
+                    _cacheHandler.SetItemStale<UserCard>();
                 if (reviews.Any())
                     _cacheHandler.SetItemStale<Review>();
             }

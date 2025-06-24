@@ -5,7 +5,7 @@ namespace Simple.Ecommerce.Api.Services.CacheServices
     public class CacheCleanupService : BackgroundService
     {
         private readonly ICache _cache;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(2);
 
         public CacheCleanupService(
             ICache cache

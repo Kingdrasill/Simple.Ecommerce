@@ -8,7 +8,7 @@ namespace Simple.Ecommerce.Infra.Mapping
     {
         public void Configure(EntityTypeBuilder<OrderItem> builder)
         {
-            builder.ToTable("ItensPedido");
+            builder.ToTable("PedidosItens");
 
             builder.Property(ci => ci.Id).ValueGeneratedOnAdd();
             builder.HasKey(ci => ci.Id);

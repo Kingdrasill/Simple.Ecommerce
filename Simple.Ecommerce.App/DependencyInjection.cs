@@ -1,12 +1,14 @@
-﻿using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Simple.Ecommerce.App.Interfaces.Commands.CategoryCommands;
+using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
+using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.LoginCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.ReviewCommands;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
-using Simple.Ecommerce.App.Interfaces.Commands.CategoryCommands;
-using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.CacheFrequencyQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.CategoryQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
@@ -38,8 +40,6 @@ using Simple.Ecommerce.App.UseCases.ReviewCases.Commands;
 using Simple.Ecommerce.App.UseCases.ReviewCases.Queries;
 using Simple.Ecommerce.App.UseCases.UserCases.Commands;
 using Simple.Ecommerce.App.UseCases.UserCases.Queries;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Simple.Ecommerce.App
 {
@@ -106,13 +106,16 @@ namespace Simple.Ecommerce.App
 
             // Order Batch
             services.AddScoped<IAddDiscountOrderCommand, AddDiscountOrderCommand>();
+            services.AddScoped<ICancelOrderCommand, CancelOrderCommand>();
+            services.AddScoped<IConfirmOrderCommand, ConfirmOrderCommand>();
+            services.AddScoped<IChangePaymentMethodOrderCommand, ChangePaymentMethodOrderCommand>();
             services.AddScoped<ICreateOrderCommand, CreateOrderCommand>();
             services.AddScoped<IDeleteDiscountOrderCommand, DeleteDiscountOrderCommand>();
             services.AddScoped<IDeleteOrderCommand, DeleteOrderCommand>();
+            services.AddScoped<IRemovePaymentMethodOrderCommand, RemovePaymentMethodOrderCommand>();
             services.AddScoped<IUpdateOrderCommand, UpdateOrderCommand>();
-            services.AddScoped<ICancelOrderCommand, CancelOrderCommand>();
-            services.AddScoped<IConfirmOrderCommand, ConfirmOrderCommand>();
             services.AddScoped<IGetDiscountsOrderQuery, GetDiscountsOrderQuery>();
+            services.AddScoped<IGetPaymentMethodOrderQuery, GetPaymentMethodOrderQuery>();
             services.AddScoped<IGetOrderQuery, GetOrderQuery>();
             services.AddScoped<IListOrderQuery, ListOrderQuery>();
 
@@ -146,13 +149,16 @@ namespace Simple.Ecommerce.App
 
             // User Batch
             services.AddScoped<IAddAddressUserCommand, AddAddressUserCommand>();
+            services.AddScoped<IAddCardUserCommand, AddCardUserCommand>();
             services.AddScoped<IAddPhotoUserCommand, AddPhotoUserCommand>();
             services.AddScoped<ICreateUserCommand, CreateUserCommand>();
-            services.AddScoped<IDeleteAddressUserCommand, DeleteAddressUserCommand>();
-            services.AddScoped<IDeletePhotoUserCommand, DeletePhotoUserCommand>();
             services.AddScoped<IDeleteUserCommand, DeleteUserCommand>();
+            services.AddScoped<IRemoveAddressUserCommand, RemoveAddressUserCommand>();
+            services.AddScoped<IRemoveCardUserCommand, RemoveCardUserCommand>();
+            services.AddScoped<IRemovePhotoUserCommand, RemovePhotoUserCommand>();
             services.AddScoped<IUpdateUserCommand, UpdateUserCommand>();
             services.AddScoped<IGetAddressesUserQuery, GetAddressesUserQuery>();
+            services.AddScoped<IGetCardsUserQuery, GetCardsUserQuery>();
             services.AddScoped<IGetPhotoUserQuery, GetPhotoUserQuery>();
             services.AddScoped<IGetUserQuery, GetUserQuery>();
             services.AddScoped<IListUserQuery, ListUserQuery>();

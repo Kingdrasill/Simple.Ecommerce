@@ -1,12 +1,12 @@
-﻿using Simple.Ecommerce.Api.Services;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.Contracts.UserAddressContracts;
+using Simple.Ecommerce.Contracts.UserCardContracts;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Contracts.UserPhotoContracts;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -20,10 +20,13 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IGetUserQuery _getUserQuery;
         private readonly IListUserQuery _listUserQuery;
         private readonly IAddAddressUserCommand _addAddressUserCommand;
+        private readonly IAddCardUserCommand _addCardUserCommand;
         private readonly IAddPhotoUserCommand _addPhotoUserCommand;
-        private readonly IDeleteAddressUserCommand _deleteAddressUserCommand;
-        private readonly IDeletePhotoUserCommand _deletePhotoUserCommand;
+        private readonly IRemoveAddressUserCommand _deleteAddressUserCommand;
+        private readonly IRemoveCardUserCommand _deleteCardUserCommand;
+        private readonly IRemovePhotoUserCommand _deletePhotoUserCommand;
         private readonly IGetAddressesUserQuery _getAddressesUserQuery;
+        private readonly IGetCardsUserQuery _getCardsUserQuery;
         private readonly IGetPhotoUserQuery _getPhotoUserQuery;
 
         public UserController(
@@ -33,10 +36,13 @@ namespace Simple.Ecommerce.Api.Controllers
             IGetUserQuery getUserQuery,
             IListUserQuery listUserQuery,
             IAddAddressUserCommand addAddressUserCommand, 
+            IAddCardUserCommand addCardUserCommand,
             IAddPhotoUserCommand addPhotoUserCommand,
-            IDeleteAddressUserCommand deleteAddressUserCommand,
-            IDeletePhotoUserCommand deletePhotoUserCommand,
+            IRemoveAddressUserCommand deleteAddressUserCommand,
+            IRemoveCardUserCommand deleteCardUserCommand,
+            IRemovePhotoUserCommand deletePhotoUserCommand,
             IGetAddressesUserQuery getAddressesUserQuery, 
+            IGetCardsUserQuery getCardsUserQuery,
             IGetPhotoUserQuery getPhotoUserQuery
         )
         {
@@ -46,10 +52,13 @@ namespace Simple.Ecommerce.Api.Controllers
             _getUserQuery = getUserQuery;
             _listUserQuery = listUserQuery;
             _addAddressUserCommand = addAddressUserCommand;
+            _addCardUserCommand = addCardUserCommand;
             _addPhotoUserCommand = addPhotoUserCommand;
             _deleteAddressUserCommand = deleteAddressUserCommand;
+            _deleteCardUserCommand = deleteCardUserCommand;
             _deletePhotoUserCommand = deletePhotoUserCommand;
             _getAddressesUserQuery = getAddressesUserQuery;
+            _getCardsUserQuery = getCardsUserQuery;
             _getPhotoUserQuery = getPhotoUserQuery;
         }
 
@@ -62,7 +71,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Add-Address")]
+        [HttpPost("Address")]
         [Authorize]
         public async Task<ActionResult<bool>> AddAddress([FromBody] UserAddressRequest request)
         {
@@ -71,7 +80,16 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Upload-Photo")]
+        [HttpPost("Card")]
+        [Authorize]
+        public async Task<ActionResult<bool>> AddCard([FromBody] UserCardRequest request)
+        {
+            var result = await _addCardUserCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPost("Photo")]
         [Authorize]
         public async Task<ActionResult<UserPhotoResponse>> AddPhoto([FromForm] UserPhotoUploadRequest request)
         {
@@ -100,7 +118,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpDelete("Remove-Address/{userAddressId}")]
+        [HttpDelete("Address/{userAddressId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemoveAddress(int userAddressId)
         {
@@ -109,7 +127,16 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpDelete("Remove-Photo/{userId}")]
+        [HttpDelete("Card/{userCardId}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> RemoveCard(int userCardId)
+        {
+            var result = await _deleteCardUserCommand.Execute(userCardId);
+         
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpDelete("Photo/{userId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemovePhoto(int userId)
         {
@@ -145,16 +172,25 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpGet("Addresses/{id}")]
+        [HttpGet("Address/{userId}")]
         [Authorize]
-        public async Task<ActionResult<UserAddressesResponse>> GetAddresses(int id)
+        public async Task<ActionResult<UserAddressesResponse>> GetAddresses(int userId)
         {
-            var result = await _getAddressesUserQuery.Execute(id);
+            var result = await _getAddressesUserQuery.Execute(userId);
 
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpGet("Get-Photos/{userId}")]
+        [HttpGet("Card/{userId}")]
+        [Authorize]
+        public async Task<ActionResult<UserCardsReponse>> GetCards(int userId)
+        {
+            var result = await _getCardsUserQuery.Execute(userId);
+         
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpGet("Photo/{userId}")]
         [Authorize]
         public async Task<ActionResult<UserPhotoResponse>> GetPhotos(int userId)
         {

@@ -6,6 +6,7 @@ using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
+using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
@@ -14,15 +15,16 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
 {
     public class Order : BaseEntity
     {
-        public DateTime OrderDate { get; private set; }
         public int UserId { get; private set; }
         public User User { get; private set; } = null!;
-        public decimal TotalPrice { get; private set; }
-        public Address Address { get; private set; }
         public OrderType OrderType { get; private set; }
+        public Address Address { get; private set; }
         public PaymentMethod? PaymentMethod { get; private set; }
+        public decimal? TotalPrice { get; private set; }
+        public DateTime? OrderDate { get; private set; }
         public bool Confirmation { get; private set; }
         public string Status { get; private set; }
+        public CardInformation? CardInformation { get; private set; } = null;
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
         [IgnoreDataMember, NotMapped]
@@ -34,35 +36,44 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        private Order(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, PaymentMethod? paymentMethod, bool confirmation, string status)
+        private Order(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, CardInformation? cardInformation = null)
         {
             Id = id;
-            OrderDate = orderDate;
             UserId = userId;
-            TotalPrice = totalPrice;
-            Address = address;
             OrderType = orderType;
+            Address = address;
+            PaymentMethod = paymentMethod;
+            TotalPrice = totalPrice;
+            OrderDate = orderDate;
             Confirmation = confirmation;
             Status = status;
-            PaymentMethod = paymentMethod;
+            CardInformation = cardInformation;
 
             OrderItems = new HashSet<OrderItem>();
             OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        public Result<Order> Create(int id, DateTime orderDate, int userId, decimal totalPrice, Address address, OrderType orderType, PaymentMethod? paymentMethod, bool confirmation, string status)
+        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status)
         {
-            return new OrderValidator().Validate(new Order(id, orderDate, userId, totalPrice, address, orderType, paymentMethod, confirmation, status));
+            return new OrderValidator().Validate(new Order(id, userId, orderType, address, paymentMethod, totalPrice, orderDate, confirmation, status));
+        }
+
+        public void UpdatePaymentMethod(PaymentMethod? paymentmethod, CardInformation? cardInformation)
+        {
+            PaymentMethod = paymentmethod;
+            CardInformation = cardInformation;
         }
 
         public void Confirm()
         {
+            OrderDate = DateTime.UtcNow;
             Confirmation = true;
             Status = "Confirmed";
         }
 
         public void Cancel()
         {
+            OrderDate = DateTime.UtcNow;
             Confirmation = false;
             Status = "Canceled";
         }

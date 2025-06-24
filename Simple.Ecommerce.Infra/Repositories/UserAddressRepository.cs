@@ -44,18 +44,18 @@ namespace Simple.Ecommerce.Infra.Repositories
             return await _getRepository.Get(_context, id, NoTracking);
         }
 
-        public async Task<Result<List<UserAddress>>> List()
-        {
-            return await _listRepository.List(_context);
-        }
-
-        public async Task<Result<List<UserAddress>>> GetByUser(int userId)
+        public async Task<Result<List<UserAddress>>> GetByUserId(int userId)
         {
             var list = await _context.UserAddresses
                                         .Where(ua => ua.UserId == userId && !ua.Deleted)
                                         .ToListAsync();
 
             return Result<List<UserAddress>>.Success(list);
+        }
+
+        public async Task<Result<List<UserAddress>>> List()
+        {
+            return await _listRepository.List(_context);
         }
     }
 }

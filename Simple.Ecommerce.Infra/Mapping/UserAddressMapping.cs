@@ -8,7 +8,7 @@ namespace Simple.Ecommerce.Infra.Mapping
     {
         public void Configure(EntityTypeBuilder<UserAddress> builder)
         {
-            builder.ToTable("UsuarioEnderecos");
+            builder.ToTable("UsuariosEnderecos");
 
             builder.Property(ue => ue.Id).ValueGeneratedOnAdd();
             builder.HasKey(ue => ue.Id);

@@ -2,7 +2,7 @@
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.UserCommands
 {
-    public interface IDeletePhotoUserCommand
+    public interface IRemovePhotoUserCommand
     {
         Task<Result<bool>> Execute(int userId);
     }

@@ -8,7 +8,7 @@ namespace Simple.Ecommerce.Infra.Mapping
     {
         public void Configure(EntityTypeBuilder<ProductPhoto> builder)
         {
-            builder.ToTable("ProdutoFotos");
+            builder.ToTable("ProdutosFotos");
 
             builder.Property(pp => pp.Id).ValueGeneratedOnAdd();
             builder.HasKey(pp => pp.Id);

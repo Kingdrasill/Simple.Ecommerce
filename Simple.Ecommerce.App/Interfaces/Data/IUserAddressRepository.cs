@@ -10,6 +10,6 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseGetRepository<UserAddress>,
         IBaseListRepository<UserAddress>
     {
-        Task<Result<List<UserAddress>>> GetByUser(int userId);
+        Task<Result<List<UserAddress>>> GetByUserId(int userId);
     }
 }

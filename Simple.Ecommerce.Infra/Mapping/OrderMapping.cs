@@ -13,13 +13,13 @@ namespace Simple.Ecommerce.Infra.Mapping
             builder.Property(p => p.Id).ValueGeneratedOnAdd();
             builder.HasKey(p => p.Id);
 
-            builder.Property(p => p.OrderDate).IsRequired();
             builder.Property(p => p.UserId).IsRequired();
-            builder.Property(p => p.TotalPrice).IsRequired();
             builder.Property(p => p.OrderType).IsRequired();
+            builder.Property(p => p.PaymentMethod);
+            builder.Property(p => p.TotalPrice);
+            builder.Property(p => p.OrderDate);
             builder.Property(p => p.Confirmation).IsRequired();
             builder.Property(p => p.Status).HasMaxLength(20).IsRequired();
-            builder.Property(p => p.PaymentMethod).HasMaxLength(20);
 
             builder.Property(f => f.Deleted).IsRequired();
 
@@ -33,6 +33,17 @@ namespace Simple.Ecommerce.Infra.Mapping
                 a.Property(a => a.Complement).HasColumnName("Complement").HasMaxLength(30);
                 a.Property(a => a.CEP).HasColumnName("CEP").HasMaxLength(8).IsRequired();
                 a.WithOwner();
+            });
+
+            builder.OwnsOne(o => o.CardInformation, ci =>
+            {
+                ci.Property(ci => ci.CardHolderName).HasColumnName("CardHolderName");
+                ci.Property(ci => ci.CardNumber).HasColumnName("CardNumber");
+                ci.Property(ci => ci.ExpirationMonth).HasColumnName("ExpirationMonth");
+                ci.Property(ci => ci.ExpirationYear).HasColumnName("ExpirationYear");
+                ci.Property(ci => ci.CardFlag).HasColumnName("CardFlag");
+                ci.Property(ci => ci.Last4Digits).HasColumnName("Last4Digits");
+                ci.WithOwner();
             });
 
             builder

@@ -8,7 +8,7 @@ namespace Simple.Ecommerce.Infra.Mapping
     {
         public void Configure(EntityTypeBuilder<DiscountBundleItem> builder)
         {
-            builder.ToTable("DescontoItensPacote");
+            builder.ToTable("DescontosItensPacote");
 
             builder.Property(dbi => dbi.Id).ValueGeneratedOnAdd();
             builder.HasKey(dbi => dbi.Id);

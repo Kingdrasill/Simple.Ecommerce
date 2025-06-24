@@ -18,22 +18,22 @@ namespace Simple.Ecommerce.Domain.Events.OrderEvent
         public Address Address { get; set; }
         public List<OrderItemEntry> Items { get; set; }
 
-        public OrderPlacedEvent(Order order)
-        {
-            OrderId = order.Id;
-            UserId = order.UserId;
-            OrderDate = order.OrderDate;
-            Status = order.Status;
-            OrderType = order.OrderType;
-            TotalPrice = order.TotalPrice;
-            PaymentMethod = order.PaymentMethod ?? PaymentMethod.Cash;
-            Address = order.Address;
-            Items = order.OrderItems.Select(ci => new OrderItemEntry()
-            {
-                ProductId = ci.ProductId,
-                Quantity = ci.Quantity,
-                UnitPrice = ci.Price
-            }).ToList();
-        }
+        //public OrderPlacedEvent(Order order)
+        //{
+        //    OrderId = order.Id;
+        //    UserId = order.UserId;
+        //    OrderDate = order.OrderDate;
+        //    Status = order.Status;
+        //    OrderType = order.OrderType;
+        //    TotalPrice = order.TotalPrice;
+        //    PaymentMethod = order.PaymentMethod ?? PaymentMethod.Cash;
+        //    Address = order.Address;
+        //    Items = order.OrderItems.Select(ci => new OrderItemEntry()
+        //    {
+        //        ProductId = ci.ProductId,
+        //        Quantity = ci.Quantity,
+        //        UnitPrice = ci.Price
+        //    }).ToList();
+        //}
     }
 }

@@ -4,7 +4,7 @@ namespace Simple.Ecommerce.Contracts.ProductPhotoContracts
 {
     public record ProductPhotoResponse
     (
-        PhotoResponse Photo,
+        PhotoProductResponse Photo,
         int ProductId
     );
 }

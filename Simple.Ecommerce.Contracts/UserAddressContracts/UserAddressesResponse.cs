@@ -6,6 +6,6 @@ namespace Simple.Ecommerce.Contracts.UserAddressContracts
     (
         int UserId,
         string Name,
-        List<AddressResponse> Addresses
+        List<UserAddressResponse> Addresses
     );
 }

@@ -7,13 +7,13 @@ using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
-    public class DeleteAddressUserCommand : IDeleteAddressUserCommand
+    public class RemoveAddressUserCommand : IRemoveAddressUserCommand
     {
         private readonly IUserAddressRepository _userAddressRepository;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
-        public DeleteAddressUserCommand(
+        public RemoveAddressUserCommand(
             IUserAddressRepository userAddressRepository,
             IUserRepository repository,
             UseCache useCache,

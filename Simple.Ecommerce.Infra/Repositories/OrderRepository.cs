@@ -1,5 +1,7 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
@@ -39,6 +41,21 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<bool>> Delete(int id)
         {
             return await _deleteRepository.Delete(_context, id);
+        }
+
+        public async Task<Result<bool>> DeletePaymentMethod(int id)
+        {
+            var order = await _context.Orders.FirstOrDefaultAsync(p => p.Id == id && !p.Deleted);
+            if (order is null)
+            {
+                return Result<bool>.Failure(new List<Error> { new Error("NotFound", "Pedido não encontrado!") });
+            }
+
+            order.UpdatePaymentMethod(null, null);
+            _context.Entry(order).Reference(o => o.CardInformation).IsModified = true;
+
+            await _context.SaveChangesAsync();
+            return Result<bool>.Success(true);
         }
 
         public async Task<Result<Order>> Get(int id, bool NoTracking = true)

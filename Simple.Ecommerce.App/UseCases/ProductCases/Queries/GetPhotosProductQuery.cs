@@ -31,8 +31,8 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
         {
             if (_useCache.Use)
             {
-                var cacheResponse = _cacheHandler.ListFromCacheByProperty<ProductPhoto, PhotoResponse>(nameof(ProductPhoto.ProductId), productId, 
-                    cache => new PhotoResponse(
+                var cacheResponse = _cacheHandler.ListFromCacheByProperty<ProductPhoto, PhotoProductResponse>(nameof(ProductPhoto.ProductId), productId, 
+                    cache => new PhotoProductResponse(
                         Convert.ToString(cache[$"{nameof(Photo)}_FileName"])!,
                         Convert.ToInt32(cache["Id"])
                     ));
@@ -58,10 +58,10 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                 return Result<ProductPhotosResponse>.Failure(listResult.Errors!);
             }
 
-            var response = new List<PhotoResponse>();
+            var response = new List<PhotoProductResponse>();
             foreach (var photo in listResult.GetValue())
             {
-                response.Add(new PhotoResponse(
+                response.Add(new PhotoProductResponse(
                     photo.Photo.FileName,
                     photo.Id
                 ));

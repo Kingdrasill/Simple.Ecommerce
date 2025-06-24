@@ -68,14 +68,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     ).GetValue(),
                     (cache, address) => new Order().Create(
                         Convert.ToInt32(cache["Id"]),
-                        Convert.ToDateTime(cache["OrderDate"]),
                         Convert.ToInt32(cache["UserId"]),
-                        Convert.ToDecimal(cache["TotalPrice"]),
-                        address,
                         (OrderType)Convert.ToInt32(cache["OrderType"])!,
+                        address,
+                        cache.GetNullablePaymentMethod("PaymentMethod"),
+                        cache.GetNullableDecimal("TotalPrice"),
+                        cache.GetNullableDateTime("OrderDate"),
                         Convert.ToBoolean(cache["Confirmation"]),
-                        Convert.ToString(cache["Status"])!,
-                        Convert.ToString(cache["PaymentMethod"])!
+                        Convert.ToString(cache["Status"])!
                     ).GetValue()),
                 () => GetFromRepositoryOrder(orderId),
                 () => _cacheHandler.SendToCache<Order>()

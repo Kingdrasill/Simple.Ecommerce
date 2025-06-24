@@ -10,12 +10,7 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
 
         public OrderValidator()
         {
-            _builder = new ValidationBuilder()
-                .AddNegativeValueDecimal(nameof(Order.TotalPrice), typeof(Order).Name)
-                .AddEmptyValue(nameof(Order.OrderType), typeof(Order).Name)
-                .AddMaxLength(nameof(Order.OrderType), typeof(Order).Name, 5)
-                .AddEmptyValue(nameof(Order.PaymentMethod), typeof(Order).Name)
-                .AddMaxLength(nameof(Order.PaymentMethod), typeof(Order).Name, 20);
+            _builder = new ValidationBuilder();
         }
 
         public Result<Order> Validate(Order entity)

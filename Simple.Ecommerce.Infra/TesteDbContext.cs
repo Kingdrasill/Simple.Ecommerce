@@ -17,6 +17,7 @@ using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
+using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Microsoft.EntityFrameworkCore;
 
@@ -81,5 +82,6 @@ namespace Simple.Ecommerce.Infra
         public DbSet<Review> Reviews { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<UserAddress> UserAddresses { get; set; }
+        public DbSet<UserCard> UserCards { get; set; }  
     }
 }

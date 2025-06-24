@@ -31,18 +31,19 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
         {
             if (_useCache.Use)
             {
-                var cacheResponse = _cacheHandler.GetFromCache<User, PhotoResponse>(userId,
+                var cacheResponse = _cacheHandler.GetFromCache<User, PhotoUserResponse>(userId,
                     cache => {
                         if (cache.TryGetValue($"{nameof(Photo)}_FileName", out var fileName) && fileName is not null)
-                            return new PhotoResponse(Convert.ToString(fileName)!);
+                            return new PhotoUserResponse(Convert.ToString(fileName)!);
                         return null;
                     });
 
                 if (cacheResponse.IsSuccess)
-                    return Result<UserPhotoResponse>.Success(new UserPhotoResponse(
-                        userId,
-                        cacheResponse.GetValue()
-                    ));
+                    return Result<UserPhotoResponse>.Success(
+                        new UserPhotoResponse(
+                            userId,
+                            cacheResponse.GetValue()
+                        ));
             }
 
             var repoResponse = await GetFromRepository(userId);
@@ -62,9 +63,9 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
 
             var response = new UserPhotoResponse(
                 userId,
-                userResult.GetValue().Photo is not null ? new PhotoResponse(
+                userResult.GetValue().Photo is null ? null : new PhotoUserResponse(
                     userResult.GetValue().Photo!.FileName
-                ) : null
+                )
             );
             return Result<UserPhotoResponse>.Success(response);
         }

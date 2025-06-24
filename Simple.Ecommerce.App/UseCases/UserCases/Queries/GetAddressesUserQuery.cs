@@ -1,6 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.UserAddressContracts;
 using Simple.Ecommerce.Contracts.UserContracts;
@@ -9,7 +10,6 @@ using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.App.Services.Cache;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
 {
@@ -51,9 +51,9 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
                 return Result<UserAddressesResponse>.Failure(userResponse.Errors!);
             }
 
-            var addressesResponse = await GetAsync<List<AddressResponse>>(
-                () => _cacheHandler.ListFromCacheByProperty<UserAddress, AddressResponse>(nameof(UserAddress.UserId), userId,
-                    cache => new AddressResponse(
+            var addressesResponse = await GetAsync<List<UserAddressResponse>>(
+                () => _cacheHandler.ListFromCacheByProperty<UserAddress, UserAddressResponse>(nameof(UserAddress.UserId), userId,
+                    cache => new UserAddressResponse(
                         Convert.ToInt32(cache[$"{nameof(Address)}_Number"]),
                         Convert.ToString(cache[$"{nameof(Address)}_Street"])!,
                         Convert.ToString(cache[$"{nameof(Address)}_Neighbourhood"])!,
@@ -119,18 +119,18 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
             return Result<UserResponse>.Success(response);
         }
 
-        private async Task<Result<List<AddressResponse>>> GetFromRepositoryUserAddresses(int userId)
+        private async Task<Result<List<UserAddressResponse>>> GetFromRepositoryUserAddresses(int userId)
         {
-            var listResult = await _userAddressRepository.GetByUser(userId);
+            var listResult = await _userAddressRepository.GetByUserId(userId);
             if (listResult.IsFailure)
             {
-                return Result<List<AddressResponse>>.Failure(listResult.Errors!);
+                return Result<List<UserAddressResponse>>.Failure(listResult.Errors!);
             }
 
-            var response = new List<AddressResponse>();
+            var response = new List<UserAddressResponse>();
             foreach (var address in listResult.GetValue())
             {
-                response.Add(new AddressResponse(
+                response.Add(new UserAddressResponse(
                     address.Address.Number,
                     address.Address.Street,
                     address.Address.Neighbourhood,
@@ -142,7 +142,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
                 ));
             }
 
-            return Result<List<AddressResponse>>.Success(response);
+            return Result<List<UserAddressResponse>>.Success(response);
         }
     }
 }
