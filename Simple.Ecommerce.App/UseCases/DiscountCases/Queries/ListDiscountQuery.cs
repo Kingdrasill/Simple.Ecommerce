@@ -1,31 +1,32 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {
     public class ListDiscountQuery : IListDiscountQuery
     {
         private readonly IDiscountRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ListDiscountQuery(
             IDiscountRepository repository, 
-            IDiscountTierRepository discountTierRepository, 
-            IDiscountBundleItemRepository discountBundleItemRepository, 
-            ICouponRepository couponRepository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -48,25 +49,9 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     ));
             }
 
-            var repoResponse = await GetFromRepository();
-            if (repoResponse.IsSuccess && _useCache.Use)
-                await _cacheHandler.SendToCache<Discount>();
-
-            return repoResponse;
-        }
-
-        private async Task<Result<List<DiscountResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<DiscountResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<DiscountResponse>();
-            foreach (var discount in listResult.GetValue())
-            {
-                response.Add(new DiscountResponse(
+            var repoResponse = await _repositoryHandler.ListFromRepository<Discount, DiscountResponse>(
+                async () => await _repository.List(),
+                discount => new DiscountResponse(
                     discount.Id,
                     discount.Name,
                     discount.DiscountType,
@@ -77,9 +62,10 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     discount.ValidTo,
                     discount.IsActive
                 ));
-            }
+            if (repoResponse.IsSuccess && _useCache.Use)
+                await _cacheHandler.SendToCache<Discount>();
 
-            return Result<List<DiscountResponse>>.Success(response);
+            return repoResponse;
         }
     }
 }

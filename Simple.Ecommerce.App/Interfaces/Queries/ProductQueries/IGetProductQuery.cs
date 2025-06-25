@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.App.Interfaces.Queries.ProductQueries
 {
     public interface IGetProductQuery
     {
-        Task<Result<ProductResponse>> Execute(int id, bool NoTracking = true);
+        Task<Result<ProductResponse>> Execute(int id);
     }
 }

@@ -23,7 +23,7 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IChangePaymentMethodOrderCommand _changePaymentMethodOrderCommand;
         private readonly IDeleteDiscountOrderCommand _deleteDiscountOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
-        private readonly IGetDiscountsOrderQuery _getDiscountsOrderQuery;
+        private readonly IGetDiscountDTOsOrderQuery _getDiscountDTOsOrderQuery;
         private readonly IGetPaymentMethodOrderQuery _getPaymentMethodOrderQuery;
 
         public OrderController(
@@ -38,7 +38,7 @@ namespace Simple.Ecommerce.Api.Controllers
             IChangePaymentMethodOrderCommand changePaymentMethodOrderCommand,
             IDeleteDiscountOrderCommand deleteDiscountOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
-            IGetDiscountsOrderQuery getDiscountsOrderQuery,
+            IGetDiscountDTOsOrderQuery getDiscountDTOsOrderQuery,
             IGetPaymentMethodOrderQuery getPaymentMethodOrderQuery
         )
         {
@@ -53,7 +53,7 @@ namespace Simple.Ecommerce.Api.Controllers
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
             _deleteDiscountOrderCommand = deleteDiscountOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
-            _getDiscountsOrderQuery = getDiscountsOrderQuery;
+            _getDiscountDTOsOrderQuery = getDiscountDTOsOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
         [HttpPost]
@@ -159,7 +159,7 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<List<OrderDiscountDTO>>> GetDiscounts(int orderId)
         {
-            var result = await _getDiscountsOrderQuery.Execute(orderId);
+            var result = await _getDiscountDTOsOrderQuery.Execute(orderId);
 
             return ResultHandler.HandleResult(this, result);
         }

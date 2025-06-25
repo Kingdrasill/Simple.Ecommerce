@@ -1,26 +1,30 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
-using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderItemQueries;
+using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
+using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Queries
 {
     public class ListOrderItemQuery : IListOrderItemQuery
     {
         private readonly IOrderItemRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ListOrderItemQuery(
             IOrderItemRepository repository,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -41,34 +45,19 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository();
+            var repoResponse = await _repositoryHandler.ListFromRepository<OrderItem, OrderItemResponse>(
+                async () => await _repository.List(),
+                orderItem => new OrderItemResponse(
+                    orderItem.Id,
+                    orderItem.ProductId,
+                    orderItem.Price,
+                    orderItem.Quantity,
+                    orderItem.OrderId
+                ));
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<OrderItem>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<List<OrderItemResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<OrderItemResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<OrderItemResponse>();
-            foreach (var cartItem in listResult.GetValue())
-            {
-                response.Add(new OrderItemResponse(
-                    cartItem.Id,
-                    cartItem.ProductId,
-                    cartItem.Price,
-                    cartItem.Quantity,
-                    cartItem.OrderId
-                ));
-            }
-
-            return Result<List<OrderItemResponse>>.Success(response);
         }
     }
 }

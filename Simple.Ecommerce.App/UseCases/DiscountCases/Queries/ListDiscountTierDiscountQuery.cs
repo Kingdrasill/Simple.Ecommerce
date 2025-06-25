@@ -1,26 +1,30 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {
     public class ListDiscountTierDiscountQuery : IListDiscountTierDiscountQuery
     {
         private readonly IDiscountTierRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ListDiscountTierDiscountQuery(
-            IDiscountTierRepository repository, 
+            IDiscountTierRepository repository,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -40,33 +44,18 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository();
-            if (repoResponse.IsSuccess && _useCache.Use)
-                await _cacheHandler.SendToCache<DiscountTier>();
-
-            return repoResponse;
-        }
-
-        private async Task<Result<List<DiscountTierResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<DiscountTierResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<DiscountTierResponse>();
-            foreach (var discountTier in listResult.GetValue())
-            {
-                response.Add(new DiscountTierResponse(
+            var repoResponse = await _repositoryHandler.ListFromRepository<DiscountTier, DiscountTierResponse>(
+                async () => await _repository.List(),
+                discountTier => new DiscountTierResponse(
                     discountTier.Id,
                     discountTier.MinQuantity,
                     discountTier.Value,
                     discountTier.DiscountId
                 ));
-            }
+            if (repoResponse.IsSuccess && _useCache.Use)
+                await _cacheHandler.SendToCache<DiscountTier>();
 
-            return Result<List<DiscountTierResponse>>.Success(response);
+            return repoResponse;
         }
     }
 }

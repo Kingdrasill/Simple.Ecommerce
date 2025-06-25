@@ -1,27 +1,31 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.CouponContracts;
 using Simple.Ecommerce.Domain.Entities.CouponEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {
     public class GetCouponDiscountQuery : IGetCouponDiscountQuery
     {
         private readonly ICouponRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public GetCouponDiscountQuery(
             ICouponRepository repository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -44,33 +48,23 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository(id);
+            var repoResponse = await _repositoryHandler.GetFromRepository<Coupon, CouponResponse>(
+                id,
+                async (id) => await _repository.Get(id),
+                coupon => new CouponResponse(
+                    coupon.Id,
+                    coupon.Code,
+                    coupon.IsUsed,
+                    coupon.CreatedAt,
+                    coupon.ExpirationAt,
+                    coupon.UsedAt,
+                    coupon.DiscountId
+                )
+            );
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<Coupon>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<CouponResponse>> GetFromRepository(int id)
-        {
-            var getCoupon = await _repository.Get(id);
-            if (getCoupon.IsFailure)
-            {
-                return Result<CouponResponse>.Failure(getCoupon.Errors!);
-            }
-
-            var coupon = getCoupon.GetValue();
-            var response = new CouponResponse(
-                coupon.Id,
-                coupon.Code,
-                coupon.IsUsed,
-                coupon.CreatedAt,
-                coupon.ExpirationAt,
-                coupon.UsedAt,
-                coupon.DiscountId
-            );
-
-            return Result<CouponResponse>.Success(response);
         }
     }
 }

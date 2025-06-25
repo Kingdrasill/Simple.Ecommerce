@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.App.Interfaces.Queries.OrderQueries
 {
     public interface IGetOrderQuery
     {
-        Task<Result<OrderResponse>> Execute(int id, bool NoTracking = true);
+        Task<Result<OrderResponse>> Execute(int id);
     }
 }

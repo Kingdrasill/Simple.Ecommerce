@@ -1,13 +1,14 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.ProductQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.CategoryContracts;
 using Simple.Ecommerce.Contracts.ProductCategoryContracts;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
 {
@@ -16,6 +17,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IProductCategoryRepository _productCategoryRepository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -23,6 +25,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
             IProductRepository repository, 
             ICategoryRepository categoryRepository,
             IProductCategoryRepository productCategoryRepository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -30,6 +33,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
             _repository = repository;
             _categoryRepository = categoryRepository;
             _productCategoryRepository = productCategoryRepository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -45,7 +49,9 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                         Convert.ToString(cache["Description"])!,
                         Convert.ToInt32(cache["Stock"])
                     ).GetValue()),
-                () => _repository.Get(productId),
+                () => _repositoryHandler.GetFromRepository<Product>(
+                    productId,
+                    async (id) => await _repository.Get(id)),
                 () => _cacheHandler.SendToCache<Product>()
             );
             if (productResponse.IsFailure)
@@ -60,7 +66,9 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                         Convert.ToInt32(cache["ProductId"]),
                         Convert.ToInt32(cache["CategoryId"])
                     ).GetValue()),
-                () => _productCategoryRepository.GetByProductId(productId),
+                () => _repositoryHandler.ListFromRepository<ProductCategory>(
+                    productId,
+                    async (filterId) => await _productCategoryRepository.GetByProductId(filterId)),
                 () => _cacheHandler.SendToCache<ProductCategory>()
             );
             if (productCategoryResponse.IsFailure)
@@ -78,7 +86,9 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                         Convert.ToInt32(cache["Id"]),
                         Convert.ToString(cache["Name"])!
                     ).GetValue()),
-                () => _categoryRepository.GetCategoriesByIds(categoriesIds),
+                () => _repositoryHandler.GetFromRepositoryByIds<Category, int>(
+                    categoriesIds,
+                    async (ids) => await _categoryRepository.GetCategoriesByIds(ids.ToList())),
                 () => _cacheHandler.SendToCache<Category>()
             );
             if (categoryResponse.IsFailure)

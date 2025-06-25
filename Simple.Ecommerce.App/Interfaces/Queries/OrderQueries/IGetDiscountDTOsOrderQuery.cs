@@ -3,7 +3,7 @@ using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.Interfaces.Queries.OrderQueries
 {
-    public interface IGetDiscountsOrderQuery
+    public interface IGetDiscountDTOsOrderQuery
     {
         Task<Result<List<OrderDiscountDTO>>> Execute(int orderId);
     }

@@ -2,37 +2,40 @@
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
-using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
+using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {
     public class GetOrderQuery : IGetOrderQuery
     {
         private readonly IOrderRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public GetOrderQuery(
             IOrderRepository repository,
-            ICacheFrequencyRepository cacheFrequencyRepository,
+            IRepositoryHandler repositoryHandler,
             ICache cache,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<OrderResponse>> Execute(int id, bool NoTracking = true)
+        public async Task<Result<OrderResponse>> Execute(int id)
         {
             if (_useCache.Use)
             {
@@ -61,46 +64,35 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository(id, NoTracking);
+            var repoResponse = await _repositoryHandler.GetFromRepository<Order, OrderResponse>(
+                id,
+                async (id) => await _repository.Get(id),
+                order => {
+                    var addressResponse = new OrderAddressResponse(
+                        order.Address.Number,
+                        order.Address.Street,
+                        order.Address.Neighbourhood,
+                        order.Address.City,
+                        order.Address.Country,
+                        order.Address.Complement,
+                        order.Address.CEP
+                    );
+                    return new OrderResponse(
+                        order.Id,
+                        order.UserId,
+                        order.OrderType,
+                        addressResponse,
+                        order.PaymentMethod,
+                        order.TotalPrice,
+                        order.OrderDate,
+                        order.Confirmation,
+                        order.Status
+                    );
+                });
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<Order>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<OrderResponse>> GetFromRepository(int id, bool NoTracking)
-        {
-            var getResult = await _repository.Get(id, NoTracking);
-            if (getResult.IsFailure)
-            {
-                return Result<OrderResponse>.Failure(getResult.Errors!);
-            }
-
-            var order = getResult.GetValue();
-
-            var addressResponse = new OrderAddressResponse(
-                order.Address.Number,
-                order.Address.Street,
-                order.Address.Neighbourhood,
-                order.Address.City,
-                order.Address.Country,
-                order.Address.Complement,
-                order.Address.CEP
-            );
-
-            var response = new OrderResponse(
-                order.Id,
-                order.UserId,
-                order.OrderType,
-                addressResponse,
-                order.PaymentMethod,
-                order.TotalPrice,
-                order.OrderDate,
-                order.Confirmation,
-                order.Status
-            );
-
-            return Result<OrderResponse>.Success(response);
         }
     }
 }

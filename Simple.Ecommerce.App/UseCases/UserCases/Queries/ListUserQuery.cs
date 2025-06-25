@@ -1,26 +1,30 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
 {
     public class ListUserQuery : IListUserQuery
     {
         private readonly IUserRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ListUserQuery(
             IUserRepository repository,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -40,33 +44,18 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository();
-            if (repoResponse.IsSuccess && _useCache.Use)
-                await _cacheHandler.SendToCache<User>();
-
-            return repoResponse;
-        }
-
-        private async Task<Result<List<UserResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<UserResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<UserResponse>();
-            foreach (var user in listResult.GetValue())
-            {
-                response.Add(new UserResponse(
+            var repoResponse = await _repositoryHandler.ListFromRepository<User, UserResponse>(
+                async () => await _repository.List(),
+                user => new UserResponse(
                     user.Id,
                     user.Name,
                     user.Email,
                     user.PhoneNumber
                 ));
-            }
+            if (repoResponse.IsSuccess && _useCache.Use)
+                await _cacheHandler.SendToCache<User>();
 
-            return Result<List<UserResponse>>.Success(response);
+            return repoResponse;
         }
     }
 }

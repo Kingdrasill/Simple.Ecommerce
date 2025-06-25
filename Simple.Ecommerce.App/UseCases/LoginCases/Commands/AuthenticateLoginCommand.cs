@@ -10,6 +10,7 @@ using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.App.Interfaces.Services.Authentication;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 
 namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
 {
@@ -19,6 +20,7 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
         private readonly IUserRepository _userRepository;
         private readonly ICryptographyService _cryptographyService;
         private readonly IJwtAuthenticationService _jwtAuthenticationService;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -27,6 +29,7 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             IUserRepository userRepository, 
             ICryptographyService cryptographyService,
             IJwtAuthenticationService jwtAuthenticationService,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -35,6 +38,7 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             _userRepository = userRepository;
             _cryptographyService = cryptographyService;
             _jwtAuthenticationService = jwtAuthenticationService;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -86,11 +90,10 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
                     return cacheResponse;
             }
 
-            var repoResponse = await _userRepository.Get(login.UserId);
-            if (repoResponse.IsFailure)
-                return repoResponse;
-
-            if (_useCache.Use)
+            var repoResponse = await _repositoryHandler.GetFromRepository<User>(
+                login.UserId,
+                async (id) => await _userRepository.Get(id));
+            if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<User>();
 
             return repoResponse;
@@ -130,10 +133,7 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             }
 
             var repoResponse = await _repository.Authenticate(credential, password);
-            if (repoResponse.IsFailure)
-                return repoResponse;
-            
-            if (_useCache.Use)
+            if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<Login>();
 
             return repoResponse;

@@ -1,6 +1,8 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.CouponContracts;
 using Simple.Ecommerce.Contracts.DiscountBundleItemContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
@@ -10,9 +12,8 @@ using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {
@@ -22,6 +23,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
         private readonly IDiscountTierRepository _discountTierRepository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
         private readonly ICouponRepository _couponRepository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -30,6 +32,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             IDiscountTierRepository discountTierRepository,
             IDiscountBundleItemRepository discountBundleItemRepository, 
             ICouponRepository couponRepository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -38,6 +41,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             _discountTierRepository = discountTierRepository;
             _discountBundleItemRepository = discountBundleItemRepository;
             _couponRepository = couponRepository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -57,7 +61,9 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                         cache.GetNullableDateTime("ValidTo"),
                         cache.GetBoolean("IsActive")
                     ).GetValue()),
-                () => GetFromRepositoryDiscount(id),
+                () => _repositoryHandler.GetFromRepository<Discount>(
+                    id,
+                    async (id) => await _repository.Get(id)),
                 () => _cacheHandler.SendToCache<Discount>()
             );
             if (getDiscount.IsFailure)
@@ -78,7 +84,14 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                             Convert.ToInt32(cache["MinQuality"]),
                             Convert.ToDecimal(cache["Value"])
                         )),
-                    () => GetFromRepositoryDiscountTier(discount.Id),
+                    () => _repositoryHandler.ListFromRepository<DiscountTier, DiscountTierResponse>(
+                        discount.Id,
+                        async (filterId) => await _discountTierRepository.GetByDiscountId(filterId),
+                        tier => new DiscountTierResponse(
+                            tier.Id,
+                            tier.MinQuantity,
+                            tier.Value
+                        )),
                     () => _cacheHandler.SendToCache<DiscountTier>()
                 );
                 if (tiersResponse.IsFailure)
@@ -96,7 +109,14 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                             Convert.ToInt32(cache["ProductId"]),
                             Convert.ToInt32(cache["Quantity"])
                         )),
-                    () => GetFromRepositoryDiscountBundleItem(discount.Id),
+                    () => _repositoryHandler.ListFromRepository<DiscountBundleItem, DiscountBundleItemResponse>(
+                        discount.Id,
+                        async (filterId) => await _discountBundleItemRepository.GetByDiscountId(filterId),
+                        bundleItem => new DiscountBundleItemResponse(
+                            bundleItem.Id,
+                            bundleItem.ProductId,
+                            bundleItem.Quantity
+                        )),
                     () => _cacheHandler.SendToCache<DiscountBundleItem>()
                 );
                 if (bundleItemsResponse.IsFailure)
@@ -116,7 +136,17 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                         Convert.ToDateTime(cache["ExpirationAt"]),
                         cache.GetNullableDateTime("UsedAt")
                     )),
-                () => GetFromRepositoryCoupon(discount.Id),
+                () => _repositoryHandler.ListFromRepository<Coupon, CouponResponse>(
+                    discount.Id,
+                    async (filterId) => await _couponRepository.GetByDiscountId(filterId),
+                    coupon => new CouponResponse(
+                        coupon.Id,
+                        coupon.Code,
+                        coupon.IsUsed,
+                        coupon.CreatedAt,
+                        coupon.ExpirationAt,
+                        coupon.UsedAt
+                    )),
                 () => _cacheHandler.SendToCache<Coupon>()
             );
             if (couponsResponse.IsFailure)
@@ -160,78 +190,6 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 await sendToCache();
 
             return repoResponse;
-        }
-
-        private async Task<Result<Discount>> GetFromRepositoryDiscount(int discountId)
-        {
-            var getDiscount = await _repository.Get(discountId);
-            return getDiscount;
-        }
-
-        private async Task<Result<List<DiscountBundleItemResponse>>> GetFromRepositoryDiscountBundleItem(int discountId)
-        {
-            var listBundleItem = await _discountBundleItemRepository.GetByDiscountId(discountId);
-            if (listBundleItem.IsFailure)
-            {
-                return Result<List<DiscountBundleItemResponse>>.Failure(listBundleItem.Errors!);
-            }
-
-            var response = new List<DiscountBundleItemResponse>();
-            foreach (var bundleItem in listBundleItem.GetValue())
-            {
-                response.Add(new DiscountBundleItemResponse(
-                    bundleItem.Id,
-                    bundleItem.ProductId,
-                    bundleItem.Quantity
-                ));
-            }
-
-            return Result<List<DiscountBundleItemResponse>>.Success(response);
-        }
-
-        private async Task<Result<List<DiscountTierResponse>>> GetFromRepositoryDiscountTier(int discountId)
-        {
-            var listTier = await _discountTierRepository.GetByDiscountId(discountId);
-            if (listTier.IsFailure)
-            {
-                return Result<List<DiscountTierResponse>>.Failure(listTier.Errors!);
-            }
-
-            var response = new List<DiscountTierResponse>();
-            foreach (var tier in listTier.GetValue())
-            {
-                response.Add(new DiscountTierResponse(
-                    tier.Id,
-                    tier.MinQuantity,
-                    tier.Value
-                ));
-            }
-
-            return Result<List<DiscountTierResponse>>.Success(response);
-        }
-
-        private async Task<Result<List<CouponResponse>>> GetFromRepositoryCoupon(int discountId)
-        {
-            var listCoupon = await _couponRepository.GetByDiscountId(discountId);
-            if (listCoupon.IsFailure)
-            { 
-                return Result<List<CouponResponse>>.Failure(listCoupon.Errors!);
-            }
-
-            var response = new List<CouponResponse>();
-            foreach (var coupon in listCoupon.GetValue())
-            {
-                response.Add(new CouponResponse(
-                    coupon.Id,
-                    coupon.Code,
-                    coupon.IsUsed,
-                    coupon.CreatedAt,
-                    coupon.ExpirationAt,
-                    coupon.UsedAt
-                ));
-            }
-
-            return Result<List<CouponResponse>>.Success(response);
         }
     }
 }

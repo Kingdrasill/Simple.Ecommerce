@@ -1,28 +1,32 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.ProductQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.ProductPhotoContracts;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
 {
     public class GetPhotosProductQuery : IGetPhotosProductQuery
     {
         private readonly IProductPhotoRepository _productPhotoRepository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public GetPhotosProductQuery(
             IProductPhotoRepository productPhotoRepository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _productPhotoRepository = productPhotoRepository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -43,34 +47,21 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                     ));
             }
 
-            var repoResponse = await GetFromRepository(productId);
+            var repoResponse = await _repositoryHandler.GetGroupedListFromRepository<ProductPhoto, PhotoProductResponse, ProductPhotosResponse>(
+                productId,
+                async (id) => await _productPhotoRepository.ListByProductId(id),
+                photo => new PhotoProductResponse(
+                    photo.Photo.FileName,
+                    photo.Id
+                ),
+                (id, photos) => new ProductPhotosResponse(
+                    id,
+                    photos
+                ));
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<ProductPhoto>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<ProductPhotosResponse>> GetFromRepository(int productId)
-        {
-            var listResult = await _productPhotoRepository.ListByProductId(productId);
-            if (listResult.IsFailure)
-            {
-                return Result<ProductPhotosResponse>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<PhotoProductResponse>();
-            foreach (var photo in listResult.GetValue())
-            {
-                response.Add(new PhotoProductResponse(
-                    photo.Photo.FileName,
-                    photo.Id
-                ));
-            }
-
-            return Result<ProductPhotosResponse>.Success(new ProductPhotosResponse(
-                productId,
-                response
-            ));
         }
     }
 }

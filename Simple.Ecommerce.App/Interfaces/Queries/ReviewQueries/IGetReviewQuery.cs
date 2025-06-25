@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.App.Interfaces.Queries.ReviewQueries
 {
     public interface IGetReviewQuery
     {
-        Task<Result<ReviewResponse>> Execute(int id, bool NoTracking = true);
+        Task<Result<ReviewResponse>> Execute(int id);
     }
 }

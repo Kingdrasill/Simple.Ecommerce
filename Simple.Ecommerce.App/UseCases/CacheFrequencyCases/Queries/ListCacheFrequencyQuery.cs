@@ -1,6 +1,8 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.CacheFrequencyQueries;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.CacheFrequencyContracts;
+using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.CacheFrequencyCases.Queries
@@ -8,38 +10,30 @@ namespace Simple.Ecommerce.App.UseCases.CacheFrequencyCases.Queries
     public class ListCacheFrequencyQuery : IListCacheFrequencyQuery
     {
         private readonly ICacheFrequencyRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
 
         public ListCacheFrequencyQuery(
-            ICacheFrequencyRepository repository
+            ICacheFrequencyRepository repository,
+            IRepositoryHandler repositoryHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
         }
 
         public async Task<Result<List<CacheFrequencyResponse>>> Execute()
         {
-            var listResult = await _repository.List();
-
-            if (listResult.IsFailure)
-            {
-                return Result<List<CacheFrequencyResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<CacheFrequencyResponse>();
-
-            foreach (var frequency in listResult.GetValue())
-            {
-                response.Add(new CacheFrequencyResponse(
+            return await _repositoryHandler.ListFromRepository<CacheFrequency, CacheFrequencyResponse>(
+                async () => await _repository.List(),
+                frequency => new CacheFrequencyResponse(
                     frequency.Id,
                     frequency.Entity,
                     frequency.Frequency,
                     frequency.HoursToLive,
                     frequency.Expirable,
                     frequency.KeepCached
-                ));
-            }
-
-            return Result<List<CacheFrequencyResponse>>.Success(response);
+                )
+            );
         }
     }
 }

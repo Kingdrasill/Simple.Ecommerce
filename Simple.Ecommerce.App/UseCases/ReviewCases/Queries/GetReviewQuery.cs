@@ -6,27 +6,31 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 
 namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
 {
     public class GetReviewQuery : IGetReviewQuery
     {
         private readonly IReviewRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public GetReviewQuery(
             IReviewRepository repository,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<ReviewResponse>> Execute(int id, bool NoTracking = true)
+        public async Task<Result<ReviewResponse>> Execute(int id)
         {
             if (_useCache.Use)
             {
@@ -42,31 +46,20 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository(id, NoTracking);
+            var repoResponse = await _repositoryHandler.GetFromRepository<Review, ReviewResponse>(
+                id,
+                async (id) => await _repository.Get(id),
+                review => new ReviewResponse(
+                    review.Id,
+                    review.Score,
+                    review.Comment,
+                    review.UserId,
+                    review.ProductId
+                ));
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<Review>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<ReviewResponse>> GetFromRepository(int id, bool NoTracking)
-        {
-            var getResult = await _repository.Get(id, NoTracking);
-            if (getResult.IsFailure)
-            {
-                return Result<ReviewResponse>.Failure(getResult.Errors!);
-            }
-
-            var review = getResult.GetValue();
-            var response = new ReviewResponse(
-                review.Id,
-                review.Score,
-                review.Comment,
-                review.UserId,
-                review.ProductId
-            );
-
-            return Result<ReviewResponse>.Success(response);
         }
     }
 }

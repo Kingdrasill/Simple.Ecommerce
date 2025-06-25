@@ -1,26 +1,30 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {
     public class GetDiscountTierDiscountQuery : IGetDiscountTierDiscountQuery
     {
         private readonly IDiscountTierRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private UseCache _useCache;
         private ICacheHandler _cacheHandler;
 
         public GetDiscountTierDiscountQuery(
             IDiscountTierRepository repository, 
+            IRepositoryHandler repositoryHandler,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -40,30 +44,19 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     return cacheResponse;
             }
 
-            var reposResponse = await GetFromRepository(id);
+            var reposResponse = await _repositoryHandler.GetFromRepository(
+                id,
+                async (id) => await _repository.Get(id),
+                discountTier => new DiscountTierResponse(
+                    discountTier.Id,
+                    discountTier.MinQuantity,
+                    discountTier.Value,
+                    discountTier.DiscountId
+                ));
             if (reposResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<DiscountTier>();
 
             return reposResponse;
-        }
-
-        private async Task<Result<DiscountTierResponse>> GetFromRepository(int id)
-        {
-            var getResult = await _repository.Get(id);
-            if (getResult.IsFailure)
-            {
-                return Result<DiscountTierResponse>.Failure(getResult.Errors!);
-            }
-
-            var discountTier = getResult.GetValue();
-            var response = new DiscountTierResponse(
-                discountTier.Id,
-                discountTier.MinQuantity,
-                discountTier.Value,
-                discountTier.DiscountId
-            );
-
-            return Result<DiscountTierResponse>.Success(response);
         }
     }
 }

@@ -19,9 +19,11 @@ using Simple.Ecommerce.App.Interfaces.Queries.ReviewQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.ImageCleanup;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Interfaces.Services.ServiceResolver;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.App.Services.FileImage;
+using Simple.Ecommerce.App.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Services.ServiceResolver;
 using Simple.Ecommerce.App.UseCases.CacheFrequencyCases.Queries;
 using Simple.Ecommerce.App.UseCases.CategoryCases.Commands;
@@ -55,6 +57,9 @@ namespace Simple.Ecommerce.App
 
             // Cache Handler
             services.AddScoped<ICacheHandler, CacheHandler>();
+
+            // Repository Handler
+            services.AddScoped<IRepositoryHandler, RepositotyHandler>();
 
             // CacheFrequency Batch
             services.AddScoped<IListCacheFrequencyQuery, ListCacheFrequencyQuery>();
@@ -114,7 +119,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IDeleteOrderCommand, DeleteOrderCommand>();
             services.AddScoped<IRemovePaymentMethodOrderCommand, RemovePaymentMethodOrderCommand>();
             services.AddScoped<IUpdateOrderCommand, UpdateOrderCommand>();
-            services.AddScoped<IGetDiscountsOrderQuery, GetDiscountsOrderQuery>();
+            services.AddScoped<IGetDiscountDTOsOrderQuery, GetDiscountDTOsOrderQuery>();
             services.AddScoped<IGetPaymentMethodOrderQuery, GetPaymentMethodOrderQuery>();
             services.AddScoped<IGetOrderQuery, GetOrderQuery>();
             services.AddScoped<IListOrderQuery, ListOrderQuery>();

@@ -6,22 +6,26 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 
 namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
 {
     public class ListReviewQuery : IListReviewQuery
     {
         private readonly IReviewRepository _repository;
+        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ListReviewQuery(
             IReviewRepository repository,
+            IRepositoryHandler repositoryHandler,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
+            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -42,34 +46,19 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
                     return cacheResponse;
             }
 
-            var repoResponse = await GetFromRepository();
-            if (repoResponse.IsSuccess && _useCache.Use)
-                await _cacheHandler.SendToCache<Review>();
-
-            return repoResponse;
-        }
-
-        private async Task<Result<List<ReviewResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<ReviewResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<ReviewResponse>();
-            foreach (var review in listResult.GetValue())
-            {
-                response.Add(new ReviewResponse(
+            var repoResponse = await _repositoryHandler.ListFromRepository<Review, ReviewResponse>(
+                async () => await _repository.List(),
+                review => new ReviewResponse(
                     review.Id,
                     review.Score,
                     review.Comment,
                     review.UserId,
                     review.ProductId
                 ));
-            }
+            if (repoResponse.IsSuccess && _useCache.Use)
+                await _cacheHandler.SendToCache<Review>();
 
-            return Result<List<ReviewResponse>>.Success(response);
+            return repoResponse;
         }
     }
 }
