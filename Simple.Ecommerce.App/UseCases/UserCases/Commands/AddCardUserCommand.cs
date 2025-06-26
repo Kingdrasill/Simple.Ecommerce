@@ -1,6 +1,9 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.CardService;
+using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
+using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.UserCardContracts;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
@@ -14,18 +17,24 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
     {
         private readonly IUserRepository _repository;
         private readonly IUserCardRepository _userCardRepository;
+        private readonly ICryptographyService _cryptographyService;
+        private readonly ICardService _cardService;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public AddCardUserCommand(
             IUserRepository repository, 
-            IUserCardRepository userCardRepository, 
+            IUserCardRepository userCardRepository,
+            ICryptographyService cryptographyService,
+            ICardService cardService,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _userCardRepository = userCardRepository;
+            _cryptographyService = cryptographyService;
+            _cardService = cardService;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -38,18 +47,31 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 return Result<bool>.Failure(getUser.Errors!);
             }
 
+            var isValid = _cardService.IsValidCardNumber(request.CardInformation.CardNumber);
+            if (isValid.IsFailure)
+            {
+                return Result<bool>.Failure(isValid.Errors!);
+            }
+
+            var cardFlag = _cardService.GetCardFlag(request.CardInformation.CardNumber);
+            if (cardFlag.IsFailure)
+            {
+                return Result<bool>.Failure(cardFlag.Errors!);
+            }
+
+            var encryptedNumber = _cryptographyService.Encrypt(request.CardInformation.CardNumber);
+            if (encryptedNumber.IsFailure)
+            {
+                return Result<bool>.Failure(encryptedNumber.Errors!);
+            }
+
             var last4Digits = request.CardInformation.CardNumber[^4..];
-
-            // Add Crypthography for card number
-            // Add Verification for card number
-            // Add GetFlag for card number
-
             var cardInformation = new CardInformation().Create(
                 request.CardInformation.CardHolderName,
-                request.CardInformation.CardNumber,
+                encryptedNumber.GetValue(),
                 request.CardInformation.ExpirationMonth,
                 request.CardInformation.ExpirationYear,
-                CardFlag.AmericanExpress, // This should be replaced with a method to get the actual card flag
+                cardFlag.GetValue(),
                 last4Digits
             );
             if (cardInformation.IsFailure)

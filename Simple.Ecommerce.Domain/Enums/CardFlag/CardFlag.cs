@@ -5,10 +5,9 @@
         Visa = 1,
         MasterCard = 2,
         AmericanExpress = 3,
-        Discover = 4,
-        DinersClub = 5,
-        JCB = 6,
-        Elo = 7,
-        Hipercard = 8
+        Elo = 4,
+        Hipercard = 5,
+        DinersClub = 6,
+        Discover = 7
     }
 }

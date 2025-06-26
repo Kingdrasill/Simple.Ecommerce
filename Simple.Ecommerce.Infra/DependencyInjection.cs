@@ -7,6 +7,11 @@ using ImageFile.Library.Core.Events;
 using ImageFile.Library.Core.Services;
 using ImageFile.Library.Infra.Cleaner;
 using ImageFile.Library.Infra.Resolver;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.App.Interfaces.ReadData;
@@ -33,6 +38,7 @@ using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
+using Simple.Ecommerce.Domain.Settings.AesSettings;
 using Simple.Ecommerce.Domain.Settings.EmailSettings;
 using Simple.Ecommerce.Domain.Settings.JwtSettings;
 using Simple.Ecommerce.Domain.Settings.MongoDbSettings;
@@ -48,11 +54,6 @@ using Simple.Ecommerce.Infra.Services.Cryptography;
 using Simple.Ecommerce.Infra.Services.Dispatcher;
 using Simple.Ecommerce.Infra.Services.Email;
 using Simple.Ecommerce.Infra.Services.JwtToken;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using MongoDB.Driver;
 
 namespace Simple.Ecommerce.Infra
 {
@@ -127,6 +128,9 @@ namespace Simple.Ecommerce.Infra
 
             services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<EmailSettings>>().Value);
+
+            services.Configure<AesSettings>(configuration.GetSection("AesSettings"));
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<AesSettings>>().Value);
         }
 
         private static void AddNoSQLDatabase(this IServiceCollection services, IConfiguration configuration)
@@ -197,7 +201,11 @@ namespace Simple.Ecommerce.Infra
         private static void AddApplicationServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<ICacheFrequencyInitializer, CacheFrequencyInitializer>();
-            services.AddScoped<ICryptographyService, CryptographyService>();
+            services.AddScoped<ICryptographyService>(sp =>
+            {
+                var aesSettings = sp.GetRequiredService<IOptions<AesSettings>>().Value;
+                return new CryptographyService(aesSettings.Key, aesSettings.IV);
+            });
             services.AddScoped<IJwtAuthenticationService, JwtAuthenticationService>();
             services.AddScoped<IEmailService, SmtpService>();
         }

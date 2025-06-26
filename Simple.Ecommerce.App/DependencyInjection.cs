@@ -18,10 +18,12 @@ using Simple.Ecommerce.App.Interfaces.Queries.ProductQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.ReviewQueries;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.CardService;
 using Simple.Ecommerce.App.Interfaces.Services.ImageCleanup;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Interfaces.Services.ServiceResolver;
 using Simple.Ecommerce.App.Services.Cache;
+using Simple.Ecommerce.App.Services.CardService;
 using Simple.Ecommerce.App.Services.FileImage;
 using Simple.Ecommerce.App.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Services.ServiceResolver;
@@ -57,6 +59,9 @@ namespace Simple.Ecommerce.App
 
             // Cache Handler
             services.AddScoped<ICacheHandler, CacheHandler>();
+
+            // Card Service
+            services.AddScoped<ICardService, CardService>();
 
             // Repository Handler
             services.AddScoped<IRepositoryHandler, RepositotyHandler>();
