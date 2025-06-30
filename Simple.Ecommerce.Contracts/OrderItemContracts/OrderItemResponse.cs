@@ -3,9 +3,10 @@
     public record OrderItemResponse
     (
         int Id,
-        int ProductId,
         decimal Price,
         int Quantity,
-        int OrderId
+        int ProductId,
+        int OrderId,
+        int? DiscountId
     );
 }

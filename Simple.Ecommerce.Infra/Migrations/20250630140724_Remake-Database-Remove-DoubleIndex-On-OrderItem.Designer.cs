@@ -11,8 +11,8 @@ using Simple.Ecommerce.Infra;
 namespace Simple.Ecommerce.Infra.Migrations
 {
     [DbContext(typeof(TesteDbContext))]
-    [Migration("20250623134947_Made-Some-Values-Null-Order")]
-    partial class MadeSomeValuesNullOrder
+    [Migration("20250630140724_Remake-Database-Remove-DoubleIndex-On-OrderItem")]
+    partial class RemakeDatabaseRemoveDoubleIndexOnOrderItem
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -266,30 +266,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.ToTable("Logins", (string)null);
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderDiscountEnity.OrderDiscount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("DiscountId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DiscountId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("PedidosDescontos", (string)null);
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -301,6 +277,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("DiscountId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("OrderDate")
                         .HasColumnType("datetime(6)");
@@ -324,6 +303,8 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DiscountId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Pedidos", (string)null);
@@ -337,6 +318,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("DiscountId")
+                        .HasColumnType("int");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
@@ -352,10 +336,11 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("DiscountId");
 
-                    b.HasIndex("OrderId", "ProductId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("PedidosItens", (string)null);
                 });
@@ -509,6 +494,25 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.ToTable("UsuariosEnderecos", (string)null);
                 });
 
+            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserCardEntity.UserCard", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UsuariosCartoes", (string)null);
+                });
+
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserEntity.User", b =>
                 {
                     b.Property<int>("Id")
@@ -611,27 +615,13 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderDiscountEnity.OrderDiscount", b =>
-                {
-                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
-                        .WithMany("OrderDiscounts")
-                        .HasForeignKey("DiscountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", "Order")
-                        .WithMany("OrderDiscounts")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Discount");
-
-                    b.Navigation("Order");
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
+                        .WithMany("Orders")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.UserEntity.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -690,14 +680,65 @@ namespace Simple.Ecommerce.Infra.Migrations
                                 .HasForeignKey("OrderId");
                         });
 
+                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.CardInformationObject.CardInformation", "CardInformation", b1 =>
+                        {
+                            b1.Property<int>("OrderId")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("CardFlag")
+                                .HasColumnType("int")
+                                .HasColumnName("CardFlag");
+
+                            b1.Property<string>("CardHolderName")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("CardHolderName");
+
+                            b1.Property<string>("CardNumber")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("CardNumber");
+
+                            b1.Property<string>("ExpirationMonth")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("ExpirationMonth");
+
+                            b1.Property<string>("ExpirationYear")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("ExpirationYear");
+
+                            b1.Property<string>("Last4Digits")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("Last4Digits");
+
+                            b1.HasKey("OrderId");
+
+                            b1.ToTable("Pedidos");
+
+                            b1.WithOwner()
+                                .HasForeignKey("OrderId");
+                        });
+
                     b.Navigation("Address")
                         .IsRequired();
+
+                    b.Navigation("CardInformation");
+
+                    b.Navigation("Discount");
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderItemEntity.OrderItem", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
@@ -709,6 +750,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Discount");
 
                     b.Navigation("Order");
 
@@ -870,6 +913,65 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserCardEntity.UserCard", b =>
+                {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.UserEntity.User", "User")
+                        .WithMany("UserCards")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.CardInformationObject.CardInformation", "CardInformation", b1 =>
+                        {
+                            b1.Property<int>("UserCardId")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("CardFlag")
+                                .HasColumnType("int")
+                                .HasColumnName("CardFlag");
+
+                            b1.Property<string>("CardHolderName")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("varchar(50)")
+                                .HasColumnName("CardHolderName");
+
+                            b1.Property<string>("CardNumber")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("CardNumber");
+
+                            b1.Property<string>("ExpirationMonth")
+                                .IsRequired()
+                                .HasMaxLength(2)
+                                .HasColumnType("varchar(2)")
+                                .HasColumnName("ExpirationMonth");
+
+                            b1.Property<string>("ExpirationYear")
+                                .IsRequired()
+                                .HasMaxLength(5)
+                                .HasColumnType("varchar(5)")
+                                .HasColumnName("ExpirationYear");
+
+                            b1.Property<string>("Last4Digits")
+                                .IsRequired()
+                                .HasColumnType("longtext")
+                                .HasColumnName("Last4Digits");
+
+                            b1.HasKey("UserCardId");
+
+                            b1.ToTable("UsuariosCartoes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserCardId");
+                        });
+
+                    b.Navigation("CardInformation")
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserEntity.User", b =>
                 {
                     b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.PhotoObject.Photo", "Photo", b1 =>
@@ -906,7 +1008,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Navigation("DiscountTiers");
 
-                    b.Navigation("OrderDiscounts");
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("Orders");
 
                     b.Navigation("ProductDiscounts");
                 });
@@ -918,8 +1022,6 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
-                    b.Navigation("OrderDiscounts");
-
                     b.Navigation("OrderItems");
                 });
 
@@ -947,6 +1049,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("Reviews");
 
                     b.Navigation("UserAddresses");
+
+                    b.Navigation("UserCards");
                 });
 #pragma warning restore 612, 618
         }

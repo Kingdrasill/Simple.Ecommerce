@@ -7,9 +7,9 @@ using Simple.Ecommerce.Contracts.CardInformationContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {

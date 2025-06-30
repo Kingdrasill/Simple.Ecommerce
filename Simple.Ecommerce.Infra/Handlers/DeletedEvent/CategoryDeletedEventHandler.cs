@@ -3,7 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {

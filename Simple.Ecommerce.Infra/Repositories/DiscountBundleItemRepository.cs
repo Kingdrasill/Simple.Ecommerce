@@ -1,8 +1,8 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {
@@ -50,10 +50,36 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<List<DiscountBundleItem>>> GetByDiscountId(int discountId)
         {
             var discountBundleItems = await _context.DiscountBundleItems
-                                                        .Where(dbi => dbi.DiscountId == discountId && !dbi.Deleted)
-                                                        .ToListAsync();
+                .Where(dbi => dbi.DiscountId == discountId && !dbi.Deleted)
+                .ToListAsync();
 
             return Result<List<DiscountBundleItem>>.Success(discountBundleItems);
+        }
+
+        public async Task<Result<List<DiscountBundleItem>>> GetByProductId(int productId)
+        {
+            var discountBundleItems = await (
+                    from dbi in _context.DiscountBundleItems
+                    join d in _context.Discounts on dbi.DiscountId equals d.Id into discountJoin
+                    from discount in discountJoin.DefaultIfEmpty()
+                    where
+                            discount.IsActive
+                        &&  discount.ValidFrom <= DateTime.UtcNow && discount.ValidTo >= DateTime.UtcNow
+                        && !dbi.Deleted
+                    select dbi
+                ).ToListAsync();
+
+            return Result<List<DiscountBundleItem>>.Success(discountBundleItems);
+        }
+
+        public async Task<Result<List<int>>> GetProductIdsByDiscountId(int discountId)
+        {
+            var discountBundleIds = await _context.DiscountBundleItems
+                .Where(dbi => dbi.DiscountId == discountId && !dbi.Deleted)
+                .Select(dbi => dbi.ProductId)
+                .ToListAsync();
+
+            return Result<List<int>>.Success(discountBundleIds);
         }
 
         public async Task<Result<List<DiscountBundleItem>>> List()

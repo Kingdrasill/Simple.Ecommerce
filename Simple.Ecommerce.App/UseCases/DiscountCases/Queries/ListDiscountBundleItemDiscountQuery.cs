@@ -4,8 +4,8 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.DiscountBundleItemContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
 {

@@ -3,8 +3,9 @@
     public record OrderItemRequest
     (
         int Quantity,
-        decimal Price,
         int ProductId,
-        int OrderId
+        int OrderId,
+        int? DiscountId = null,
+        bool Override = false
     );
 }

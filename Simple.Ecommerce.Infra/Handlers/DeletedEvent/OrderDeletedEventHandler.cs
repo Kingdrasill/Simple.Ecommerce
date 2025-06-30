@@ -1,9 +1,9 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.Domain.Entities.OrderDiscountEnity;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
-using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {
@@ -26,19 +26,19 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 
         public async Task Handle(OrderDeletedEvent domainEvent)
         {
-            var orderDiscounts = await _context.OrderDiscounts
+            var orderItems = await _context.OrderItems
                 .Where(od => od.OrderId == domainEvent.OrderId)
                 .ToListAsync();
 
-            foreach (var orderDiscount in orderDiscounts)
+            foreach (var orderItem in orderItems)
             {
-                orderDiscount.MarkAsDeleted(raiseEvent: false);
+                orderItem.MarkAsDeleted(raiseEvent: false);
             }
 
             if (_useCache.Use)
             {
-                if (orderDiscounts.Any())
-                    _cacheHandler.SetItemStale<OrderDiscount>();
+                if (orderItems.Any())
+                    _cacheHandler.SetItemStale<OrderItem>();
             }    
         }
     }

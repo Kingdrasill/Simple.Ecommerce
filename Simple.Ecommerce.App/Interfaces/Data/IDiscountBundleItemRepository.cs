@@ -12,5 +12,7 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseUpdateRepository<DiscountBundleItem>
     {
         Task<Result<List<DiscountBundleItem>>> GetByDiscountId(int discountId);
+        Task<Result<List<DiscountBundleItem>>> GetByProductId(int productId);
+        Task<Result<List<int>>> GetProductIdsByDiscountId(int discountId);
     }
 }

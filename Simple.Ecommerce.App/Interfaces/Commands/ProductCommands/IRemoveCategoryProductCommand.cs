@@ -2,7 +2,7 @@
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.ProductCommands
 {
-    public interface IDeleteCategoryProductCommand
+    public interface IRemoveCategoryProductCommand
     {
         Task<Result<bool>> Execute(int id);
     }

@@ -4,7 +4,6 @@ using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.Contracts.OrderContracts;
-using Simple.Ecommerce.Contracts.OrderDiscountContracts;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -17,13 +16,12 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IUpdateOrderCommand _updateOrderCommand;
         private readonly IGetOrderQuery _getOrderQuery;
         private readonly IListOrderQuery _listOrderQuery;
-        private readonly IAddDiscountOrderCommand _addDiscountOrderCommand;
         private readonly ICancelOrderCommand _cancelOrderCommand;
         private readonly IConfirmOrderCommand _confirmOrderCommand;
+        private readonly IChangeDiscountOrderCommand _changeDiscountOrderCommand;
         private readonly IChangePaymentMethodOrderCommand _changePaymentMethodOrderCommand;
-        private readonly IDeleteDiscountOrderCommand _deleteDiscountOrderCommand;
+        private readonly IRemoveDiscountOrderCommand _removeDiscountOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
-        private readonly IGetDiscountDTOsOrderQuery _getDiscountDTOsOrderQuery;
         private readonly IGetPaymentMethodOrderQuery _getPaymentMethodOrderQuery;
 
         public OrderController(
@@ -32,13 +30,12 @@ namespace Simple.Ecommerce.Api.Controllers
             IUpdateOrderCommand updateOrderCommand,
             IGetOrderQuery getOrderQuery,
             IListOrderQuery listOrderQuery,
-            IAddDiscountOrderCommand addDiscountOrderCommand,
             ICancelOrderCommand cancelOrderCommand,
             IConfirmOrderCommand confirmOrderCommand,
+            IChangeDiscountOrderCommand changeDiscountOrderCommand,
             IChangePaymentMethodOrderCommand changePaymentMethodOrderCommand,
-            IDeleteDiscountOrderCommand deleteDiscountOrderCommand,
+            IRemoveDiscountOrderCommand removeDiscountOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
-            IGetDiscountDTOsOrderQuery getDiscountDTOsOrderQuery,
             IGetPaymentMethodOrderQuery getPaymentMethodOrderQuery
         )
         {
@@ -47,13 +44,12 @@ namespace Simple.Ecommerce.Api.Controllers
             _updateOrderCommand = updateOrderCommand;
             _getOrderQuery = getOrderQuery;
             _listOrderQuery = listOrderQuery;
-            _addDiscountOrderCommand = addDiscountOrderCommand;
             _cancelOrderCommand = cancelOrderCommand;
             _confirmOrderCommand = confirmOrderCommand;
+            _changeDiscountOrderCommand = changeDiscountOrderCommand;
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
-            _deleteDiscountOrderCommand = deleteDiscountOrderCommand;
+            _removeDiscountOrderCommand = removeDiscountOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
-            _getDiscountDTOsOrderQuery = getDiscountDTOsOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
         [HttpPost]
@@ -65,29 +61,11 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Discount")]
-        [Authorize]
-        public async Task<ActionResult<OrderDiscountResponse>> AddDiscount([FromBody] OrderDiscountRequest request)
-        {
-            var result = await _addDiscountOrderCommand.Execute(request);
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<ActionResult<bool>> Delete(int id)
         {
             var result = await _deleteOrderCommand.Execute(id);
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
-        [HttpDelete("Discount/{orderDiscountId}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> RemoveDiscount(int orderDiscountId)
-        {
-            var result = await _deleteDiscountOrderCommand.Execute(orderDiscountId);
 
             return ResultHandler.HandleResult(this, result);
         }
@@ -119,11 +97,29 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
+        [HttpPut("Discount/Change")]
+        [Authorize]
+        public async Task<ActionResult<bool>> ChangeDiscount([FromBody] OrderDiscountRequest request)
+        {
+            var result = await _changeDiscountOrderCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
         [HttpPut("PaymentMethod/Change")]
         [Authorize]
         public async Task<ActionResult<OrderPaymentMethodResponse>> ChangePaymentMethod([FromBody] OrderPaymentMethodRequest request)
         {
             var result = await _changePaymentMethodOrderCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Discount/Remove/{orderId}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> RemoveDiscount(int orderId)
+        {
+            var result = await _removeDiscountOrderCommand.Execute(orderId);
 
             return ResultHandler.HandleResult(this, result);
         }
@@ -151,15 +147,6 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<List<OrderResponse>>> List()
         {
             var result = await _listOrderQuery.Execute();
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
-        [HttpGet("Discount/{orderId}")]
-        [Authorize]
-        public async Task<ActionResult<List<OrderDiscountDTO>>> GetDiscounts(int orderId)
-        {
-            var result = await _getDiscountDTOsOrderQuery.Execute(orderId);
 
             return ResultHandler.HandleResult(this, result);
         }

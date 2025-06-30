@@ -23,9 +23,9 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IAddCategoryProductCommand _addCategoryProductCommand;
         private readonly IAddDiscountProductCommand _addDiscountProductCommand;
         private readonly IAddPhotoProductCommand _addProductPhotoCommand;
-        private readonly IDeleteCategoryProductCommand _deleteCategoryProductCommand;
-        private readonly IDeleteDiscountProductCommand _deleteDiscountProductCommand;
-        private readonly IDeletePhotoProductCommand _deleteProductPhotoCommand;
+        private readonly IRemoveCategoryProductCommand _removeCategoryProductCommand;
+        private readonly IRemoveDiscountProductCommand _removeDiscountProductCommand;
+        private readonly IRemovePhotoProductCommand _removeProductPhotoCommand;
         private readonly IGetCategoriesProductQuery _getCategoriesProductQuery;
         private readonly IGetDiscountsProductQuery _getDiscountsProductQuery;
         private readonly IGetPhotosProductQuery _getPhotosProductQuery;
@@ -39,11 +39,11 @@ namespace Simple.Ecommerce.Api.Controllers
             IAddCategoryProductCommand addCategoryProductCommand,
             IAddDiscountProductCommand addDiscountProductCommand,
             IAddPhotoProductCommand addProductPhotoCommand,
-            IDeleteCategoryProductCommand deleteCategoryProductCommand,
-            IDeleteDiscountProductCommand deleteDiscountProductCommand,
-            IDeletePhotoProductCommand deleteProductPhotoCommand,
-            IGetCategoriesProductQuery categoriesProductQuery,
-            IGetDiscountsProductQuery discountsProductQuery,
+            IRemoveCategoryProductCommand removeCategoryProductCommand,
+            IRemoveDiscountProductCommand removeDiscountProductCommand,
+            IRemovePhotoProductCommand removeProductPhotoCommand,
+            IGetCategoriesProductQuery getCategoriesProductQuery,
+            IGetDiscountsProductQuery getDiscountsProductQuery,
             IGetPhotosProductQuery getPhotosProductQuery
         )
         {
@@ -55,11 +55,11 @@ namespace Simple.Ecommerce.Api.Controllers
             _addCategoryProductCommand = addCategoryProductCommand;
             _addDiscountProductCommand = addDiscountProductCommand;
             _addProductPhotoCommand = addProductPhotoCommand;
-            _deleteCategoryProductCommand = deleteCategoryProductCommand;
-            _deleteDiscountProductCommand = deleteDiscountProductCommand;
-            _deleteProductPhotoCommand = deleteProductPhotoCommand;
-            _getCategoriesProductQuery = categoriesProductQuery;
-            _getDiscountsProductQuery = discountsProductQuery;
+            _removeCategoryProductCommand = removeCategoryProductCommand;
+            _removeDiscountProductCommand = removeDiscountProductCommand;
+            _removeProductPhotoCommand = removeProductPhotoCommand;
+            _getCategoriesProductQuery = getCategoriesProductQuery;
+            _getDiscountsProductQuery = getDiscountsProductQuery;
             _getPhotosProductQuery = getPhotosProductQuery;
         }
 
@@ -72,7 +72,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Add-Category")]
+        [HttpPost("Category")]
         [Authorize]
         public async Task<ActionResult<ProductCategoryDTO>> AddCategory([FromBody] ProductCategoryRequest request)
         {
@@ -81,7 +81,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Add-Discount")]
+        [HttpPost("Discount")]
         [Authorize]
         public async Task<ActionResult<ProductDiscountResponse>> AddDiscount([FromBody] ProductDiscountRequest request)
         {
@@ -90,7 +90,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Add-Photo")]
+        [HttpPost("Photo")]
         [Authorize]
         public async Task<ActionResult<ProductPhotoResponse>> AddPhoto([FromForm] ProductPhotoUploadRequest request)
         {
@@ -119,29 +119,29 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpDelete("Remove-Category/{productCategoryId}")]
+        [HttpDelete("Category/{productCategoryId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemoveCategory(int productCategoryId)
         {
-            var result = await _deleteCategoryProductCommand.Execute(productCategoryId);
+            var result = await _removeCategoryProductCommand.Execute(productCategoryId);
 
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpDelete("Remove-Discount/{productDiscountId}")]
+        [HttpDelete("Discount/{productDiscountId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemoveDiscount(int productDiscountId)
         {
-            var result = await _deleteDiscountProductCommand.Execute(productDiscountId);
+            var result = await _removeDiscountProductCommand.Execute(productDiscountId);
 
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpDelete("Remove-Photo/{productPhotoId}")]
+        [HttpDelete("Photo/{productPhotoId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemovePhoto(int productPhotoId)
         {
-            var result = await _deleteProductPhotoCommand.Execute(productPhotoId);
+            var result = await _removeProductPhotoCommand.Execute(productPhotoId);
 
             return ResultHandler.HandleResult(this, result);
         }
@@ -173,7 +173,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpGet("Get-Categories/{productId}")]
+        [HttpGet("Category/{productId}")]
         [Authorize]
         public async Task<ActionResult<ProductCategoriesDTO>> GetCategories(int productId)
         {
@@ -182,7 +182,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpGet("Get-Discounts/{productId}")]
+        [HttpGet("Discount/{productId}")]
         [Authorize]
         public async Task<ActionResult<List<DiscountDTO>>> GetDiscounts(int productId)
         {
@@ -191,7 +191,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpGet("Get-Photos/{productId}")]
+        [HttpGet("Photo/{productId}")]
         [Authorize]
         public async Task<ActionResult<ProductPhotosResponse>> GetPhotos(int productId)
         {

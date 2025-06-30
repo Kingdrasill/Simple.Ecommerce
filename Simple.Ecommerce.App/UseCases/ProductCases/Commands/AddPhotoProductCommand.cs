@@ -5,11 +5,11 @@ using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.ProductPhotoContracts;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using ImageFile.Library.Core.Enums;
 using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 {

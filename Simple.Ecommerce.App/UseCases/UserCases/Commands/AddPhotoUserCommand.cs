@@ -7,9 +7,9 @@ using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using ImageFile.Library.Core.Enums;
 using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {

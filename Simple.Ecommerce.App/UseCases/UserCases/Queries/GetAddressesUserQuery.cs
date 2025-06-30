@@ -8,9 +8,9 @@ using Simple.Ecommerce.Contracts.UserAddressContracts;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
 {

@@ -6,8 +6,8 @@ using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {

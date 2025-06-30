@@ -1,10 +1,10 @@
-﻿using Simple.Ecommerce.Api.Services.CacheServices;
-using Simple.Ecommerce.Api.Services.ImageServices;
-using Simple.Ecommerce.Domain.Settings.JwtSettings;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Simple.Ecommerce.Api.Services.CacheServices;
+using Simple.Ecommerce.Api.Services.ImageServices;
+using Simple.Ecommerce.Domain.Settings.JwtSettings;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using System.Text;
 
 namespace Simple.Ecommerce.Api

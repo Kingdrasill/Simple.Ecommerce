@@ -10,17 +10,16 @@ namespace Simple.Ecommerce.Infra.Mapping
         {
             builder.ToTable("PedidosItens");
 
-            builder.Property(ci => ci.Id).ValueGeneratedOnAdd();
-            builder.HasKey(ci => ci.Id);
+            builder.Property(oi => oi.Id).ValueGeneratedOnAdd();
+            builder.HasKey(oi => oi.Id);
 
-            builder.Property(ci => ci.Price).IsRequired();
-            builder.Property(ci => ci.Quantity).IsRequired();
-            builder.Property(ci => ci.ProductId).IsRequired();
-            builder.Property(ci => ci.OrderId).IsRequired();
+            builder.Property(oi => oi.Price).IsRequired();
+            builder.Property(oi => oi.Quantity).IsRequired();
+            builder.Property(oi => oi.ProductId).IsRequired();
+            builder.Property(oi => oi.OrderId).IsRequired();
+            builder.Property(oi => oi.DiscountId);
 
-            builder.Property(f => f.Deleted).IsRequired();
-
-            builder.HasIndex(ci => new { ci.OrderId, ci.ProductId}).IsUnique();
+            builder.Property(oi => oi.Deleted).IsRequired();
         }
     }
 }

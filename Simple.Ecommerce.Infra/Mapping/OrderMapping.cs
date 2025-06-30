@@ -2,28 +2,29 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Simple.Ecommerce.Infra.Mapping
+namespace Simple.Ecommerce.Infra.Maooing
 {
-    public class OrderMapping : IEntityTypeConfiguration<Order>
+    public class OrderMaooing : IEntityTypeConfiguration<Order>
     {
         public void Configure(EntityTypeBuilder<Order> builder)
         {
             builder.ToTable("Pedidos");
 
-            builder.Property(p => p.Id).ValueGeneratedOnAdd();
-            builder.HasKey(p => p.Id);
+            builder.Property(o => o.Id).ValueGeneratedOnAdd();
+            builder.HasKey(o => o.Id);
 
-            builder.Property(p => p.UserId).IsRequired();
-            builder.Property(p => p.OrderType).IsRequired();
-            builder.Property(p => p.PaymentMethod);
-            builder.Property(p => p.TotalPrice);
-            builder.Property(p => p.OrderDate);
-            builder.Property(p => p.Confirmation).IsRequired();
-            builder.Property(p => p.Status).HasMaxLength(20).IsRequired();
+            builder.Property(o => o.UserId).IsRequired();
+            builder.Property(o => o.OrderType).IsRequired();
+            builder.Property(o => o.PaymentMethod);
+            builder.Property(o => o.TotalPrice);
+            builder.Property(o => o.OrderDate);
+            builder.Property(o => o.Confirmation).IsRequired();
+            builder.Property(o => o.Status).HasMaxLength(20).IsRequired();
+            builder.Property(o => o.DiscountId);
 
             builder.Property(f => f.Deleted).IsRequired();
 
-            builder.OwnsOne(p => p.Address, a =>
+            builder.OwnsOne(o => o.Address, a =>
             {
                 a.Property(a => a.Number).HasColumnName("Number").IsRequired();
                 a.Property(a => a.Street).HasColumnName("Street").HasMaxLength(30).IsRequired();
@@ -47,7 +48,7 @@ namespace Simple.Ecommerce.Infra.Mapping
             });
 
             builder
-                .HasMany(p => p.OrderItems)
+                .HasMany(o => o.OrderItems)
                 .WithOne(ci => ci.Order)
                 .HasForeignKey(ci => ci.OrderId)
                 .IsRequired()

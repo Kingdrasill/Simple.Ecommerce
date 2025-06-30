@@ -1,4 +1,5 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
 using Simple.Ecommerce.Domain.Entities;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 using Simple.Ecommerce.Domain.Entities.CouponEntity;
@@ -8,7 +9,6 @@ using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
-using Simple.Ecommerce.Domain.Entities.OrderDiscountEnity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
@@ -19,7 +19,6 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Infra
 {
@@ -73,7 +72,6 @@ namespace Simple.Ecommerce.Infra
         public DbSet<DiscountTier> DiscountTiers { get; set; }
         public DbSet<Login> Logins { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderDiscount> OrderDiscounts { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductCategory> ProductCategories { get; set; }

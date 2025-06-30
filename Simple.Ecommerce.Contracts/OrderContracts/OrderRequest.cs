@@ -12,6 +12,7 @@ namespace Simple.Ecommerce.Contracts.OrderContracts
         PaymentMethod? PaymentMethod = null,
         decimal? TotalPrice = null,
         DateTime? OrderDate = null,
+        int? DiscountId = null,
         int Id = 0
     );
 }

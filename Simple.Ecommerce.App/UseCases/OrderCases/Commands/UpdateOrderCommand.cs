@@ -4,8 +4,10 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -14,18 +16,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
     {
         private readonly IOrderRepository _repository;
         private readonly IUserRepository _userRepository;
+        private readonly IDiscountRepository _discountRepository;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public UpdateOrderCommand(
             IOrderRepository repository,
             IUserRepository userRepository,
+            IDiscountRepository discountRepository,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _userRepository = userRepository;
+            _discountRepository = discountRepository;
             _cacheHandler = cacheHandler;
             _useCache = useCache;
         }
@@ -42,6 +47,31 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (getUser.IsFailure)
             {
                 return Result<OrderResponse>.Failure(getUser.Errors!);
+            }
+
+            var getDiscount = request.DiscountId is null ? null : await _discountRepository.Get(request.DiscountId.Value);
+            if (getDiscount is not null)
+            {
+                if (getDiscount.IsFailure)
+                    return Result<OrderResponse>.Failure(getDiscount.Errors!);
+
+                List<Error> errors = new();
+
+                if (getDiscount.GetValue().DiscountScope != DiscountScope.Order)
+                    errors.Add(new("UpdateOrderCommand.InvalidDiscountScope", "O desconto não é aplicável a pedidos!"));
+                if (getDiscount.GetValue().DiscountType == DiscountType.Bundle)
+                    errors.Add(new("UpdateOrderCommand.InvalidDiscountType", "O desconto de pacote não é aplicável a pedidos!"));
+                if (getDiscount.GetValue().ValidFrom > DateTime.UtcNow)
+                    errors.Add(new("UpdateOrderCommand.DiscountNotValidYet", "O desconto ainda não está válido!"));
+                if (getDiscount.GetValue().ValidTo < DateTime.UtcNow)
+                    errors.Add(new("UpdateOrderCommand.DiscountExpired", "O desconto já expirou!"));
+                if (!getDiscount.GetValue().IsActive)
+                    errors.Add(new("UpdateOrderCommand.InactiveDiscount", "O desconto não está ativo!"));
+
+                if (errors.Count != 0)
+                {
+                    return Result<OrderResponse>.Failure(errors);
+                }
             }
 
             var address = new Address().Create(
@@ -67,7 +97,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.TotalPrice,
                 request.OrderDate,
                 getOrder.GetValue().Confirmation,
-                getOrder.GetValue().Status
+                getOrder.GetValue().Status,
+                request.DiscountId,
+                getOrder.GetValue().CardInformation
             );
             if (instance.IsFailure)
             {
@@ -104,7 +136,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 order.TotalPrice,
                 order.OrderDate,
                 order.Confirmation,
-                order.Status
+                order.Status,
+                order.DiscountId
             );
 
             return Result<OrderResponse>.Success(response);

@@ -5,8 +5,8 @@ using Simple.Ecommerce.Contracts.ProductDiscountContracts;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 {

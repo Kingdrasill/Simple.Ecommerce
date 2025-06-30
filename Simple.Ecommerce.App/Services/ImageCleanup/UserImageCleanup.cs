@@ -2,7 +2,7 @@
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.ImageCleanup;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.Services.FileImage
 {

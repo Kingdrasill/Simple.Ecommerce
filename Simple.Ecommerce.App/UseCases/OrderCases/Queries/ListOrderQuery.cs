@@ -7,9 +7,9 @@ using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {
@@ -56,7 +56,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                         cache.GetNullableDecimal("TotalPrice"),
                         cache.GetNullableDateTime("OrderDate"),
                         Convert.ToBoolean(cache["Confirmation"]),
-                        Convert.ToString(cache["Status"])!
+                        Convert.ToString(cache["Status"])!,
+                        cache.GetNullableInt("DiscountId")
                     ));
                 if (cacheResponse.IsSuccess)
                     return cacheResponse;
@@ -83,7 +84,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                         order.TotalPrice,
                         order.OrderDate,
                         order.Confirmation,
-                        order.Status
+                        order.Status,
+                        order.DiscountId
                     );
                 });
             if (repoResponse.IsSuccess && _useCache.Use)
@@ -122,7 +124,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     order.TotalPrice,
                     order.OrderDate,
                     order.Confirmation,
-                    order.Status
+                    order.Status,
+                    order.DiscountId
                 ));
             }
 

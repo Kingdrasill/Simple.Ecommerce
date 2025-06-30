@@ -1,23 +1,23 @@
-﻿using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
+﻿using ImageFile.Library.Core.Enums;
+using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using ImageFile.Library.Core.Enums;
-using ImageFile.Library.Core.Services;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 {
-    public class DeletePhotoProductCommand : IDeletePhotoProductCommand
+    public class RemovePhotoProductCommand : IRemovePhotoProductCommand
     {
         private readonly IProductPhotoRepository _productPhotoRepository;
         private readonly IImageManager _imageManager;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
-        public DeletePhotoProductCommand(
+        public RemovePhotoProductCommand(
             IProductPhotoRepository productPhotoRepository, 
             IImageManager imageManager,
             UseCache useCache, 

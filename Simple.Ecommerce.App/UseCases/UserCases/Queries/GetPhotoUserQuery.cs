@@ -5,9 +5,9 @@ using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.UserPhotoContracts;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Queries
 {

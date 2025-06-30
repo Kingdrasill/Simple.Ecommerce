@@ -3,10 +3,10 @@ using Simple.Ecommerce.App.Interfaces.Queries.ReviewQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Contracts.ReviewContracts;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
 {

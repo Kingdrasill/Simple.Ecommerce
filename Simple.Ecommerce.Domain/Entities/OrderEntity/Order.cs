@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.Entities.OrderDiscountEnity;
+﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
@@ -25,18 +25,17 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
         public bool Confirmation { get; private set; }
         public string Status { get; private set; }
         public CardInformation? CardInformation { get; private set; } = null;
+        public int? DiscountId { get; private set; }
+        public Discount? Discount { get; private set; } = null;
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
-        [IgnoreDataMember, NotMapped]
-        public ICollection<OrderDiscount> OrderDiscounts { get; private set; }
 
         public Order() 
         {
             OrderItems = new HashSet<OrderItem>();
-            OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        private Order(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, CardInformation? cardInformation = null)
+        private Order(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, CardInformation? cardInformation = null)
         {
             Id = id;
             UserId = userId;
@@ -47,15 +46,20 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderDate = orderDate;
             Confirmation = confirmation;
             Status = status;
+            DiscountId = discountId;
             CardInformation = cardInformation;
 
             OrderItems = new HashSet<OrderItem>();
-            OrderDiscounts = new HashSet<OrderDiscount>();
         }
 
-        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status)
+        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, CardInformation? cardInformation = null)
         {
-            return new OrderValidator().Validate(new Order(id, userId, orderType, address, paymentMethod, totalPrice, orderDate, confirmation, status));
+            return new OrderValidator().Validate(new Order(id, userId, orderType, address, paymentMethod, totalPrice, orderDate, confirmation, status, discountId, cardInformation));
+        }
+
+        public void UpdateDiscountId(int? discountId)
+        {
+            DiscountId = discountId;
         }
 
         public void UpdatePaymentMethod(PaymentMethod? paymentmethod, CardInformation? cardInformation)

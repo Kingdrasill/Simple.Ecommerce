@@ -263,30 +263,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.ToTable("Logins", (string)null);
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderDiscountEnity.OrderDiscount", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("DiscountId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DiscountId");
-
-                    b.HasIndex("OrderId");
-
-                    b.ToTable("PedidosDescontos", (string)null);
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -298,6 +274,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("DiscountId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("OrderDate")
                         .HasColumnType("datetime(6)");
@@ -321,6 +300,8 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DiscountId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Pedidos", (string)null);
@@ -334,6 +315,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<int?>("DiscountId")
+                        .HasColumnType("int");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
@@ -349,10 +333,11 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("DiscountId");
 
-                    b.HasIndex("OrderId", "ProductId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("PedidosItens", (string)null);
                 });
@@ -627,27 +612,13 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderDiscountEnity.OrderDiscount", b =>
-                {
-                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
-                        .WithMany("OrderDiscounts")
-                        .HasForeignKey("DiscountId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", "Order")
-                        .WithMany("OrderDiscounts")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Discount");
-
-                    b.Navigation("Order");
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
+                        .WithMany("Orders")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.UserEntity.User", "User")
                         .WithMany("Orders")
                         .HasForeignKey("UserId")
@@ -753,11 +724,18 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Navigation("CardInformation");
 
+                    b.Navigation("Discount");
+
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderItemEntity.OrderItem", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("DiscountId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", "Order")
                         .WithMany("OrderItems")
                         .HasForeignKey("OrderId")
@@ -769,6 +747,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Discount");
 
                     b.Navigation("Order");
 
@@ -1025,7 +1005,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Navigation("DiscountTiers");
 
-                    b.Navigation("OrderDiscounts");
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("Orders");
 
                     b.Navigation("ProductDiscounts");
                 });
@@ -1037,8 +1019,6 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
-                    b.Navigation("OrderDiscounts");
-
                     b.Navigation("OrderItems");
                 });
 

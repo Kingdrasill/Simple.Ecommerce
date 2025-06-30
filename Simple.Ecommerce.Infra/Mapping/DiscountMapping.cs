@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 
 namespace Simple.Ecommerce.Infra.Mapping
 {
@@ -42,6 +42,18 @@ namespace Simple.Ecommerce.Infra.Mapping
                 .WithOne(c => c.Discount)
                 .HasForeignKey(c => c.DiscountId)
                 .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasMany(d => d.Orders)
+                .WithOne(o => o.Discount)
+                .HasForeignKey(o => o.DiscountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder
+                .HasMany(d => d.OrderItems)
+                .WithOne(oi => oi.Discount)
+                .HasForeignKey(oi => oi.DiscountId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

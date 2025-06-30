@@ -2,8 +2,8 @@
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.ProductCommands
 {
-    public interface IDeletePhotoProductCommand
+    public interface IRemoveDiscountProductCommand
     {
-        Task<Result<bool>> Execute(int productPhotoId);
+        Task<Result<bool>> Execute(int productDiscountId);
     }
 }

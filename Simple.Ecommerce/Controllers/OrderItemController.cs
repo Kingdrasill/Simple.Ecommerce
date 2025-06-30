@@ -1,9 +1,9 @@
-﻿using Simple.Ecommerce.Api.Services;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderItemQueries;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -11,17 +11,32 @@ namespace Simple.Ecommerce.Api.Controllers
     [Route("api/[controller]")]
     public class OrderItemController : ControllerBase
     {
+        private readonly IAddItemOrderItemCommand _addItemOrderItemCommand;
         private readonly IAddItemsOrderItemCommand _addItemsOrderItemCommand;
+        private readonly IChangeDiscountOrderItemCommand _changeDiscountOrderItemCommand;
+        private readonly IRemoveAllItemsOrderItemCommand _removeAllItemsOrderItemCommand;
+        private readonly IRemoveDiscountOrderItemCommand _removeDiscountOrderItemCommand;
+        private readonly IRemoveItemOrderItemCommand _removeItemOrderItemCommand;
         private readonly IGetOrderItemQuery _getOrderItemQuery;
         private readonly IListOrderItemQuery _listOrderItemQuery;
 
         public OrderItemController(
+            IAddItemOrderItemCommand addItemOrderItemCommand,
             IAddItemsOrderItemCommand addItemsOrderItemCommand,
+            IChangeDiscountOrderItemCommand changeDiscountOrderItemCommand,
+            IRemoveAllItemsOrderItemCommand removeAllItemsOrderItemCommand,
+            IRemoveDiscountOrderItemCommand removeDiscountOrderItemCommand,
+            IRemoveItemOrderItemCommand removeItemOrderItemCommand,
             IGetOrderItemQuery getOrderItemQuery, 
             IListOrderItemQuery listOrderItemQuery
         )
         {
+            _addItemOrderItemCommand = addItemOrderItemCommand;
             _addItemsOrderItemCommand = addItemsOrderItemCommand;
+            _changeDiscountOrderItemCommand = changeDiscountOrderItemCommand;
+            _removeAllItemsOrderItemCommand = removeAllItemsOrderItemCommand;
+            _removeDiscountOrderItemCommand = removeDiscountOrderItemCommand;
+            _removeItemOrderItemCommand = removeItemOrderItemCommand;
             _getOrderItemQuery = getOrderItemQuery;
             _listOrderItemQuery = listOrderItemQuery;
         }
@@ -31,6 +46,51 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<OrderItemsResponse>> Post([FromBody] OrderItemsRequest request)
         {
             var result = await _addItemsOrderItemCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpDelete("RemoveAll/{orderId}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> RemoveAll(int orderId)
+        {
+            var result = await _removeAllItemsOrderItemCommand.Execute(orderId);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Add")]
+        [Authorize]
+        public async Task<ActionResult<OrderItemResponse>> AddItem([FromBody] OrderItemRequest request)
+        {
+            var result = await _addItemOrderItemCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Discount/Change")]
+        [Authorize]
+        public async Task<ActionResult<bool>> ChangeDiscount([FromBody] OrderItemDiscountRequest request)
+        {
+            var result = await _changeDiscountOrderItemCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Remove")]
+        [Authorize]
+        public async Task<ActionResult<OrderItemResponse>> RemoveItem([FromBody] OrderItemRequest request)
+        {
+            var result = await _removeItemOrderItemCommand.Execute(request);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Discount/Remove/{orderId}/{productId}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> RemoveDiscount(int orderId, int productId)
+        {
+            var result = await _removeDiscountOrderItemCommand.Execute(orderId, productId);
 
             return ResultHandler.HandleResult(this, result);
         }

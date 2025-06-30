@@ -13,7 +13,7 @@ namespace Simple.Ecommerce.Api.Services
 
                 foreach (var error in result.Errors!)
                 {
-                    message += error.Type + ": " + error.Message;
+                    message += error.Type + ": " + error.Message + "\n";
                 }
 
                 return controller.Problem(message);

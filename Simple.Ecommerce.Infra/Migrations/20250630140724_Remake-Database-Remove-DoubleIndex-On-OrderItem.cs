@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace Simple.Ecommerce.Infra.Migrations
 {
     /// <inheritdoc />
-    public partial class RemakeDatabaseOrderEnumPaymentMethod : Migration
+    public partial class RemakeDatabaseRemoveDoubleIndexOnOrderItem : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -325,9 +325,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    OrderDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    OrderType = table.Column<int>(type: "int", nullable: false),
                     Number = table.Column<int>(type: "int", nullable: false),
                     Street = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: false),
                     Neighbourhood = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: false),
@@ -335,17 +334,58 @@ namespace Simple.Ecommerce.Infra.Migrations
                     Country = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: false),
                     Complement = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: true),
                     CEP = table.Column<string>(type: "varchar(8)", maxLength: 8, nullable: false),
-                    OrderType = table.Column<int>(type: "int", nullable: false),
-                    PaymentMethod = table.Column<int>(type: "int", maxLength: 20, nullable: true),
+                    PaymentMethod = table.Column<int>(type: "int", nullable: true),
+                    TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    OrderDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Confirmation = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
+                    CardHolderName = table.Column<string>(type: "longtext", nullable: true),
+                    CardNumber = table.Column<string>(type: "longtext", nullable: true),
+                    ExpirationMonth = table.Column<string>(type: "longtext", nullable: true),
+                    ExpirationYear = table.Column<string>(type: "longtext", nullable: true),
+                    CardFlag = table.Column<int>(type: "int", nullable: true),
+                    Last4Digits = table.Column<string>(type: "longtext", nullable: true),
+                    DiscountId = table.Column<int>(type: "int", nullable: true),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Pedidos", x => x.Id);
                     table.ForeignKey(
+                        name: "FK_Pedidos_Descontos_DiscountId",
+                        column: x => x.DiscountId,
+                        principalTable: "Descontos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Pedidos_Usuarios_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "UsuariosCartoes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    CardHolderName = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    CardNumber = table.Column<string>(type: "longtext", nullable: false),
+                    ExpirationMonth = table.Column<string>(type: "varchar(2)", maxLength: 2, nullable: false),
+                    ExpirationYear = table.Column<string>(type: "varchar(5)", maxLength: 5, nullable: false),
+                    CardFlag = table.Column<int>(type: "int", nullable: false),
+                    Last4Digits = table.Column<string>(type: "longtext", nullable: false),
+                    Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UsuariosCartoes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UsuariosCartoes_Usuarios_UserId",
                         column: x => x.UserId,
                         principalTable: "Usuarios",
                         principalColumn: "Id",
@@ -406,48 +446,27 @@ namespace Simple.Ecommerce.Infra.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PedidosDescontos",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    OrderId = table.Column<int>(type: "int", nullable: false),
-                    DiscountId = table.Column<int>(type: "int", nullable: false),
-                    Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PedidosDescontos", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PedidosDescontos_Descontos_DiscountId",
-                        column: x => x.DiscountId,
-                        principalTable: "Descontos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PedidosDescontos_Pedidos_OrderId",
-                        column: x => x.OrderId,
-                        principalTable: "Pedidos",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                })
-                .Annotation("MySQL:Charset", "utf8mb4");
-
-            migrationBuilder.CreateTable(
                 name: "PedidosItens",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    ProductId = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
                     OrderId = table.Column<int>(type: "int", nullable: false),
+                    DiscountId = table.Column<int>(type: "int", nullable: true),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PedidosItens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PedidosItens_Descontos_DiscountId",
+                        column: x => x.DiscountId,
+                        principalTable: "Descontos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_PedidosItens_Pedidos_OrderId",
                         column: x => x.OrderId,
@@ -512,25 +531,24 @@ namespace Simple.Ecommerce.Infra.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Pedidos_DiscountId",
+                table: "Pedidos",
+                column: "DiscountId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Pedidos_UserId",
                 table: "Pedidos",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PedidosDescontos_DiscountId",
-                table: "PedidosDescontos",
+                name: "IX_PedidosItens_DiscountId",
+                table: "PedidosItens",
                 column: "DiscountId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PedidosDescontos_OrderId",
-                table: "PedidosDescontos",
-                column: "OrderId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PedidosItens_OrderId_ProductId",
+                name: "IX_PedidosItens_OrderId",
                 table: "PedidosItens",
-                columns: new[] { "OrderId", "ProductId" },
-                unique: true);
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PedidosItens_ProductId",
@@ -576,6 +594,11 @@ namespace Simple.Ecommerce.Infra.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UsuariosCartoes_UserId",
+                table: "UsuariosCartoes",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UsuariosEnderecos_UserId",
                 table: "UsuariosEnderecos",
                 column: "UserId");
@@ -605,9 +628,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                 name: "Frequencias");
 
             migrationBuilder.DropTable(
-                name: "PedidosDescontos");
-
-            migrationBuilder.DropTable(
                 name: "PedidosItens");
 
             migrationBuilder.DropTable(
@@ -618,6 +638,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             migrationBuilder.DropTable(
                 name: "ProdutosFotos");
+
+            migrationBuilder.DropTable(
+                name: "UsuariosCartoes");
 
             migrationBuilder.DropTable(
                 name: "UsuariosEnderecos");
@@ -632,13 +655,13 @@ namespace Simple.Ecommerce.Infra.Migrations
                 name: "Categorias");
 
             migrationBuilder.DropTable(
-                name: "Descontos");
-
-            migrationBuilder.DropTable(
                 name: "Produtos");
 
             migrationBuilder.DropTable(
                 name: "Logins");
+
+            migrationBuilder.DropTable(
+                name: "Descontos");
 
             migrationBuilder.DropTable(
                 name: "Usuarios");

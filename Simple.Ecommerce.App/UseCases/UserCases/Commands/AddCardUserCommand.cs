@@ -7,9 +7,9 @@ using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.UserCardContracts;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
 using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
@@ -64,8 +64,8 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             {
                 return Result<bool>.Failure(encryptedNumber.Errors!);
             }
-
             var last4Digits = request.CardInformation.CardNumber[^4..];
+
             var cardInformation = new CardInformation().Create(
                 request.CardInformation.CardHolderName,
                 encryptedNumber.GetValue(),

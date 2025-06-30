@@ -14,6 +14,7 @@ namespace Simple.Ecommerce.Contracts.OrderContracts
         decimal? TotalPrice,
         DateTime? OrderDate,
         bool Confirmation,
-        string Status
+        string Status,
+        int? DiscountId
     );
 }

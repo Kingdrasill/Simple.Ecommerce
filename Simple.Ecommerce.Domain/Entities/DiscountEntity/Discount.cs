@@ -1,7 +1,8 @@
 ﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
-using Simple.Ecommerce.Domain.Entities.OrderDiscountEnity;
+using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
@@ -31,7 +32,9 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountEntity
         [IgnoreDataMember, NotMapped]
         public ICollection<ProductDiscount> ProductDiscounts { get; private set; }
         [IgnoreDataMember, NotMapped]
-        public ICollection<OrderDiscount> OrderDiscounts { get; private set; }
+        public ICollection<Order> Orders { get; private set; }
+        [IgnoreDataMember, NotMapped]
+        public ICollection<OrderItem> OrderItems { get; private set; }
 
         public Discount() 
         {
@@ -39,7 +42,8 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountEntity
             DiscountBundleItems = new HashSet<DiscountBundleItem>();
             Coupons = new HashSet<Coupon>();
             ProductDiscounts = new HashSet<ProductDiscount>();
-            OrderDiscounts = new HashSet<OrderDiscount>();
+            Orders = new HashSet<Order>();
+            OrderItems = new HashSet<OrderItem>();
         }
 
         private Discount(int id, string name, DiscountType discountType, DiscountScope discountScope, DiscountValueType? discountValueType, decimal? value, DateTime? validFrom, DateTime? validTo, bool isActive)
@@ -58,7 +62,8 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountEntity
             DiscountBundleItems = new HashSet<DiscountBundleItem>();
             Coupons = new HashSet<Coupon>();
             ProductDiscounts = new HashSet<ProductDiscount>();
-            OrderDiscounts = new HashSet<OrderDiscount>();
+            Orders = new HashSet<Order>();
+            OrderItems = new HashSet<OrderItem>();
         }
 
         public Result<Discount> Create(int id, string name, DiscountType discountType, DiscountScope discountScope, DiscountValueType? discountValueType, decimal? value, DateTime? validFrom, DateTime? validTo, bool isActive)

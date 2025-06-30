@@ -1,12 +1,11 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
-using Simple.Ecommerce.Domain.Entities.OrderDiscountEnity;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
-using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {
@@ -56,15 +55,6 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                 discountTier.MarkAsDeleted(raiseEvent: false);
             }
 
-            var orderDiscounts = await _context.OrderDiscounts
-                .Where(od => od.DiscountId == domainEvent.DiscountId)
-                .ToListAsync();
-
-            foreach (var orderDiscount in orderDiscounts)
-            {
-                orderDiscount.MarkAsDeleted(raiseEvent: false);
-            }
-
             var productDiscounts = await _context.ProductDiscounts
                 .Where(pd => pd.DiscountId == domainEvent.DiscountId)
                 .ToListAsync();
@@ -80,8 +70,6 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                     _cacheHandler.SetItemStale<DiscountBundleItem>();
                 if (discountTiers.Any())
                     _cacheHandler.SetItemStale<DiscountTier>();
-                if (orderDiscounts.Any())
-                    _cacheHandler.SetItemStale<OrderDiscount>();
                 if (productDiscounts.Any())
                     _cacheHandler.SetItemStale<ProductDiscount>();
             }

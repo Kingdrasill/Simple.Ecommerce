@@ -1,9 +1,9 @@
+using Microsoft.AspNetCore.Http.Features;
 using Simple.Ecommerce.Api;
 using Simple.Ecommerce.App;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.Domain.ValueObjects.UseCacheObject;
+using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Infra;
-using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 { 

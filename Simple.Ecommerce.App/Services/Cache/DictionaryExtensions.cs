@@ -5,6 +5,11 @@ namespace Simple.Ecommerce.App.Services.Cache
 {
     public static class DictionaryExtensions
     {
+        public static int? GetNullableInt(this IDictionary<string, object> dict, string key)
+        {
+            return dict.TryGetValue(key, out var value) && value is not null ? Convert.ToInt32(value) : null;
+        }
+
         public static string? GetNullableString(this IDictionary<string, object> dict, string key)
         {
             return dict.TryGetValue(key, out var value) && value is not null ? value.ToString() : null;

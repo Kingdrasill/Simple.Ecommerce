@@ -1,4 +1,4 @@
-﻿namespace Simple.Ecommerce.Domain.ValueObjects.UseCacheObject
+﻿namespace Simple.Ecommerce.Domain.Settings.UseCacheSettings
 {
     public class UseCache
     {

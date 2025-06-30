@@ -115,22 +115,26 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IAuthenticateLoginCommand, AuthenticateLoginCommand>();
 
             // Order Batch
-            services.AddScoped<IAddDiscountOrderCommand, AddDiscountOrderCommand>();
             services.AddScoped<ICancelOrderCommand, CancelOrderCommand>();
             services.AddScoped<IConfirmOrderCommand, ConfirmOrderCommand>();
+            services.AddScoped<IChangeDiscountOrderCommand, ChangeDiscountOrderCommand>();
             services.AddScoped<IChangePaymentMethodOrderCommand, ChangePaymentMethodOrderCommand>();
             services.AddScoped<ICreateOrderCommand, CreateOrderCommand>();
-            services.AddScoped<IDeleteDiscountOrderCommand, DeleteDiscountOrderCommand>();
             services.AddScoped<IDeleteOrderCommand, DeleteOrderCommand>();
+            services.AddScoped<IRemoveDiscountOrderCommand, RemoveDiscountOrderCommand>();
             services.AddScoped<IRemovePaymentMethodOrderCommand, RemovePaymentMethodOrderCommand>();
             services.AddScoped<IUpdateOrderCommand, UpdateOrderCommand>();
-            services.AddScoped<IGetDiscountDTOsOrderQuery, GetDiscountDTOsOrderQuery>();
             services.AddScoped<IGetPaymentMethodOrderQuery, GetPaymentMethodOrderQuery>();
             services.AddScoped<IGetOrderQuery, GetOrderQuery>();
             services.AddScoped<IListOrderQuery, ListOrderQuery>();
 
             // OrderItem Batch
+            services.AddScoped<IAddItemOrderItemCommand, AddItemOrderItemCommand>();
             services.AddScoped<IAddItemsOrderItemCommand, AddItemsOrderItemCommand>();
+            services.AddScoped<IChangeDiscountOrderItemCommand, ChangeDiscountOrderItemCommand>();
+            services.AddScoped<IRemoveAllItemsOrderItemCommand, RemoveAllItemsOrderItemCommand>();
+            services.AddScoped<IRemoveDiscountOrderItemCommand, RemoveDiscountOrderItemCommand>();
+            services.AddScoped<IRemoveItemOrderItemCommand, RemoveItemOrderItemCommand>();
             services.AddScoped<IGetOrderItemQuery, GetOrderItemQuery>();
             services.AddScoped<IListOrderItemQuery, ListOrderItemQuery>();
 
@@ -139,9 +143,9 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IAddDiscountProductCommand, AddDiscountProductCommand>();
             services.AddScoped<IAddPhotoProductCommand, AddPhotoProductCommand>();
             services.AddScoped<ICreateProductCommand, CreateProductCommand>();
-            services.AddScoped<IDeleteCategoryProductCommand, DeleteCategoryProductCommand>();
-            services.AddScoped<IDeleteDiscountProductCommand, DeleteDiscountProductCommand>();
-            services.AddScoped<IDeletePhotoProductCommand, DeletePhotoProductCommand>();
+            services.AddScoped<IRemoveCategoryProductCommand, RemoveCategoryProductCommand>();
+            services.AddScoped<IRemoveDiscountProductCommand, RemoveDiscountProductCommand>();
+            services.AddScoped<IRemovePhotoProductCommand, RemovePhotoProductCommand>();
             services.AddScoped<IDeleteProductCommand, DeleteProductCommand>();
             services.AddScoped<IUpdateProductCommand, UpdateProductCommand>();
             services.AddScoped<IGetCategoriesProductQuery, GetCategoriesProductQuery>();
