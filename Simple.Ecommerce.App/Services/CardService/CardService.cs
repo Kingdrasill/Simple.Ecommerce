@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.CardService;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using System.Text.RegularExpressions;
 
 namespace Simple.Ecommerce.App.Services.CardService

@@ -1,14 +1,15 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 {
@@ -19,6 +20,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
         private readonly IOrderRepository _orderRepository;
         private readonly IDiscountRepository _discountRepository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -29,6 +31,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             IOrderRepository orderRepository, 
             IDiscountRepository discountRepository,
             IDiscountBundleItemRepository discountBundleItemRepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -38,6 +41,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             _orderRepository = orderRepository;
             _discountRepository = discountRepository;
             _discountBundleItemRepository = discountBundleItemRepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -137,6 +141,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                     orderItem.OrderId,
                     orderItem.DiscountId
                 );
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<OrderItemResponse>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

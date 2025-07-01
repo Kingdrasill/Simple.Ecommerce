@@ -3,7 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Queries.CacheFrequencyQueries;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.CacheFrequencyContracts;
 using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.UseCases.CacheFrequencyCases.Queries
 {

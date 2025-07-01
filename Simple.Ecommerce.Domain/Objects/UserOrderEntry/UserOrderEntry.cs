@@ -1,4 +1,4 @@
-﻿namespace Simple.Ecommerce.Domain.ValueObjects.UserOrderObject
+﻿namespace Simple.Ecommerce.Domain.Objects
 {
     public class UserOrderEntry
     {

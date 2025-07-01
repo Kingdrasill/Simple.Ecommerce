@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories

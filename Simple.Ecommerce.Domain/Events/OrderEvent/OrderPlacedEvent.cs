@@ -1,8 +1,8 @@
 ﻿using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.OrderItemObject;
 
 namespace Simple.Ecommerce.Domain.Events.OrderEvent
 {
@@ -18,22 +18,22 @@ namespace Simple.Ecommerce.Domain.Events.OrderEvent
         public Address Address { get; set; }
         public List<OrderItemEntry> Items { get; set; }
 
-        //public OrderPlacedEvent(Order order)
-        //{
-        //    OrderId = order.Id;
-        //    UserId = order.UserId;
-        //    OrderDate = order.OrderDate;
-        //    Status = order.Status;
-        //    OrderType = order.OrderType;
-        //    TotalPrice = order.TotalPrice;
-        //    PaymentMethod = order.PaymentMethod ?? PaymentMethod.Cash;
-        //    Address = order.Address;
-        //    Items = order.OrderItems.Select(ci => new OrderItemEntry()
-        //    {
-        //        ProductId = ci.ProductId,
-        //        Quantity = ci.Quantity,
-        //        UnitPrice = ci.Price
-        //    }).ToList();
-        //}
+        public OrderPlacedEvent(Order order)
+        {
+            OrderId = order.Id;
+            UserId = order.UserId;
+            OrderDate = order.OrderDate!.Value;
+            Status = order.Status;
+            OrderType = order.OrderType;
+            TotalPrice = order.TotalPrice!.Value;
+            PaymentMethod = order.PaymentMethod ?? PaymentMethod.Cash;
+            Address = order.Address;
+            Items = order.OrderItems.Select(ci => new OrderItemEntry()
+            {
+                ProductId = ci.ProductId,
+                Quantity = ci.Quantity,
+                UnitPrice = ci.Price
+            }).ToList();
+        }
     }
 }

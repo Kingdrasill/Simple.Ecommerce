@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Validation.Validators;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.Domain.Entities.CouponEntity
 {

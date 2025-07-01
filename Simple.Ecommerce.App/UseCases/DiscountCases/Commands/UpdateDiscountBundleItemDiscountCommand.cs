@@ -1,9 +1,10 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.DiscountBundleItemContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
@@ -12,18 +13,21 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
     {
         private readonly IDiscountRepository _repository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public UpdateDiscountBundleItemDiscountCommand(
             IDiscountRepository repository, 
             IDiscountBundleItemRepository discountBundleItemRepository, 
+            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _discountBundleItemRepository = discountBundleItemRepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -57,6 +61,12 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             if (updateResult.IsFailure)
             {
                 return Result<DiscountBundleItemResponse>.Failure(updateResult.Errors!);
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<DiscountBundleItemResponse>.Failure(commit.Errors!);
             }
 
             var discountBundleItem = updateResult.GetValue();

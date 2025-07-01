@@ -1,10 +1,10 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {

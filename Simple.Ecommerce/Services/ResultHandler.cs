@@ -1,5 +1,5 @@
-﻿using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.Api.Services
 {

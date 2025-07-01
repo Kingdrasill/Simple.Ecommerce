@@ -20,6 +20,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -53,6 +54,7 @@ using Simple.Ecommerce.Infra.Services.Cryptography;
 using Simple.Ecommerce.Infra.Services.Dispatcher;
 using Simple.Ecommerce.Infra.Services.Email;
 using Simple.Ecommerce.Infra.Services.JwtToken;
+using Simple.Ecommerce.Infra.UoW;
 
 namespace Simple.Ecommerce.Infra
 {
@@ -103,6 +105,8 @@ namespace Simple.Ecommerce.Infra
         {
             services.AddDbContext<TesteDbContext>(options =>
                 options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!));
+
+            services.AddScoped<ISaverTransectioner, SaverTransectioner>();
         }
 
         private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)

@@ -1,12 +1,13 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 {
@@ -14,18 +15,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
     {
         private readonly IOrderRepository _repository;
         private readonly IDiscountRepository _discountRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ChangeDiscountOrderCommand(
             IOrderRepository repository, 
-            IDiscountRepository discountRepository, 
+            IDiscountRepository discountRepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _discountRepository = discountRepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -70,6 +74,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (updateResult.IsFailure)
             {
                 return Result<bool>.Failure(updateResult.Errors!);
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

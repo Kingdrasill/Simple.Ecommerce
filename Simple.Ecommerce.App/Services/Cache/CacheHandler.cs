@@ -3,8 +3,8 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.ServiceResolver;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 

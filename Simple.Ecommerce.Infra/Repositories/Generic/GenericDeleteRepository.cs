@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Interfaces.BaseEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories.Generic
@@ -17,7 +17,6 @@ namespace Simple.Ecommerce.Infra.Repositories.Generic
             entity.MarkAsDeleted();
 
             context.Set<T>().Update(entity);
-            await context.SaveChangesAsync();
             return Result<bool>.Success(true);
         }
     }

@@ -1,5 +1,5 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
-using Simple.Ecommerce.App.Interfaces.Services.Processor;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.Processor;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Events.OrderEvent;
 

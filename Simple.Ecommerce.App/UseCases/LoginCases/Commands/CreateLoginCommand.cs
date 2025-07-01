@@ -1,10 +1,11 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.LoginCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.LoginContracts;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
@@ -13,18 +14,21 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
     {
         private readonly ILoginRepository _repository;
         private readonly IUserRepository _userRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateLoginCommand(
             ILoginRepository repository, 
             IUserRepository userRepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _userRepository = userRepository;
+            _saverOrTransectioner = unityOfWork;
             _cacheHandler = cacheHandler;
             _useCache = useCache;
         }
@@ -61,6 +65,12 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             if (createResult.IsFailure)
             {
                 return Result<bool>.Failure(createResult.Errors!);
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

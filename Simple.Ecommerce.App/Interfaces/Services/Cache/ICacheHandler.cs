@@ -1,5 +1,4 @@
-﻿using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+﻿using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.Interfaces.Services.Cache
 {

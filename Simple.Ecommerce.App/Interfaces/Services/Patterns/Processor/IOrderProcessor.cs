@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.OrderEntity;
 
-namespace Simple.Ecommerce.App.Interfaces.Services.Processor
+namespace Simple.Ecommerce.App.Interfaces.Services.Patterns.Processor
 {
     public interface IOrderProcessor
     {

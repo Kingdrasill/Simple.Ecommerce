@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {

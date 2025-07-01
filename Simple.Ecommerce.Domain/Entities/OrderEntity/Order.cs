@@ -4,10 +4,10 @@ using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
 

@@ -2,8 +2,8 @@
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.Crendetial;
 using Simple.Ecommerce.Domain.Events.DeletedEvent;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Validation.Validators;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
 
@@ -37,9 +37,26 @@ namespace Simple.Ecommerce.Domain.Entities.LoginEntity
             CredentialVerifications = new HashSet<CredentialVerification>();
         }
 
+        private Login(int id, User user, string credential, string password, CredentialType type)
+        {
+            Id = id;
+            User = user;
+            Credential = credential;
+            Password = password;
+            Type = type;
+            IsVerified = false;
+
+            CredentialVerifications = new HashSet<CredentialVerification>();
+        }
+
         public Result<Login> Create(int id, int userId, string credential, string password, CredentialType type)
         {
             return new LoginValidator().Validate(new Login(id, userId, credential, password, type));
+        }
+
+        public Result<Login> Create(int id, User user, string credential, string password, CredentialType type)
+        {
+            return new LoginValidator().Validate(new Login(id, user, credential, password, type));
         }
 
         public void SetVerified() => IsVerified = true;

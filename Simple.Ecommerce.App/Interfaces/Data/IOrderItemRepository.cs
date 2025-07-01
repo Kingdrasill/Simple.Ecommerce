@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.Interfaces.Data
 {

@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Errors.BaseError;
 
-namespace Simple.Ecommerce.Domain.ValueObjects.ResultObject
+namespace Simple.Ecommerce.Domain.Objects
 {
     public class Result<T>
     {

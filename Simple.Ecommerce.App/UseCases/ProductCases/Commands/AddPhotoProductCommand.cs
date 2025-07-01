@@ -1,15 +1,18 @@
-﻿using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
+﻿using ImageFile.Library.Core.Entities;
+using ImageFile.Library.Core.Enums;
+using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.ProductPhotoContracts;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using ImageFile.Library.Core.Enums;
-using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.Domain.Exceptions.ResultException;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
+using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 {
@@ -17,6 +20,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
     {
         private readonly IProductPhotoRepository _repository;
         private readonly IProductRepository _productRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly IImageManager _imageManager;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
@@ -24,6 +28,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
         public AddPhotoProductCommand(
             IProductPhotoRepository repository, 
             IProductRepository productRepository, 
+            ISaverTransectioner unityOfWork,
             IImageManager imageManager,
             UseCache useCache, 
             ICacheHandler cacheHandler
@@ -31,6 +36,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
         {
             _repository = repository;
             _productRepository = productRepository;
+            _saverOrTransectioner = unityOfWork;
             _imageManager = imageManager;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
@@ -38,63 +44,86 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 
         public async Task<Result<ProductPhotoResponse>> Execute(ProductPhotoRequest request, Stream stream, string fileExtension)
         {
-            var getProduct = await _productRepository.Get(request.ProductId);
-            if (getProduct.IsFailure)
+            FileImage? savedImage = null;
+            await _saverOrTransectioner.BeginTransaction();
+            try
             {
-                return Result<ProductPhotoResponse>.Failure(getProduct.Errors!);
-            }
+                var getProduct = await _productRepository.Get(request.ProductId);
+                if (getProduct.IsFailure)
+                {
+                    throw new ResultException(getProduct.Errors!);
+                }
 
-            var imageFile = await _imageManager.UploadImageAsync(
-                $"{Guid.NewGuid()}{fileExtension}",
-                stream,
-                request.Compress,
-                request.Deletable
-            );
-            if (imageFile.Result != ImageOperationResult.Success)
+                var imageFile = await _imageManager.UploadImageAsync(
+                    $"{Guid.NewGuid()}{fileExtension}",
+                    stream,
+                    request.Compress,
+                    request.Deletable
+                );
+                if (imageFile.Result != ImageOperationResult.Success)
+                {
+                    throw new ResultException(new Error($"AddPhotoProductCommand.ImageFileSystem.{imageFile.Result}", imageFile.ErrorMessage!));
+                }
+
+                savedImage = imageFile.Image;
+
+                var photo = new Photo().Create(
+                    imageFile.Image!.Name
+                );
+                if (photo.IsFailure)
+                {
+                    throw new ResultException(photo.Errors!);
+                }
+
+                var instance = new ProductPhoto().Create(
+                    0,
+                    request.ProductId,
+                    photo.GetValue()
+                );
+                if (instance.IsFailure)
+                {
+                    throw new ResultException(instance.Errors!);
+                }
+
+                var createResult = await _repository.Create(instance.GetValue());
+                if (createResult.IsFailure)
+                {
+                    throw new ResultException(createResult.Errors!);
+                }
+
+                await _saverOrTransectioner.Commit();
+
+                var productPhoto = createResult.GetValue();
+
+                if (_useCache.Use)
+                    _cacheHandler.SetItemStale<ProductPhoto>();
+
+                var photoResponse = new PhotoProductResponse(
+                    productPhoto.Photo.FileName,
+                    productPhoto.Id
+                );
+
+                var response = new ProductPhotoResponse(
+                    photoResponse,
+                    productPhoto.ProductId
+                );
+
+                return Result<ProductPhotoResponse>.Success(response);
+            }
+            catch (ResultException rex)
             {
-                return Result<ProductPhotoResponse>.Failure(new List<Error> { new($"ImageFileSystem.{imageFile.Result}", imageFile.ErrorMessage!) });
+                await _saverOrTransectioner.Rollback();
+                if (savedImage is not null)
+                    await _imageManager.DeleteImageAsync(savedImage.Name);
+                return Result<ProductPhotoResponse>.Failure(rex.Errors);
             }
-
-            var photo = new Photo().Create(
-                imageFile.Image!.Name    
-            );
-            if (photo.IsFailure)
+            catch (Exception ex)
             {
-                return Result<ProductPhotoResponse>.Failure(photo.Errors!);
+                await _saverOrTransectioner.Rollback();
+                if (savedImage is not null)
+                    await _imageManager.DeleteImageAsync(savedImage.Name);
+                return Result<ProductPhotoResponse>.Failure(new List<Error> { new("AddPhotoProductCommand.Unknown", ex.Message) });
             }
-
-            var instance = new ProductPhoto().Create(
-                0,
-                request.ProductId,
-                photo.GetValue()
-            );
-            if (instance.IsFailure)
-            {
-                return Result<ProductPhotoResponse>.Failure(instance.Errors!);
-            }
-
-            var createResult = await _repository.Create(instance.GetValue());
-            if (createResult.IsFailure)
-            {
-                return Result<ProductPhotoResponse>.Failure(createResult.Errors!);
-            }
-
-            var productPhoto = createResult.GetValue();
-
-            if (_useCache.Use)
-                _cacheHandler.SetItemStale<ProductPhoto>();
-
-            var photoResponse = new PhotoProductResponse(
-                productPhoto.Photo.FileName,
-                productPhoto.Id
-            );
-
-            var response = new ProductPhotoResponse(
-                photoResponse,
-                productPhoto.ProductId
-            );
-
-            return Result<ProductPhotoResponse>.Success(response);
         }
     }
 }

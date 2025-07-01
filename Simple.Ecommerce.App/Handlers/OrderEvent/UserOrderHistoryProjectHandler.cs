@@ -1,8 +1,8 @@
 ﻿using Simple.Ecommerce.App.Interfaces.ReadData;
 using Simple.Ecommerce.Domain.Events.OrderEvent;
 using Simple.Ecommerce.Domain.Interfaces.OrderEvent;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.ReadModels;
-using Simple.Ecommerce.Domain.ValueObjects.UserOrderObject;
 
 namespace Simple.Ecommerce.App.Handlers.OrderEvent
 {

@@ -1,9 +1,10 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.ProductCategoryContracts;
 using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
@@ -13,6 +14,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly IProductCategoryRepository _productCategoryRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -20,6 +22,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
             IProductRepository repository,
             ICategoryRepository categoryRepository,
             IProductCategoryRepository productCategoryRepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
@@ -27,6 +30,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
             _repository = repository;
             _categoryRepository = categoryRepository;
             _productCategoryRepository = productCategoryRepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -61,10 +65,16 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
                 return Result<ProductCategoryDTO>.Failure(createResult.Errors!);
             }
 
-            if (_useCache.Use)
-                _cacheHandler.SetItemStale<ProductCategory>();
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<ProductCategoryDTO>.Failure(commit.Errors!);
+            }
 
             var productCategory = createResult.GetValue();
+
+            if (_useCache.Use)
+                _cacheHandler.SetItemStale<ProductCategory>();
 
             var response = new ProductCategoryDTO(
                 productCategory.Id,

@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Processor;
+﻿using Simple.Ecommerce.App.Interfaces.Services.Patterns.Processor;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 
 namespace Simple.Ecommerce.App.Services.Processor

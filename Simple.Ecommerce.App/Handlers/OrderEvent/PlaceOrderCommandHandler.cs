@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Command;
 using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
-using Simple.Ecommerce.App.Interfaces.Services.Processor;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.Processor;
 using Simple.Ecommerce.App.Services.Command;
 
 namespace Simple.Ecommerce.App.Handlers.OrderEvent

@@ -1,11 +1,11 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Authentication;
+﻿using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Simple.Ecommerce.App.Interfaces.Services.Authentication;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.JwtSettings;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.Domain.ValueObjects.TokenObject;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;

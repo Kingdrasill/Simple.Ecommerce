@@ -4,8 +4,8 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.ProductContracts;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
 {

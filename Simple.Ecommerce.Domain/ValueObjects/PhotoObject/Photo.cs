@@ -1,7 +1,7 @@
-﻿using Simple.Ecommerce.Domain.Validation.Validators;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Domain.ValueObjects.PhotoObject
 {

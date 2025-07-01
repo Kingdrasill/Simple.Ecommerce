@@ -1,11 +1,12 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.UserAddressContracts;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
@@ -13,18 +14,21 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
     {
         private readonly IUserRepository _repository;
         private readonly IUserAddressRepository _userAddressrepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public AddAddressUserCommand(
             IUserRepository repository, 
             IUserAddressRepository userAddressrepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _userAddressrepository = userAddressrepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -65,6 +69,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             if (createResult.IsFailure)
             {
                 return Result<bool>.Failure(createResult.Errors!);
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

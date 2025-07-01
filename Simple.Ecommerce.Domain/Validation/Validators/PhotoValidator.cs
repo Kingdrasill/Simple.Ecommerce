@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {

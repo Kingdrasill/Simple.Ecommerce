@@ -1,14 +1,16 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Exceptions.ResultException;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 {
@@ -19,6 +21,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
         private readonly IProductRepository _productRepository;
         private readonly IDiscountRepository _discountRepository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -28,6 +31,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             IProductRepository productRepository, 
             IDiscountRepository discountRepository,
             IDiscountBundleItemRepository discountBundleItemRepository,
+            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -37,137 +41,154 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             _productRepository = productRepository;
             _discountRepository = discountRepository;
             _discountBundleItemRepository = discountBundleItemRepository;
+            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
         public async Task<Result<OrderItemsResponse>> Execute(OrderItemsRequest request)
         {
-            var getOrder = await _orderRepository.Get(request.OrderId);
-            if (getOrder.IsFailure)
+            await _saverOrTransectioner.BeginTransaction();
+            try
             {
-                return Result<OrderItemsResponse>.Failure(getOrder.Errors!);
+                var getOrder = await _orderRepository.Get(request.OrderId);
+                if (getOrder.IsFailure)
+                {
+                    throw new ResultException(getOrder.Errors!);
+                }
+
+                var order = getOrder.GetValue();
+
+                var getOrderItemsDiscountInfo = await _repository.GetOrdemItemsDiscountInfo(order.Id);
+                if (getOrderItemsDiscountInfo.IsFailure)
+                {
+                    throw new ResultException(getOrderItemsDiscountInfo.Errors!);
+                }
+
+                var orderItemsDiscountInfo = getOrderItemsDiscountInfo.GetValue();
+                OrderItemsResponse response = new OrderItemsResponse(new List<OrderItemResponse>());
+
+                foreach (var orderItemRequest in request.OrderItems)
+                {
+                    if (request.OrderId != order.Id)
+                    {
+                        throw new ResultException(new Error("AddItemsOrderItemCommand.NotRelated.OrderId", "Um dos itens é de um pedido diferente!"));
+                    }
+
+                    var getProduct = await _productRepository.Get(orderItemRequest.ProductId);
+                    if (getProduct.IsFailure)
+                    {
+                        throw new ResultException(getProduct.Errors!);
+                    }
+
+                    var product = getProduct.GetValue();
+
+                    var getDiscount = orderItemRequest.DiscountId is null ? null : await _discountRepository.Get(orderItemRequest.DiscountId.Value);
+                    if (getDiscount is not null)
+                    {
+                        if (getDiscount.IsFailure)
+                        {
+                            throw new ResultException(getDiscount.Errors!);
+                        }
+
+                        var validateResult = await ValidateProductDiscount(getDiscount.GetValue(), product, orderItemsDiscountInfo);
+                        if (validateResult.IsFailure)
+                        {
+                            throw new ResultException(validateResult.Errors!);
+                        }
+                    }
+
+                    OrderItemResponse itemResponse = new OrderItemResponse(0, 0, 0, 0, 0, null);
+
+                    var getOrderItem = await _repository.GetByOrderIdAndProductId(order.Id, product.Id);
+                    if (getOrderItem.IsSuccess)
+                    {
+                        var orderItem = getOrderItem.GetValue();
+                        orderItem.Update(orderItemRequest.Quantity, product.Price, orderItemRequest.DiscountId, orderItemRequest.Override);
+
+                        var validateOrderItem = orderItem.Validate();
+                        if (validateOrderItem.IsFailure)
+                        {
+                            throw new ResultException(validateOrderItem.Errors!);
+                        }
+
+                        var updateResult = await _repository.Update(orderItem);
+                        if (updateResult.IsFailure)
+                        {
+                            throw new ResultException(updateResult.Errors!);
+                        }
+
+                        var orderItemUpdated = updateResult.GetValue();
+
+                        itemResponse = new OrderItemResponse(
+                            orderItemUpdated.Id,
+                            orderItemUpdated.Price,
+                            orderItemUpdated.Quantity,
+                            orderItemUpdated.ProductId,
+                            orderItemUpdated.OrderId,
+                            orderItemUpdated.DiscountId
+                        );
+                    }
+                    else
+                    {
+                        var instance = new OrderItem().Create(
+                            0,
+                            product.Price,
+                            orderItemRequest.Quantity,
+                            orderItemRequest.ProductId,
+                            orderItemRequest.OrderId,
+                            orderItemRequest.DiscountId
+                        );
+                        if (instance.IsFailure)
+                        {
+                            throw new ResultException(instance.Errors!);
+                        }
+
+                        var createResult = await _repository.Create(instance.GetValue());
+                        if (createResult.IsFailure)
+                        {
+                            throw new ResultException(createResult.Errors!);
+                        }
+
+                        var orderItem = createResult.GetValue();
+
+                        itemResponse = new OrderItemResponse(
+                            orderItem.Id,
+                            orderItem.Price,
+                            orderItem.Quantity,
+                            orderItem.ProductId,
+                            orderItem.OrderId,
+                            orderItem.DiscountId
+                        );
+                    }
+
+                    orderItemsDiscountInfo.Add(new OrderItemDiscountInfoDTO(
+                        itemResponse.OrderId,
+                        itemResponse.ProductId,
+                        itemResponse.DiscountId,
+                        getDiscount is null ? null : getDiscount.GetValue().DiscountType
+                    ));
+
+                    response.OrderItems.Add(itemResponse);
+                }
+
+                await _saverOrTransectioner.Commit();
+
+                if (_useCache.Use)
+                    _cacheHandler.SetItemStale<OrderItem>();
+
+                return Result<OrderItemsResponse>.Success(response);
             }
-
-            var order = getOrder.GetValue();
-
-            var getOrderItemsDiscountInfo = await _repository.GetOrdemItemsDiscountInfo(order.Id);
-            if (getOrderItemsDiscountInfo.IsFailure)
+            catch (ResultException rex)
             {
-                return Result<OrderItemsResponse>.Failure(getOrderItemsDiscountInfo.Errors!);
+                await _saverOrTransectioner.Rollback();
+                return Result<OrderItemsResponse>.Failure(rex.Errors);
             }
-
-            var orderItemsDiscountInfo = getOrderItemsDiscountInfo.GetValue();
-            OrderItemsResponse response = new OrderItemsResponse(new List<OrderItemResponse>());
-
-            foreach (var orderItemRequest in request.OrderItems)
+            catch (Exception ex)
             {
-                if (request.OrderId != order.Id)
-                {
-                    return Result<OrderItemsResponse>.Failure(new List<Error> { new("AddItemsOrderItemCommand.NotRelated.OrderId", "Um dos itens é de um pedido diferente!") });
-                }
-
-                var getProduct = await _productRepository.Get(orderItemRequest.ProductId);
-                if (getProduct.IsFailure)
-                {
-                    return Result<OrderItemsResponse>.Failure(getProduct.Errors!);
-                }
-
-                var product = getProduct.GetValue();
-
-                var getDiscount = orderItemRequest.DiscountId is null ? null : await _discountRepository.Get(orderItemRequest.DiscountId.Value);
-                if (getDiscount is not null)
-                {
-                    if (getDiscount.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(getDiscount.Errors!);
-                    }
-
-                    var validateResult = await ValidateProductDiscount(getDiscount.GetValue(), product, orderItemsDiscountInfo);
-                    if (validateResult.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(validateResult.Errors!);
-                    }
-                }
-
-                OrderItemResponse itemResponse = new OrderItemResponse(0, 0, 0, 0, 0, null);
-
-                var getOrderItem = await _repository.GetByOrderIdAndProductId(order.Id, product.Id);
-                if (getOrderItem.IsSuccess)
-                {
-                    var orderItem = getOrderItem.GetValue();
-                    orderItem.Update(orderItemRequest.Quantity, product.Price, orderItemRequest.DiscountId, orderItemRequest.Override);
-
-                    var validateOrderItem = orderItem.Validate();
-                    if (validateOrderItem.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(validateOrderItem.Errors!);
-                    }
-
-                    var updateResult = await _repository.Update(orderItem);
-                    if (updateResult.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(updateResult.Errors!);
-                    }
-
-                    var orderItemUpdated = updateResult.GetValue();
-
-                    itemResponse = new OrderItemResponse(
-                        orderItemUpdated.Id,
-                        orderItemUpdated.Price,
-                        orderItemUpdated.Quantity,
-                        orderItemUpdated.ProductId,
-                        orderItemUpdated.OrderId,
-                        orderItemUpdated.DiscountId
-                    );
-                }
-                else
-                {
-                    var instance = new OrderItem().Create(
-                        0,
-                        product.Price,
-                        orderItemRequest.Quantity,
-                        orderItemRequest.ProductId,
-                        orderItemRequest.OrderId,
-                        orderItemRequest.DiscountId
-                    );
-                    if (instance.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(instance.Errors!);
-                    }
-
-                    var createResult = await _repository.Create(instance.GetValue());
-                    if (createResult.IsFailure)
-                    {
-                        return Result<OrderItemsResponse>.Failure(createResult.Errors!);
-                    }
-
-                    var orderItem = createResult.GetValue();
-
-                    itemResponse = new OrderItemResponse(
-                        orderItem.Id,
-                        orderItem.Price,
-                        orderItem.Quantity,
-                        orderItem.ProductId,
-                        orderItem.OrderId,
-                        orderItem.DiscountId
-                    );
-                }
-
-                orderItemsDiscountInfo.Add(new OrderItemDiscountInfoDTO(
-                    itemResponse.OrderId,
-                    itemResponse.ProductId,
-                    itemResponse.DiscountId,
-                    getDiscount is null ? null : getDiscount.GetValue().DiscountType
-                ));
-
-                response.OrderItems.Add(itemResponse);
+                await _saverOrTransectioner.Rollback();
+                return Result<OrderItemsResponse>.Failure(new List<Error> { new("AddItemsOrderItemCommand.Unknown", ex.Message) });
             }
-
-            if (_useCache.Use)
-                _cacheHandler.SetItemStale<OrderItem>();
-
-            return Result<OrderItemsResponse>.Success(response);
         }
 
         private async Task<Result<bool>> ValidateProductDiscount(Discount discount, Product product, List<OrderItemDiscountInfoDTO> orderItemsDiscountInfo)

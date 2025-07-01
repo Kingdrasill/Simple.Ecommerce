@@ -3,13 +3,12 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CardService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
-using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 using Simple.Ecommerce.Contracts.UserCardContracts;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
-using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
@@ -17,6 +16,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
     {
         private readonly IUserRepository _repository;
         private readonly IUserCardRepository _userCardRepository;
+        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly ICryptographyService _cryptographyService;
         private readonly ICardService _cardService;
         private readonly UseCache _useCache;
@@ -25,6 +25,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
         public AddCardUserCommand(
             IUserRepository repository, 
             IUserCardRepository userCardRepository,
+            ISaverTransectioner unityOfWork,
             ICryptographyService cryptographyService,
             ICardService cardService,
             UseCache useCache, 
@@ -33,6 +34,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
         {
             _repository = repository;
             _userCardRepository = userCardRepository;
+            _saverOrTransectioner = unityOfWork;
             _cryptographyService = cryptographyService;
             _cardService = cardService;
             _useCache = useCache;
@@ -93,6 +95,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             if (createResult.IsFailure)
             {
                 return Result<bool>.Failure(createResult.Errors!);
+            }
+
+            var commit = await _saverOrTransectioner.SaveChanges();
+            if (commit.IsFailure)
+            {
+                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

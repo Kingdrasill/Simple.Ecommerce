@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+﻿using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.Infra.Interfaces.Generic
 {

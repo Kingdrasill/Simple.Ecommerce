@@ -3,7 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories

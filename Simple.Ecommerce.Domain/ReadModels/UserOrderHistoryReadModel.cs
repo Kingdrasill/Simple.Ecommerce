@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.ValueObjects.UserOrderObject;
+﻿using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.Domain.ReadModels
 {

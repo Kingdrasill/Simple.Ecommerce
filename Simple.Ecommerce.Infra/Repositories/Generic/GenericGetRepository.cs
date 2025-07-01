@@ -1,8 +1,8 @@
 ﻿using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Interfaces.BaseEntity;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.Infra.Repositories.Generic
 {

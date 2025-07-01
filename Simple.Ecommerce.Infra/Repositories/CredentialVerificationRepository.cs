@@ -1,9 +1,9 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {

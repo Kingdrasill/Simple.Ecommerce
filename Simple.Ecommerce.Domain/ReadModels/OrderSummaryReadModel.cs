@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.OrderItemObject;
 
 namespace Simple.Ecommerce.Domain.ReadModels
 {

@@ -1,5 +1,5 @@
 ﻿using Simple.Ecommerce.Contracts.UserPhotoContracts;
-using Simple.Ecommerce.Domain.ValueObjects.ResultObject;
+using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.UserCommands
 {
