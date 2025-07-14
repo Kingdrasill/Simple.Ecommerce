@@ -7,7 +7,7 @@ namespace Simple.Ecommerce.Infra.Repositories.Generic
 {
     public class GenericDeleteRepository<T> : IGenericDeleteRepository<T> where T : class, IBaseEntity
     {
-        public virtual async Task<Result<bool>> Delete(TesteDbContext context, int id)
+        public virtual async Task<Result<bool>> Delete(TesteDbContext context, int id, bool skipSave = false)
         {
             var entity = await context.Set<T>().FindAsync(id);
 
@@ -17,6 +17,8 @@ namespace Simple.Ecommerce.Infra.Repositories.Generic
             entity.MarkAsDeleted();
 
             context.Set<T>().Update(entity);
+            if (!skipSave)
+                await context.SaveChangesAsync();
             return Result<bool>.Success(true);
         }
     }

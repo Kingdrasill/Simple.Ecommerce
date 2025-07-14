@@ -6,11 +6,13 @@ namespace Simple.Ecommerce.Infra.Repositories.Generic
 {
     public class GenericUpdateRepository<T> : IGenericUpdateRepository<T> where T : class
     {
-        public virtual Task<Result<T>> Update(TesteDbContext context, T entity)
+        public async virtual Task<Result<T>> Update(TesteDbContext context, T entity, bool skipSave = false)
         {
             context.Entry(entity).State = EntityState.Modified;
             context.Set<T>().Update(entity);
-            return Task.FromResult(Result<T>.Success(entity));
+            if (!skipSave)
+                await context.SaveChangesAsync();
+            return Result<T>.Success(entity);
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -30,7 +30,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _listRepository = listRepository;
         }
 
-        public async Task<Result<CacheFrequency>> Create(CacheFrequency entity)
+        public async Task<Result<CacheFrequency>> Create(CacheFrequency entity, bool skipSave = false)
         {
             return await _createRepository.Create(_context, entity);
         }
@@ -59,7 +59,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             return await _listRepository.List(_context);
         }
 
-        public async Task<Result<CacheFrequency>> Update(CacheFrequency entity)
+        public async Task<Result<CacheFrequency>> Update(CacheFrequency entity, bool skipSave = false)
         {
             return await _updateRepository.Update(_context, entity);
         }

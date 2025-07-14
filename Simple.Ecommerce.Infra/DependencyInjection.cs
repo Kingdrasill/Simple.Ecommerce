@@ -72,6 +72,9 @@ namespace Simple.Ecommerce.Infra
             // SQL Database Configuration
             AddSQLDatabase(services, configuration);
 
+            // Adding Unities of Work
+            AddUnitiesOfWork(services, configuration);
+
             // Services Configuration (Options)
             AddConfigurations(services, configuration);
 
@@ -109,8 +112,12 @@ namespace Simple.Ecommerce.Infra
         {
             services.AddDbContext<TesteDbContext>(options =>
                 options.UseMySQL(configuration.GetConnectionString("DefaultConnection")!));
+        }
 
+        private static void AddUnitiesOfWork(this IServiceCollection services, IConfiguration configuration)
+        {
             services.AddScoped<ISaverTransectioner, SaverTransectioner>();
+            services.AddScoped<IConfirmedOrderUnityOfWork, ConfirmedOrderUnityOfWork>();
         }
 
         private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)

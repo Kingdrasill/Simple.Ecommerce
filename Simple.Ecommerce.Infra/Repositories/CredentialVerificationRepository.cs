@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -24,7 +24,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _updateRepository = updateRepository;
         }
 
-        public async Task<Result<CredentialVerification>> Create(CredentialVerification entity)
+        public async Task<Result<CredentialVerification>> Create(CredentialVerification entity, bool skipSave = false)
         {
             return await _createRepository.Create(_context, entity);
         }
@@ -44,7 +44,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             return Result<CredentialVerification>.Success(credentialVerification);
         }
 
-        public async Task<Result<CredentialVerification>> Update(CredentialVerification entity)
+        public async Task<Result<CredentialVerification>> Update(CredentialVerification entity, bool skipSave = false)
         {
             return await _updateRepository.Update(_context, entity);
         }

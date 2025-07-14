@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -32,12 +32,12 @@ namespace Simple.Ecommerce.Infra.Repositories
             _updateRepository = updateRepository;
         }
 
-        public async Task<Result<DiscountBundleItem>> Create(DiscountBundleItem entity)
+        public async Task<Result<DiscountBundleItem>> Create(DiscountBundleItem entity, bool skipSave = false)
         {
             return await _createRepository.Create(_context, entity);
         }
 
-        public async Task<Result<bool>> Delete(int id)
+        public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
             return await _deleteRepository.Delete(_context, id);
         }
@@ -87,7 +87,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             return await _listRepository.List(_context);
         }
 
-        public async Task<Result<DiscountBundleItem>> Update(DiscountBundleItem entity)
+        public async Task<Result<DiscountBundleItem>> Update(DiscountBundleItem entity, bool skipSave = false)
         {
             return await _updateRepository.Update(_context, entity);
         }

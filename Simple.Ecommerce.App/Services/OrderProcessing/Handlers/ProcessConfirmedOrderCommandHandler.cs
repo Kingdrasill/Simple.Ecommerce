@@ -14,36 +14,26 @@ using Simple.Ecommerce.Domain.OrderProcessing.Commands;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using System.Diagnostics;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
     public class ProcessConfirmedOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedOrderCommand, Result<Order>>
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IOrderRepository _orderRepository;
-        private readonly IOrderItemRepository _orderItemRepository;
-        private readonly ISaverTransectioner _saverTransectioner;
+        private readonly IConfirmedOrderUnityOfWork _confirmedOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
         private readonly IOrderProcessingChain _orderChain;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ProcessConfirmedOrderCommandHandler(
-            IUserRepository userRepository,
-            IOrderRepository orderRepository, 
-            IOrderItemRepository orderItemRepository,
-            ISaverTransectioner saverTransectioner, 
+            IConfirmedOrderUnityOfWork confirmedOrderUoW,
             IOrderProcessingDispatcher orderDispatcher,
             IOrderProcessingChain orderChain,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
-            _userRepository = userRepository;
-            _orderRepository = orderRepository;
-            _orderItemRepository = orderItemRepository;
-            _saverTransectioner = saverTransectioner;
+            _confirmedOrderUoW = confirmedOrderUoW;
             _orderDispatcher = orderDispatcher;
             _orderChain = orderChain;
             _useCache = useCache;
@@ -53,11 +43,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
         public async Task<Result<Order>> Handle(ProcessConfirmedOrderCommand command)
         {
             Console.WriteLine($"\n[ProcessConfirmedOrderCommandHandler] Començando o processamento do pedido {command.OrderId}.");
-            await _saverTransectioner.BeginTransaction();
+            await _confirmedOrderUoW.BeginTransaction();
             try
             {
                 // Pegando dados do pedido
-                var getOrder = await _orderRepository.Get(command.OrderId);
+                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do pedido {command.OrderId}.");
@@ -65,7 +55,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
                 var order = getOrder.GetValue();
 
-                if (order.Status is not "Created" or "Confirmed" or "Canceled" or "Failed")
+                if (order.Status is not ("Created" or "Confirmed" or "Canceled" or "Failed"))
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!");
                     throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido { command.OrderId } já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!"));
@@ -74,7 +64,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 order.UpdateStatus("Confirmed", true);
 
                 // Pegando dados do usuário que fez o pedido
-                var getUser = await _userRepository.Get(order.UserId);
+                var getUser = await _confirmedOrderUoW.Users.Get(order.UserId);
                 if (getUser.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do usuário {order.UserId}.");
@@ -82,7 +72,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Pegando os dados do desconto do pedido se existir
-                var getOrderDiscountDTO = await _orderRepository.GetDiscountDTOById(command.OrderId);
+                var getOrderDiscountDTO = await _confirmedOrderUoW.Orders.GetDiscountDTOById(command.OrderId);
                 if (getOrderDiscountDTO.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do desconto do pedido {command.OrderId}.");
@@ -91,7 +81,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 var orderDiscountDTO = getOrderDiscountDTO.GetValue();
 
                 // Pegando os itens do pedido com os dados de seu desconto se existir
-                var getOrderItemsWithDiscountDTO = await _orderItemRepository.GetOrderItemsWithDiscountDTO(command.OrderId);
+                var getOrderItemsWithDiscountDTO = await _confirmedOrderUoW.OrderItems.GetOrderItemsWithDiscountDTO(command.OrderId);
                 if (getOrderItemsWithDiscountDTO.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os itens do pedido {command.OrderId}.");
@@ -155,18 +145,20 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido para Processado
                 order.UpdateStatus("Processed", newTotalPrice: orderInProcess.CurrentTotalPrice);
-                var updateOrderResult = await _orderRepository.Update(order);
+                
+                // Enviando o evento de pedido processado
+                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Pedido {command.OrderId} processado com sucesso. Total: {order.TotalPrice:C}.");
+                await _orderDispatcher.Dispatch(new OrderProcessedEvent(order.Id, order.Status, order.TotalPrice!.Value));
+
+                order.UpdateStatus("Pending Payment");
+                var updateOrderResult = await _confirmedOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
                 {
                     throw new ResultException(updateOrderResult.Errors!);
                 }
 
-                // Enviando o evento de pedido processado
-                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Pedido {command.OrderId} processado com sucesso. Total: {order.TotalPrice:C}.");
-                await _orderDispatcher.Dispatch(new OrderProcessedEvent(order.Id, order.Status, order.TotalPrice!.Value));
-
                 // Salvando as alterações no pedido e nos itens do pedido
-                await _saverTransectioner.Commit();
+                await _confirmedOrderUoW.Commit();
                 if (_useCache.Use)
                 {
                     _cacheHandler.SetItemStale<Order>();
@@ -177,39 +169,35 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             }
             catch (ResultException rex)
             {
-                await _saverTransectioner.Rollback();
+                await _confirmedOrderUoW.Rollback();
 
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar os dados do pedido {command.OrderId}.");
-                var getOrder = await _orderRepository.Get(command.OrderId);
+                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed", false, 0);
-                    await _orderRepository.Update(order);
+                    await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
-                await _saverTransectioner.SaveChanges();
 
                 return Result<Order>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverTransectioner.Rollback();
+                await _confirmedOrderUoW.Rollback();
 
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar os dados do pedido {command.OrderId}.");
-                var getOrder = await _orderRepository.Get(command.OrderId);
+                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed", false, 0);
-                    await _orderRepository.Update(order);
+                    await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
-                await _saverTransectioner.SaveChanges();
 
                 return Result<Order>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Unknown", ex.Message) });
             }
@@ -330,7 +318,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             var newItemsErros = new List<Error>();
             foreach (var newItem in newOrderItems)
             {
-                var createItemResult = await _orderItemRepository.Create(newItem);
+                var createItemResult = await _confirmedOrderUoW.OrderItems.Create(newItem, true);
                 if (createItemResult.IsFailure)
                 {
                     newItemsErros.AddRange(createItemResult.Errors!);
@@ -367,7 +355,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     throw new ResultException(updatedItem.Errors!);
                 }
 
-                var updateResult = await _orderItemRepository.Update(updatedItem.GetValue());
+                var updateResult = await _confirmedOrderUoW.OrderItems.Update(updatedItem.GetValue(), true);
                 if (updateResult.IsFailure)
                 {
                     updatedItemsErros.AddRange(updateResult.Errors!);

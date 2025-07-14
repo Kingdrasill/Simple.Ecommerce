@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -29,12 +29,12 @@ namespace Simple.Ecommerce.Infra.Repositories
             _listRepository = listRepository;
         }
 
-        public async Task<Result<UserAddress>> Create(UserAddress entity)
+        public async Task<Result<UserAddress>> Create(UserAddress entity, bool skipSave = false)
         {
             return await _createRepository.Create(_context, entity);
         }
 
-        public async Task<Result<bool>> Delete(int id)
+        public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
             return await _deleteRepository.Delete(_context, id);
         }

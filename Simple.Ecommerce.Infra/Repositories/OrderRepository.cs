@@ -39,12 +39,12 @@ namespace Simple.Ecommerce.Infra.Repositories
             _updateRepository = updateRepository;
         }
 
-        public async Task<Result<Order>> Create(Order entity)
+        public async Task<Result<Order>> Create(Order entity, bool skipSave = false)
         {
             return await _createRepository.Create(_context, entity);
         }
 
-        public async Task<Result<bool>> Delete(int id)
+        public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
             return await _deleteRepository.Delete(_context, id);
         }
@@ -297,9 +297,9 @@ namespace Simple.Ecommerce.Infra.Repositories
             return await _listRepository.List(_context);
         }
 
-        public async Task<Result<Order>> Update(Order entity)
+        public async Task<Result<Order>> Update(Order entity, bool skipSave = false)
         {
-            return await _updateRepository.Update(_context, entity);
+            return await _updateRepository.Update(_context, entity, skipSave);
         }
     }
 }
