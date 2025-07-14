@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.Objects;
+﻿using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories.Generic

@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.Objects;
+﻿using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.ProductCommands
 {

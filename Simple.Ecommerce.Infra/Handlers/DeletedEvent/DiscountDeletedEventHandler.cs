@@ -3,7 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 

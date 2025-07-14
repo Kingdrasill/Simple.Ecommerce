@@ -3,15 +3,15 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.UserContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.Crendetial;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands

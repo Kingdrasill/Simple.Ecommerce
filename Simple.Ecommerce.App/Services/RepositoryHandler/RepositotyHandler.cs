@@ -1,5 +1,5 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Services.RepositoryHandler
 {

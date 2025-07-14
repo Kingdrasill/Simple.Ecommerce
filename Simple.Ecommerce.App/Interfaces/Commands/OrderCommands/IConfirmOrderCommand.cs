@@ -1,9 +1,10 @@
-﻿using Simple.Ecommerce.Domain.Objects;
+﻿using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.OrderCommands
 {
     public interface IConfirmOrderCommand
     {
-        Task<Result<bool>> Execute(int id);
+        Task<Result<OrderCompleteDTO>> Execute(int id);
     }
 }

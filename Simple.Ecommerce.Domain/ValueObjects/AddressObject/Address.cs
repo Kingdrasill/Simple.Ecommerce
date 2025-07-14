@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
 using Microsoft.EntityFrameworkCore;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
 {

@@ -6,7 +6,7 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.UseCases.ReviewCases.Queries
 {

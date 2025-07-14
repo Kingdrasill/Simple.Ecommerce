@@ -1,9 +1,9 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {

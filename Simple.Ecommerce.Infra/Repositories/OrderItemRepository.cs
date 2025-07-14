@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -87,6 +87,62 @@ namespace Simple.Ecommerce.Infra.Repositories
                 )).ToListAsync();
 
             return Result<List<OrderItemDiscountInfoDTO>>.Success(result);
+        }
+
+        public async Task<Result<List<OrderItemDiscountDTO>>> GetOrderItemsDiscountDTO(int orderId)
+        {
+            var result = await(
+                from oi in _context.OrderItems
+                join d in _context.Discounts on oi.DiscountId equals d.Id
+                where oi.OrderId == orderId && !oi.Deleted
+                select new OrderItemDiscountDTO(
+                    oi.Id,
+                    d.Id,
+                    d.Name,
+                    d.DiscountType,
+                    d.DiscountScope,
+                    d.DiscountValueType,
+                    d.Value,
+                    d.ValidFrom,
+                    d.ValidTo,
+                    d.IsActive
+                )).ToListAsync();
+
+            return Result<List<OrderItemDiscountDTO>>.Success(result);
+        }
+
+        public async Task<Result<List<OrderItemWithDiscountDTO>>> GetOrderItemsWithDiscountDTO(int orderId)
+        {
+            var result = await (
+                from oi in _context.OrderItems
+                join p in _context.Products on oi.ProductId equals p.Id into productJoin
+                from pj in productJoin.DefaultIfEmpty()
+                join d in _context.Discounts on oi.DiscountId equals d.Id into discountJoin
+                from dj in discountJoin.DefaultIfEmpty()
+                where oi.OrderId == orderId && !oi.Deleted
+                select new OrderItemWithDiscountDTO(
+                    oi.Id,
+                    oi.ProductId,
+                    pj.Name,
+                    oi.Quantity,
+                    pj.Price,
+                    dj == null
+                        ? null
+                        : new OrderItemDiscountDTO(
+                            oi.Id,
+                            dj.Id,
+                            dj.Name,
+                            dj.DiscountType,
+                            dj.DiscountScope,
+                            dj.DiscountValueType,
+                            dj.Value,
+                            dj.ValidFrom,
+                            dj.ValidTo,
+                            dj.IsActive
+                        )
+                )).ToListAsync();
+
+            return Result<List<OrderItemWithDiscountDTO>>.Success(result);
         }
 
         public async Task<Result<List<OrderItem>>> List()

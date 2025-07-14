@@ -1,8 +1,8 @@
 ﻿using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Enums.Crendetial;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;

@@ -1,9 +1,9 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -37,7 +37,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             }
 
             var order = getOrder.GetValue();
-            order.Cancel();
+            order.UpdateStatus("Canceled", false);
 
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)

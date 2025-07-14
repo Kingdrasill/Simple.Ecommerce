@@ -4,10 +4,10 @@ using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
 {

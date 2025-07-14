@@ -20,8 +20,8 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IConfirmOrderCommand _confirmOrderCommand;
         private readonly IChangeDiscountOrderCommand _changeDiscountOrderCommand;
         private readonly IChangePaymentMethodOrderCommand _changePaymentMethodOrderCommand;
-        private readonly IRemoveDiscountOrderCommand _removeDiscountOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
+        private readonly IGetCompleteOrderQuery _getCompleteOrderQuery;
         private readonly IGetPaymentMethodOrderQuery _getPaymentMethodOrderQuery;
 
         public OrderController(
@@ -34,8 +34,8 @@ namespace Simple.Ecommerce.Api.Controllers
             IConfirmOrderCommand confirmOrderCommand,
             IChangeDiscountOrderCommand changeDiscountOrderCommand,
             IChangePaymentMethodOrderCommand changePaymentMethodOrderCommand,
-            IRemoveDiscountOrderCommand removeDiscountOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
+            IGetCompleteOrderQuery getCompleteOrderQuery,
             IGetPaymentMethodOrderQuery getPaymentMethodOrderQuery
         )
         {
@@ -48,8 +48,8 @@ namespace Simple.Ecommerce.Api.Controllers
             _confirmOrderCommand = confirmOrderCommand;
             _changeDiscountOrderCommand = changeDiscountOrderCommand;
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
-            _removeDiscountOrderCommand = removeDiscountOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
+            _getCompleteOrderQuery = getCompleteOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
         [HttpPost]
@@ -115,15 +115,6 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPut("Discount/Remove/{orderId}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> RemoveDiscount(int orderId)
-        {
-            var result = await _removeDiscountOrderCommand.Execute(orderId);
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
         [HttpPut("PaymentMethod/Remove/{orderId}")]
         [Authorize]
         public async Task<ActionResult<bool>> RemovePaymentMethod(int orderId)
@@ -147,6 +138,15 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<List<OrderResponse>>> List()
         {
             var result = await _listOrderQuery.Execute();
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpGet("ConfirmedOrder/{orderId}")]
+        [Authorize]
+        public async Task<ActionResult<OrderPaymentMethodResponse>> GetCompleteOrder(int orderId)
+        {
+            var result = await _getCompleteOrderQuery.Execute(orderId);
 
             return ResultHandler.HandleResult(this, result);
         }

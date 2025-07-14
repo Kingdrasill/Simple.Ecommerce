@@ -1,11 +1,11 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.CredentialVerificationContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Enums.Crendetial;
-using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
 {

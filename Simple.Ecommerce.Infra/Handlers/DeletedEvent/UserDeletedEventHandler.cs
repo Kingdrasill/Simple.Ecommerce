@@ -1,12 +1,12 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
+using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent

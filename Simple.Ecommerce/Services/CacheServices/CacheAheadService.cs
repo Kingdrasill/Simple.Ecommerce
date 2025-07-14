@@ -32,14 +32,11 @@ namespace Simple.Ecommerce.Api.Services.CacheServices
                 Console.WriteLine("A cache ainda não foi carregada");
             }
 
-            _cache.LogMetrics();
-
             while (!stoppingToken.IsCancellationRequested) 
             {
                 await Task.Delay(TimeSpan.FromMinutes(10));
                 _cache.AdjustValues();
                 await UpdateFrequencies();
-                _cache.LogMetrics();
             }
         }
 

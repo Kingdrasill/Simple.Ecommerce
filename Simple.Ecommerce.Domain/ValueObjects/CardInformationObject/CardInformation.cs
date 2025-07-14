@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
 

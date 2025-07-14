@@ -15,7 +15,6 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IAddItemsOrderItemCommand _addItemsOrderItemCommand;
         private readonly IChangeDiscountOrderItemCommand _changeDiscountOrderItemCommand;
         private readonly IRemoveAllItemsOrderItemCommand _removeAllItemsOrderItemCommand;
-        private readonly IRemoveDiscountOrderItemCommand _removeDiscountOrderItemCommand;
         private readonly IRemoveItemOrderItemCommand _removeItemOrderItemCommand;
         private readonly IGetOrderItemQuery _getOrderItemQuery;
         private readonly IListOrderItemQuery _listOrderItemQuery;
@@ -25,7 +24,6 @@ namespace Simple.Ecommerce.Api.Controllers
             IAddItemsOrderItemCommand addItemsOrderItemCommand,
             IChangeDiscountOrderItemCommand changeDiscountOrderItemCommand,
             IRemoveAllItemsOrderItemCommand removeAllItemsOrderItemCommand,
-            IRemoveDiscountOrderItemCommand removeDiscountOrderItemCommand,
             IRemoveItemOrderItemCommand removeItemOrderItemCommand,
             IGetOrderItemQuery getOrderItemQuery, 
             IListOrderItemQuery listOrderItemQuery
@@ -35,7 +33,6 @@ namespace Simple.Ecommerce.Api.Controllers
             _addItemsOrderItemCommand = addItemsOrderItemCommand;
             _changeDiscountOrderItemCommand = changeDiscountOrderItemCommand;
             _removeAllItemsOrderItemCommand = removeAllItemsOrderItemCommand;
-            _removeDiscountOrderItemCommand = removeDiscountOrderItemCommand;
             _removeItemOrderItemCommand = removeItemOrderItemCommand;
             _getOrderItemQuery = getOrderItemQuery;
             _listOrderItemQuery = listOrderItemQuery;
@@ -82,15 +79,6 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<OrderItemResponse>> RemoveItem([FromBody] OrderItemRequest request)
         {
             var result = await _removeItemOrderItemCommand.Execute(request);
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
-        [HttpPut("Discount/Remove/{orderId}/{productId}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> RemoveDiscount(int orderId, int productId)
-        {
-            var result = await _removeDiscountOrderItemCommand.Execute(orderId, productId);
 
             return ResultHandler.HandleResult(this, result);
         }

@@ -1,5 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators

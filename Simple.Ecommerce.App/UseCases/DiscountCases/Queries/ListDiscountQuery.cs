@@ -6,7 +6,7 @@ using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries

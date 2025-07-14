@@ -2,6 +2,7 @@
 {
     public record DiscountTierRequest
     (
+        string Name,
         int MinQuality,
         decimal Value,
         int DiscountId,

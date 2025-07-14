@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Domain.Objects;
+﻿using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Interfaces.Services.Cache
 {
@@ -13,6 +13,14 @@ namespace Simple.Ecommerce.App.Interfaces.Services.Cache
             string secondaryPropName,
             Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory,
             Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory
+        );
+        Result<TPrimary> GetFromCache<TEntity, TNested1, TNested2, TPrimary>(
+            int id,
+            string nested1PropName,
+            string nested2PropName,
+            Func<IDictionary<string, object>, string, TNested1?> nested1Factory,
+            Func<IDictionary<string, object>, string, TNested2?> nested2Factory,
+            Func<IDictionary<string, object>, TNested1?, TNested2?, TPrimary> primaryFactory
         );
         Result<TResponse> GetFromCacheByProperty<TEntity, TResponse>(
             string propName,

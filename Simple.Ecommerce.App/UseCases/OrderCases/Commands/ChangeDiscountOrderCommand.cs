@@ -1,12 +1,12 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -52,8 +52,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
                 if (getDiscount.GetValue().DiscountScope != DiscountScope.Order)
                     errors.Add(new("CreateOrderCommand.InvalidDiscountScope", "O desconto não é aplicável a pedidos!"));
-                if (getDiscount.GetValue().DiscountType == DiscountType.Bundle)
-                    errors.Add(new("CreateOrderCommand.InvalidDiscountType", "O desconto de pacote não é aplicável a pedidos!"));
+                if (getDiscount.GetValue().DiscountType is DiscountType.Tiered or DiscountType.BuyOneGetOne or DiscountType.Bundle)
+                    errors.Add(new("CreateOrderCommand.InvalidDiscountType", "O tipo de desconto aplicado não é aplicável a pedidos!"));
                 if (getDiscount.GetValue().ValidFrom > DateTime.UtcNow)
                     errors.Add(new("CreateOrderCommand.DiscountNotValidYet", "O desconto ainda não está válido!"));
                 if (getDiscount.GetValue().ValidTo < DateTime.UtcNow)

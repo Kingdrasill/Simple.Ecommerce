@@ -5,7 +5,7 @@ using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.ProductPhotoContracts;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 

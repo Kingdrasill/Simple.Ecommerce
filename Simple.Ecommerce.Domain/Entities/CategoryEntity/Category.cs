@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;

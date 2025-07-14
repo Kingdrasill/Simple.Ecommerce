@@ -3,7 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.ServiceResolver;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -27,7 +27,10 @@ namespace Simple.Ecommerce.App.Services.Cache
             _repositoryResolver = repositoryResolver;
         }
 
-        public Result<TResponse> GetFromCache<TEntity, TResponse>(int id, Func<IDictionary<string, object>, TResponse> factory)
+        public Result<TResponse> GetFromCache<TEntity, TResponse>(
+            int id, 
+            Func<IDictionary<string, object>, TResponse> factory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItem(entity, id.ToString(), out _);
@@ -39,7 +42,12 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<TResponse>.Success(response);
         }
 
-        public Result<TPrimaryResponse> GetFromCache<TEntity, TSecondaryResponse, TPrimaryResponse>(int id, string secondaryPropName, Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory)
+        public Result<TPrimaryResponse> GetFromCache<TEntity, TSecondaryResponse, TPrimaryResponse>(
+            int id, 
+            string secondaryPropName, 
+            Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, 
+            Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItem(entity, id.ToString(), out _);
@@ -52,7 +60,32 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<TPrimaryResponse>.Success(response);
         }
 
-        public Result<TResponse> GetFromCacheByProperty<TEntity, TResponse>(string propName, object propValue, Func<IDictionary<string, object>, TResponse> factory)
+        public Result<TPrimary> GetFromCache<TEntity, TNested1, TNested2, TPrimary>(
+            int id,
+            string nested1PropName,
+            string nested2PropName,
+            Func<IDictionary<string, object>, string, TNested1?> nested1Factory,
+            Func<IDictionary<string, object>, string, TNested2?> nested2Factory,
+            Func<IDictionary<string, object>, TNested1?, TNested2?, TPrimary> primaryFactory
+        )
+        {
+            var entity = typeof(TEntity).Name;
+            var getCache = _cache.GetItem(entity, id.ToString(), out _);
+            if (getCache is null)
+            {
+                return Result<TPrimary>.Failure(new());
+            }
+            var nested1 = nested1Factory(getCache, nested1PropName);
+            var nested2 = nested2Factory(getCache, nested2PropName);
+            var response = primaryFactory(getCache, nested1, nested2);
+            return Result<TPrimary>.Success(response);
+        }
+
+        public Result<TResponse> GetFromCacheByProperty<TEntity, TResponse>(
+            string propName, 
+            object propValue, 
+            Func<IDictionary<string, object>, TResponse> factory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);
@@ -70,7 +103,9 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<TResponse>.Failure(new()); ;
         }
 
-        public Result<List<TResponse>> ListFromCache<TEntity, TResponse>(Func<IDictionary<string, object>, TResponse> factory)
+        public Result<List<TResponse>> ListFromCache<TEntity, TResponse>(
+            Func<IDictionary<string, object>, TResponse> factory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);
@@ -82,7 +117,11 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<List<TResponse>>.Success(response);
         }
 
-        public Result<List<TPrimaryResponse>> ListFromCache<TEntity, TSecondaryResponse, TPrimaryResponse>(string secondaryPropName, Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory)
+        public Result<List<TPrimaryResponse>> ListFromCache<TEntity, TSecondaryResponse, TPrimaryResponse>(
+            string secondaryPropName, 
+            Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, 
+            Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);
@@ -100,7 +139,11 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<List<TPrimaryResponse>>.Success(response);
         }
 
-        public Result<List<TResponse>> ListFromCacheByProperty<TEntity, TResponse>(string propName, object propValue, Func<IDictionary<string, object>, TResponse> factory)
+        public Result<List<TResponse>> ListFromCacheByProperty<TEntity, TResponse>(
+            string propName, 
+            object propValue, 
+            Func<IDictionary<string, object>, TResponse> factory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);
@@ -119,7 +162,13 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<List<TResponse>>.Success(response);
         }
 
-        public Result<List<TPrimaryResponse>> ListFromCacheByProperty<TEntity, TSecondaryResponse, TPrimaryResponse>(string propName, object propValue, string secondaryPropName, Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory)
+        public Result<List<TPrimaryResponse>> ListFromCacheByProperty<TEntity, TSecondaryResponse, TPrimaryResponse>(
+            string propName, 
+            object propValue, 
+            string secondaryPropName, 
+            Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory, 
+            Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);
@@ -140,7 +189,11 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<List<TPrimaryResponse>>.Success(response);
         }
 
-        public Result<List<TResponse>> ListFromCacheByPropertyIn<TEntity, TResponse>(string propName, IEnumerable<object> propValues, Func<IDictionary<string, object>, TResponse> factory)
+        public Result<List<TResponse>> ListFromCacheByPropertyIn<TEntity, TResponse>(
+            string propName, 
+            IEnumerable<object> propValues, 
+            Func<IDictionary<string, object>, TResponse> factory
+        )
         {
             var entity = typeof(TEntity).Name;
             var getCache = _cache.GetItems(entity, out _);

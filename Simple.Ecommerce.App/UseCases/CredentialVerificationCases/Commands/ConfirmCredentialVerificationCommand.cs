@@ -1,9 +1,9 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
-using Simple.Ecommerce.Domain.Objects;
 
 namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
 {

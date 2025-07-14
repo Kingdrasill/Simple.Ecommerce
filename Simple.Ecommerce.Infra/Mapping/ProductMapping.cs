@@ -35,7 +35,7 @@ namespace Simple.Ecommerce.Infra.Mapping
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder
-                .HasMany(p => p.CartItems)
+                .HasMany(p => p.OrderItems)
                 .WithOne(ci => ci.Product)
                 .HasForeignKey(ci => ci.ProductId)
                 .IsRequired()

@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -11,6 +11,8 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         public DiscountTierValidator() 
         { 
             _builder = new ValidationBuilder()
+                .AddEmptyValue(nameof(DiscountTier.Name), typeof(DiscountTier).Name)
+                .AddMaxLength(nameof(DiscountTier.Name), typeof(DiscountTier).Name, 30)
                 .AddNegativeValueInt(nameof(DiscountTier.MinQuantity), typeof(DiscountTier).Name)
                 .AddNegativeValueDecimal(nameof(DiscountTier.Value), typeof(DiscountTier).Name);
         }

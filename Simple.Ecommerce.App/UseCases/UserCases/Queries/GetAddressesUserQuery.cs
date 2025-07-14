@@ -8,7 +8,7 @@ using Simple.Ecommerce.Contracts.UserAddressContracts;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 

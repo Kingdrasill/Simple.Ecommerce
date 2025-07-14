@@ -1,10 +1,9 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
@@ -68,18 +67,18 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             CardInformation = cardInformation;
         }
 
-        public void Confirm()
+        public void UpdateStatus(string status, bool? confirmation = null, decimal? newTotalPrice = null)
         {
             OrderDate = DateTime.UtcNow;
-            Confirmation = true;
-            Status = "Confirmed";
-        }
-
-        public void Cancel()
-        {
-            OrderDate = DateTime.UtcNow;
-            Confirmation = false;
-            Status = "Canceled";
+            Status = status;
+            if (confirmation.HasValue)
+            {
+                Confirmation = confirmation.Value;
+            }
+            if (newTotalPrice.HasValue)
+            {
+                TotalPrice = newTotalPrice;
+            }
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

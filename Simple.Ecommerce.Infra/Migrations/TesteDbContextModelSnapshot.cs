@@ -187,6 +187,11 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Property<int>("MinQuantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
                     b.Property<decimal>("Value")
                         .HasColumnType("decimal(18,2)");
 
@@ -743,7 +748,7 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .IsRequired();
 
                     b.HasOne("Simple.Ecommerce.Domain.Entities.ProductEntity.Product", "Product")
-                        .WithMany("CartItems")
+                        .WithMany("OrderItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1024,9 +1029,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.ProductEntity.Product", b =>
                 {
-                    b.Navigation("CartItems");
-
                     b.Navigation("DiscountBundleItems");
+
+                    b.Navigation("OrderItems");
 
                     b.Navigation("ProductCategories");
 

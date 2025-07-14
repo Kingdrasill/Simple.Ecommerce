@@ -1,10 +1,10 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.Objects;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {

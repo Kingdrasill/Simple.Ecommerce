@@ -8,6 +8,7 @@ using Simple.Ecommerce.Contracts.DiscountBundleItemContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
 using Simple.Ecommerce.Contracts.ProductDiscountContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -15,7 +16,6 @@ using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
-using Simple.Ecommerce.Domain.Objects;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
@@ -136,6 +136,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                         () => _cacheHandler.ListFromCacheByProperty<DiscountTier, DiscountTierResponse>(nameof(DiscountTier.DiscountId), discount.Id,
                             cache => new DiscountTierResponse(
                                 Convert.ToInt32(cache["Id"]),
+                                Convert.ToString(cache["Name"])!,
                                 Convert.ToInt32(cache["MinQuality"]),
                                 Convert.ToDecimal(cache["Value"])
                             )),
@@ -144,6 +145,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                             async (filterId) => await _discountTierRepository.GetByDiscountId(filterId),
                             discountTier => new DiscountTierResponse(
                                 discountTier.Id,
+                                discountTier.Name,
                                 discountTier.MinQuantity,
                                 discountTier.Value
                             )),

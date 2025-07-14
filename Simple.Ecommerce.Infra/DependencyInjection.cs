@@ -11,6 +11,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
@@ -20,7 +23,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
-using Simple.Ecommerce.App.Interfaces.Services.Patterns.UoW;
+using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -36,7 +39,7 @@ using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.Settings.AesSettings;
 using Simple.Ecommerce.Domain.Settings.EmailSettings;
@@ -46,7 +49,7 @@ using Simple.Ecommerce.Domain.Settings.SmtpSettings;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Infra.Handlers.DeletedEvent;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
-using Simple.Ecommerce.Infra.ReadRepositories;
+using Simple.Ecommerce.Infra.ReadModelRepositories;
 using Simple.Ecommerce.Infra.Repositories;
 using Simple.Ecommerce.Infra.Repositories.Generic;
 using Simple.Ecommerce.Infra.Services.CacheFrequencyInitializer;
@@ -54,7 +57,8 @@ using Simple.Ecommerce.Infra.Services.Cryptography;
 using Simple.Ecommerce.Infra.Services.Dispatcher;
 using Simple.Ecommerce.Infra.Services.Email;
 using Simple.Ecommerce.Infra.Services.JwtToken;
-using Simple.Ecommerce.Infra.UoW;
+using Simple.Ecommerce.Infra.Services.MongoDB;
+using Simple.Ecommerce.Infra.Services.UnityOfWork;
 
 namespace Simple.Ecommerce.Infra
 {
@@ -144,13 +148,17 @@ namespace Simple.Ecommerce.Infra
                 var mongoClient = new MongoClient(mongoDbSettings.ConnectionString);
                 return mongoClient.GetDatabase(mongoDbSettings.DatabaseName);
             });
+            MongoDBClassMaps.RegisterClassMaps();
+            BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
         }
 
         private static void AddReadModelRepositories(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddSingleton<IStockReadRepository, StockReadRepository>();
-            services.AddSingleton<IOrderSummaryReadRepository, OrderSummaryReadRepository>();
-            services.AddSingleton<IUserOrderHistoryReadRepository, UserOrderHistoryReadRepository>();
+            services.AddScoped<IOrderDetailReadModelRepository, OrderDetailMongoDBReadModelRepository>();
+            services.AddScoped<IOrderEventStreamReadModelRepository, OrderEventStreamMongoDBReadModelRepository>();
+            services.AddScoped<IOrderSummaryReadModelRepository, OrderSummaryMongoDBReadModelRepository>();
+            services.AddScoped<IStockMovementReadModelRepository, StockMovementMongoDBReadModelRepository>();
+            services.AddScoped<IUserOrderHistoryReadModelRepository, UserOrderHistoryMongoDBReadModelRepository>();
         }
 
         private static void AddImageService(this IServiceCollection services, IConfiguration configuration)

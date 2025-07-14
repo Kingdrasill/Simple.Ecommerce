@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.Domain.Interfaces.BaseEntity;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 using Microsoft.EntityFrameworkCore;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Infra.Repositories.Generic
 {

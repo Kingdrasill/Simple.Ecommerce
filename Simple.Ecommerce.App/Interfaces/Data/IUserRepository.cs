@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Interfaces.Data
 {

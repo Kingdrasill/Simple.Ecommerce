@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.LoginEntity;
-using Simple.Ecommerce.Domain.Events.DeletedEvent;
-using Simple.Ecommerce.Domain.Objects;
+using Simple.Ecommerce.Domain.EntityDeletionEvents;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity
