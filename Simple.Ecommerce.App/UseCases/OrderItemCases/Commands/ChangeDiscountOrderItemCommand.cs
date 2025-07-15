@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -20,7 +19,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
         private readonly IProductRepository _productRepository;
         private readonly IDiscountRepository _discountRepository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -30,7 +28,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             IProductRepository productRepository,
             IDiscountRepository discountRepository, 
             IDiscountBundleItemRepository discountBundleItemRepository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -40,7 +37,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             _productRepository = productRepository;
             _discountRepository = discountRepository;
             _discountBundleItemRepository = discountBundleItemRepository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -72,6 +68,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                     return Result<bool>.Failure(getDiscount.Errors!);
 
                 var getOrderItemsDiscountInfo = await _repository.GetOrdemItemsDiscountInfo(getOrder.GetValue().Id);
+                if (getOrderItemsDiscountInfo.IsFailure)
+                {
+                    return Result<bool>.Failure(getOrderItemsDiscountInfo.Errors!);
+                }
 
                 var validateResult = await ValidateProductDiscount(getDiscount.GetValue(), getProduct.GetValue(), getOrderItemsDiscountInfo.GetValue());
                 if (validateResult.IsFailure)
@@ -87,12 +87,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             if (updateResult.IsFailure)
             {
                 return Result<bool>.Failure(updateResult.Errors!);
-            }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)
@@ -178,7 +172,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             {
                 return Result<bool>.Failure(errors);
             }
-
             return Result<bool>.Success(true);
         }
     }

@@ -34,7 +34,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<User>> Create(User entity, bool skipSave = false)
         {
-            return await _createRepository.Create(_context, entity);
+            return await _createRepository.Create(_context, entity, skipSave);
         }
 
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
@@ -87,7 +87,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         {
             IQueryable<User> query = _context.Users.AsNoTracking();
 
-            var entity = await query.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+            var entity = await query.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && !u.Deleted);
 
             if (entity is null)
                 return Result<User>.Failure(new List<Error> { new Error("NotFound", "Usuário não foi encontrado!") });
@@ -102,7 +102,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<User>> Update(User entity, bool skipSave = false)
         {
-            return await _updateRepository.Update(_context, entity);
+            return await _updateRepository.Update(_context, entity, skipSave);
         }
     }
 }

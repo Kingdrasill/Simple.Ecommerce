@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.App.Services.Generator;
 using Simple.Ecommerce.Contracts.CouponContracts;
 using Simple.Ecommerce.Domain;
@@ -14,34 +13,27 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
 {
     public class CreateBatchCouponsDiscountCommand : ICreateBatchCouponsDiscountCommand
     {
-        private readonly IDiscountRepository _repository;
-        private readonly ICouponRepository _couponRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
+        private readonly ICreateBatchCouponUnitOfWork _createBatchCouponUoW;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateBatchCouponsDiscountCommand(
-            IDiscountRepository repository, 
-            ICouponRepository couponRepository, 
-            ISaverTransectioner unityOfWork,
+            ICreateBatchCouponUnitOfWork createBatchCouponUoW,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
-            _repository = repository;
-            _couponRepository = couponRepository;
-            _saverOrTransectioner = unityOfWork;
+            _createBatchCouponUoW = createBatchCouponUoW;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
         public async Task<Result<List<CouponResponse>>> Execute(CouponBatchRequest request)
         {
-            await _saverOrTransectioner.BeginTransaction();
-
+            await _createBatchCouponUoW.BeginTransaction();
             try
             {
-                var getDiscount = await _repository.Get(request.DiscountId);
+                var getDiscount = await _createBatchCouponUoW.Discounts.Get(request.DiscountId);
                 if (getDiscount.IsFailure)
                 {
                     throw new ResultException(getDiscount.Errors!);
@@ -54,7 +46,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
                     do
                     {
                         code = string.IsNullOrEmpty(request.Prefix) ? Generator.GenerateCouponCode() : Generator.GenerateCouponCodeWithPrefix(request.Prefix);
-                        var usedCode = await _couponRepository.GetByCode(code);
+                        var usedCode = await _createBatchCouponUoW.Coupons.GetByCode(code);
                         if (usedCode.IsFailure)
                             break;
                     }
@@ -71,12 +63,11 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
                         throw new ResultException(instance.Errors!);
                     }
 
-                    var createResult = await _couponRepository.Create(instance.GetValue());
+                    var createResult = await _createBatchCouponUoW.Coupons.Create(instance.GetValue(), true);
                     if (createResult.IsFailure)
                     {
                         throw new ResultException(createResult.Errors!);
                     }
-
                     var coupon = createResult.GetValue();
 
                     response.Add(new CouponResponse(
@@ -90,7 +81,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
                     ));
                 }
 
-                await _saverOrTransectioner.Commit();
+                await _createBatchCouponUoW.Commit();
 
                 if (_useCache.Use)
                     _cacheHandler.SetItemStale<Coupon>();
@@ -99,12 +90,12 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             }
             catch (ResultException rex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _createBatchCouponUoW.Rollback();
                 return Result<List<CouponResponse>>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _createBatchCouponUoW.Rollback();
                 return Result<List<CouponResponse>>.Failure(new List<Error> { new("CreateBatchCouponsDiscountCommand.Unknown", ex.Message) });
             }
         }

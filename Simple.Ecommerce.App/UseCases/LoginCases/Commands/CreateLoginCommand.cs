@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.LoginCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.LoginContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.LoginEntity;
@@ -14,21 +13,18 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
     {
         private readonly ILoginRepository _repository;
         private readonly IUserRepository _userRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateLoginCommand(
             ILoginRepository repository, 
             IUserRepository userRepository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _userRepository = userRepository;
-            _saverOrTransectioner = unityOfWork;
             _cacheHandler = cacheHandler;
             _useCache = useCache;
         }
@@ -65,12 +61,6 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             if (createResult.IsFailure)
             {
                 return Result<bool>.Failure(createResult.Errors!);
-            }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

@@ -2,9 +2,8 @@
 using ImageFile.Library.Core.Enums;
 using ImageFile.Library.Core.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Contracts.PhotoContracts;
 using Simple.Ecommerce.Contracts.UserPhotoContracts;
 using Simple.Ecommerce.Domain;
@@ -18,22 +17,19 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
     public class AddPhotoUserCommand : IAddPhotoUserCommand
     {
-        private readonly IUserRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
+        private readonly IAddPhotoUserUnitOfWork _addPhotoUserUoW;
         private readonly IImageManager _imageManager;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public AddPhotoUserCommand(
-            IUserRepository repository, 
-            ISaverTransectioner unityOfWork,
+            IAddPhotoUserUnitOfWork addPhotoUserUoW,
             IImageManager imageManager, 
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
-            _repository = repository;
-            _saverOrTransectioner = unityOfWork;
+            _addPhotoUserUoW = addPhotoUserUoW;
             _imageManager = imageManager;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
@@ -42,10 +38,10 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
         public async Task<Result<UserPhotoResponse>> Execute(UserPhotoRequest request, Stream stream, string fileExtension)
         {
             FileImage? savedImage = null;
-            await _saverOrTransectioner.BeginTransaction();
+            await _addPhotoUserUoW.BeginTransaction();
             try
             {
-                var getUser = await _repository.Get(request.Id);
+                var getUser = await _addPhotoUserUoW.Users.Get(request.Id);
                 if (getUser.IsFailure)
                 {
                     throw new ResultException(getUser.Errors!);
@@ -75,18 +71,17 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 var instance = getUser.GetValue();
                 instance.AddOrUpdatePhoto(photo.GetValue());
 
-                var updateResult = await _repository.Update(instance);
+                var updateResult = await _addPhotoUserUoW.Users.Update(instance, true);
                 if (updateResult.IsFailure)
                 {
                     throw new ResultException(updateResult.Errors!);
                 }
 
-                await _saverOrTransectioner.Commit();
-
-                var user = updateResult.GetValue();
-
+                await _addPhotoUserUoW.Commit();
                 if (_useCache.Use)
                     _cacheHandler.SetItemStale<User>();
+
+                var user = updateResult.GetValue();
 
                 var response = new UserPhotoResponse(
                     user.Id,
@@ -97,14 +92,14 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             }
             catch (ResultException rex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _addPhotoUserUoW.Rollback();
                 if (savedImage is not null)
                     await _imageManager.DeleteImageAsync(savedImage.Name);
                 return Result<UserPhotoResponse>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _addPhotoUserUoW.Rollback();
                 if (savedImage is not null)
                     await _imageManager.DeleteImageAsync(savedImage.Name);
                 return Result<UserPhotoResponse>.Failure(new List<Error> { new("AddPhotoUserCommand.Unknown", ex.Message) });

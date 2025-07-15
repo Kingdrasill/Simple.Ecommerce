@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
@@ -15,21 +14,18 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
     {
         private readonly IOrderRepository _repository;
         private readonly IDiscountRepository _discountRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ChangeDiscountOrderCommand(
             IOrderRepository repository, 
             IDiscountRepository discountRepository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _discountRepository = discountRepository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -74,12 +70,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (updateResult.IsFailure)
             {
                 return Result<bool>.Failure(updateResult.Errors!);
-            }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<bool>.Failure(commit.Errors!);
             }
 
             if (_useCache.Use)

@@ -1,9 +1,8 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
@@ -18,30 +17,21 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 {
     public class CreateUserCommand : ICreateUserCommand
     {
-        private readonly IUserRepository _repository;
-        private readonly ILoginRepository _loginRepository;
-        private readonly ICredentialVerificationRepository _credentialVerificationRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
+        private readonly ICreateUserUnitOfWork _createUserUoW;
         private readonly ICryptographyService _cryptographyService;
         private readonly IEmailService _emailService;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateUserCommand(
-            IUserRepository repository,
-            ILoginRepository loginRepository,
-            ICredentialVerificationRepository credentialVerificationRepository,
-            ISaverTransectioner unityOfWork,
+            ICreateUserUnitOfWork createUserUoW,
             ICryptographyService cryptographyService,
             IEmailService emailService,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
-            _repository = repository;
-            _loginRepository = loginRepository;
-            _credentialVerificationRepository = credentialVerificationRepository;
-            _saverOrTransectioner = unityOfWork;
+            _createUserUoW = createUserUoW;
             _cryptographyService = cryptographyService;
             _emailService = emailService;
             _useCache = useCache;
@@ -50,18 +40,18 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 
         public async Task<Result<UserResponse>> Execute(UserRequest request)
         {
-            await _saverOrTransectioner.BeginTransaction();
+            await _createUserUoW.BeginTransaction();
             try
             {
                 // Checkando se usuário com o mesmo email já existe
-                var getUser = await _repository.GetByEmail(request.Email);
+                var getUser = await _createUserUoW.Users.GetByEmail(request.Email);
                 if (getUser.IsSuccess)
                 {
                     throw new ResultException(new Error("CreateUserCommand.Conflict.Email", "Um usuário já cadastrou com este email!"));
                 }
 
                 // Checkando se usuário com o mesmo númerio já existe
-                getUser = await _repository.GetByPhoneNumber(request.PhoneNumber);
+                getUser = await _createUserUoW.Users.GetByPhoneNumber(request.PhoneNumber);
                 if (getUser.IsSuccess)
                 {
                     throw new ResultException(new Error("CreateUserCommand.Conflict.PhoneNumber", "Um usuário já cadastrou com este telefone!"));
@@ -87,12 +77,11 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                     throw new ResultException(userInstance.Errors!);
                 }
 
-                var createUserResult = await _repository.Create(userInstance.GetValue());
+                var createUserResult = await _createUserUoW.Users.Create(userInstance.GetValue(), true);
                 if (createUserResult.IsFailure)
                 {
                     throw new ResultException(createUserResult.Errors!);
                 }
-
                 var user = createUserResult.GetValue();
 
                 // Criando instância de login por email
@@ -108,7 +97,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                     throw new ResultException(loginEmailInstance.Errors!);
                 }
 
-                var createLoginEmailResult = await _loginRepository.Create(loginEmailInstance.GetValue());
+                var createLoginEmailResult = await _createUserUoW.Logins.Create(loginEmailInstance.GetValue(), true);
                 if (createLoginEmailResult.IsFailure)
                 {
                     throw new ResultException(createLoginEmailResult.Errors!);
@@ -126,7 +115,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                     throw new ResultException(credentialVerificationInstance.Errors!);
                 }
 
-                var createCredentialVerificationaResult = await _credentialVerificationRepository.Create(credentialVerificationInstance.GetValue());
+                var createCredentialVerificationaResult = await _createUserUoW.CredentialVerifications.Create(credentialVerificationInstance.GetValue(), true);
                 if (createCredentialVerificationaResult.IsFailure)
                 {
                     throw new ResultException(createCredentialVerificationaResult.Errors!);
@@ -145,21 +134,20 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                     throw new ResultException(loginPhoneNumberInstance.Errors!);
                 }
 
-                var createLoginPhoneNumberResult = await _loginRepository.Create(loginPhoneNumberInstance.GetValue());
+                var createLoginPhoneNumberResult = await _createUserUoW.Logins.Create(loginPhoneNumberInstance.GetValue(), true);
                 if (createLoginPhoneNumberResult.IsFailure)
                 {
                     throw new ResultException(createLoginPhoneNumberResult.Errors!);
                 }
 
-                await _saverOrTransectioner.Commit();
-
-                await _emailService.SendEmailVerification(request.Email, credentialVerificationInstance.GetValue().Token);
-
+                await _createUserUoW.Commit();
                 if (_useCache.Use)
                 {
                     _cacheHandler.SetItemStale<User>();
                     _cacheHandler.SetItemStale<Login>();
                 }
+
+                await _emailService.SendEmailVerification(request.Email, credentialVerificationInstance.GetValue().Token);
 
                 var response = new UserResponse(
                     user.Id,
@@ -172,12 +160,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             }
             catch (ResultException rex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _createUserUoW.Rollback();
                 return Result<UserResponse>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _createUserUoW.Rollback();
                 return Result<UserResponse>.Failure(new List<Error> { new("CreateUserCommand.Unknown", ex.Message) });
             }
         }

@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.UserContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
@@ -12,19 +11,16 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
     public class UpdateUserCommand : IUpdateUserCommand
     {
         private readonly IUserRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public UpdateUserCommand(
             IUserRepository repository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -54,13 +50,6 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             {
                 return Result<UserResponse>.Failure(updateResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<UserResponse>.Failure(commit.Errors!);
-            }
-
             var user = updateResult.GetValue();
 
             if (_useCache.Use)

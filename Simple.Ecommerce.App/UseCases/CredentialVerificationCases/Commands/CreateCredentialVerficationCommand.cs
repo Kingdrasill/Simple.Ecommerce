@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.CredentialVerificationCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.CredentialVerificationContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
@@ -13,19 +12,16 @@ namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
     {
         private readonly ICredentialVerificationRepository _repository;
         private readonly ILoginRepository _loginRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly IEmailService _emailService;
 
         public CreateCredentialVerficationCommand(
             ICredentialVerificationRepository repository, 
             ILoginRepository loginRepository,
-            ISaverTransectioner unityOfWork,
             IEmailService emailService
         )
         {
             _repository = repository;
             _loginRepository = loginRepository;
-            _saverOrTransectioner = unityOfWork;
             _emailService = emailService;
         }
 
@@ -36,7 +32,6 @@ namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
             {
                 return Result<CredentialVerificationResponse>.Failure(getLogin.Errors!);
             }
-
             var login = getLogin.GetValue();
 
             var instance = new CredentialVerification().Create(
@@ -56,19 +51,13 @@ namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
                 return Result<CredentialVerificationResponse>.Failure(createResult.Errors!);
             }
 
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {                
-                return Result<CredentialVerificationResponse>.Failure(commit.Errors!);
-            }
-
             switch (login.Type)
             {
                 case CredentialType.Email:
                     await _emailService.SendEmailVerification(getLogin.GetValue().Credential, createResult.GetValue().Token);
                     break;
                 case CredentialType.Phone:
-                    // Adicionar envio de verificação por sms
+                    // Adicionar envio de verificação por sms/whatsapp
                     break;
                 case CredentialType.Social:
                     // Adicionar verificação por rede social

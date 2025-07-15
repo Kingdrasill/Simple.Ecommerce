@@ -1,10 +1,11 @@
-﻿using ImageFile.Library.Core.Services;
+﻿using ImageFile.Library.Core.Enums;
+using ImageFile.Library.Core.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
@@ -12,21 +13,18 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
     public class RemovePhotoUserCommand : IRemovePhotoUserCommand
     {
         private readonly IUserRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly IImageManager _imageManager;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public RemovePhotoUserCommand(
             IUserRepository repository, 
-            ISaverTransectioner unityOfWork,
             IImageManager imageManager, 
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
-            _saverOrTransectioner = unityOfWork;
             _imageManager = imageManager;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
@@ -47,16 +45,20 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
             }
 
             var deletePhotoResult = await _repository.DeletePhotoFromUser(user.Id);
-            if (deletePhotoResult.IsSuccess)
+            if (deletePhotoResult.IsFailure)
             {
-                var commit = await _saverOrTransectioner.SaveChanges();
-                if (commit.IsFailure)
-                    return commit;
+                return Result<bool>.Failure(deletePhotoResult.Errors!);
+            }
 
-                if (_useCache.Use)
-                    _cacheHandler.SetItemStale<User>();
+            if (_useCache.Use)
+                _cacheHandler.SetItemStale<User>();
 
-                await _imageManager.DeleteImageAsync(user.Photo.FileName);
+            var deleteImage  = await _imageManager.DeleteImageAsync(user.Photo.FileName);
+            if (deleteImage.Result != ImageOperationResult.Success)
+            {
+                List<Error> errors = new List<Error> { new("RemovePhotoProductCommand.DeleteError", "A imagem foi deletada do usuário, porém houve um erro no sistema de arquivos e será apagada depois.") };
+                errors.Add(new($"ImageFileSystem.{deleteImage.Result}", deleteImage.ErrorMessage!));
+                return Result<bool>.Failure(errors);
             }
 
             return deletePhotoResult;

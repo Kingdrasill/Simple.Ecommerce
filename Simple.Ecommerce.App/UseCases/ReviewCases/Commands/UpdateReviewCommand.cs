@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.ReviewCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.ReviewContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
@@ -14,7 +13,6 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Commands
         private readonly IReviewRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly IProductRepository _productRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -22,7 +20,6 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Commands
             IReviewRepository repository,
             IUserRepository userRepository,
             IProductRepository productRepository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
@@ -30,7 +27,6 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Commands
             _repository = repository;
             _userRepository = userRepository;
             _productRepository = productRepository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -72,13 +68,6 @@ namespace Simple.Ecommerce.App.UseCases.ReviewCases.Commands
             {
                 return Result<ReviewResponse>.Failure(updateResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<ReviewResponse>.Failure(commit.Errors!);
-            }
-
             var review = updateResult.GetValue();
 
             if (_useCache.Use)

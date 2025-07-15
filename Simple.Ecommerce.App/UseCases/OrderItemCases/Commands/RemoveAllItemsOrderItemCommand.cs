@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
@@ -12,30 +11,27 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 {
     public class RemoveAllItemsOrderItemCommand : IRemoveAllItemsOrderItemCommand
     {
-        private readonly IOrderItemRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
+        private readonly IRemoveAllItemsOrderUnitOfWork _removeAllItemsOrderUoW;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public RemoveAllItemsOrderItemCommand(
-            IOrderItemRepository repository,
-            ISaverTransectioner unityOfWork,
+            IRemoveAllItemsOrderUnitOfWork removeAllItemsOrderUoW,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
-            _repository = repository;
-            _saverOrTransectioner = unityOfWork;
+            _removeAllItemsOrderUoW = removeAllItemsOrderUoW;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
         public async Task<Result<bool>> Execute(int orderId)
         {
-            await _saverOrTransectioner.BeginTransaction();
+            await _removeAllItemsOrderUoW.BeginTransaction();
             try
             {
-                var getOrderItems = await _repository.GetByOrderId(orderId);
+                var getOrderItems = await _removeAllItemsOrderUoW.OrderItems.GetByOrderId(orderId);
                 if (getOrderItems.IsFailure)
                 {
                     throw new ResultException(getOrderItems.Errors!);
@@ -43,15 +39,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 
                 foreach (var orderItem in getOrderItems.GetValue())
                 {
-                    var deleteResult = await _repository.Delete(orderItem.Id);
+                    var deleteResult = await _removeAllItemsOrderUoW.OrderItems.Delete(orderItem.Id, true);
                     if (deleteResult.IsFailure)
                     {
                         throw new ResultException(deleteResult.Errors!);
                     }
                 }
 
-                await _saverOrTransectioner.Commit();
-
+                await _removeAllItemsOrderUoW.Commit();
                 if (_useCache.Use)
                     _cacheHandler.SetItemStale<OrderItem>();
 
@@ -59,12 +54,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             }
             catch (ResultException rex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _removeAllItemsOrderUoW.Rollback();
                 return Result<bool>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _removeAllItemsOrderUoW.Rollback();
                 return Result<bool>.Failure(new List<Error> { new("RemoveAllItemsOrderItemCommand.Unknown", ex.Message) });
             }
         }

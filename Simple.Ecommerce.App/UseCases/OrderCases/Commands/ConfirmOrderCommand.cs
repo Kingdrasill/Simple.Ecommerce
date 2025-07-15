@@ -3,6 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -33,7 +34,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             var getCompleteOrder = await _repository.GetCompleteOrder(id);
             if (getCompleteOrder.IsFailure)
             {
-                return Result<OrderCompleteDTO>.Failure(getCompleteOrder.Errors!);
+                List<Error> errors = new List<Error>{ new("ConfirmOrderCommand.ProcessedError", "O pedido foi processado mas falhou de buscar os dados do pedido.") };
+                errors.AddRange(getCompleteOrder.Errors!);
+                return Result<OrderCompleteDTO>.Failure(errors);
             }
 
             return Result<OrderCompleteDTO>.Success(getCompleteOrder.GetValue());

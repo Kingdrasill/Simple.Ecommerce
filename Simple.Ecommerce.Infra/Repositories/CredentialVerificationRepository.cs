@@ -26,7 +26,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<CredentialVerification>> Create(CredentialVerification entity, bool skipSave = false)
         {
-            return await _createRepository.Create(_context, entity);
+            return await _createRepository.Create(_context, entity, skipSave);
         }
 
         public async Task<Result<CredentialVerification>> GetByToken(string token)
@@ -46,7 +46,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<CredentialVerification>> Update(CredentialVerification entity, bool skipSave = false)
         {
-            return await _updateRepository.Update(_context, entity);
+            return await _updateRepository.Update(_context, entity, skipSave);
         }
     }
 }

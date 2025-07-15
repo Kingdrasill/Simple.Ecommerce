@@ -3,7 +3,6 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CardService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.CardInformationContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain;
@@ -18,7 +17,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
     public class ChangePaymentMethodOrderCommand : IChangePaymentMethodOrderCommand
     {
         private readonly IOrderRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly ICryptographyService _cryptographyService;
         private readonly ICardService _cardService;
         private readonly UseCache _useCache;
@@ -26,7 +24,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
         public ChangePaymentMethodOrderCommand(
             IOrderRepository repository, 
-            ISaverTransectioner unityOfWork,
             ICryptographyService cryptographyService,
             ICardService cardService,
             UseCache useCache, 
@@ -34,7 +31,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
         )
         {
             _repository = repository;
-            _saverOrTransectioner = unityOfWork;
             _cryptographyService = cryptographyService;
             _cardService = cardService;
             _useCache = useCache;
@@ -106,13 +102,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             {
                 return Result<OrderPaymentMethodResponse>.Failure(updateResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<OrderPaymentMethodResponse>.Failure(commit.Errors!);
-            }
-
             var order = updateResult.GetValue();
 
             if (_useCache.Use)

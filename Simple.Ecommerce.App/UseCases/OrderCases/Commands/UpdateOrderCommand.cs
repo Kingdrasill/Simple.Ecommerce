@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Domain;
@@ -18,7 +17,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
         private readonly IOrderRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly IDiscountRepository _discountRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -26,7 +24,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             IOrderRepository repository,
             IUserRepository userRepository,
             IDiscountRepository discountRepository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
@@ -34,7 +31,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             _repository = repository;
             _userRepository = userRepository;
             _discountRepository = discountRepository;
-            _saverOrTransectioner = unityOfWork;
             _cacheHandler = cacheHandler;
             _useCache = useCache;
         }
@@ -57,7 +53,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (getDiscount is not null)
             {
                 if (getDiscount.IsFailure)
+                {
                     return Result<OrderResponse>.Failure(getDiscount.Errors!);
+                }
 
                 List<Error> errors = new();
 
@@ -115,13 +113,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             {
                 return Result<OrderResponse>.Failure(updateResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<OrderResponse>.Failure(commit.Errors!);
-            }
-
             var order = updateResult.GetValue();
 
             if (_useCache.Use)

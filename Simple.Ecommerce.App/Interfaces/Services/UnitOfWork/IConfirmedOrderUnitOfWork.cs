@@ -1,8 +1,8 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 
-namespace Simple.Ecommerce.App.Interfaces.Services.UnityOfWork
+namespace Simple.Ecommerce.App.Interfaces.Services.UnitOfWork
 {
-    public interface IConfirmedOrderUnityOfWork : IBaseUnityOfWork
+    public interface IConfirmedOrderUnitOfWork : IBaseUnitOfWork
     {
         IUserRepository Users { get; }
         IOrderRepository Orders { get; }

@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.ProductContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
@@ -13,19 +12,16 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
     public class CreateProductCommand : ICreateProductCommand
     {
         private readonly IProductRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateProductCommand(
             IProductRepository repository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -55,13 +51,6 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
             {
                 return Result<ProductResponse>.Failure(createResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<ProductResponse>.Failure(commit.Errors!);
-            }
-
             var product = createResult.GetValue();
 
             if (_useCache.Use)

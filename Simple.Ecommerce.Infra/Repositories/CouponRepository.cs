@@ -35,7 +35,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<Coupon>> Create(Coupon entity, bool skipSave = false)
         {
-            return await _createRepository.Create(_context, entity);
+            return await _createRepository.Create(_context, entity, skipSave);
         }
 
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)

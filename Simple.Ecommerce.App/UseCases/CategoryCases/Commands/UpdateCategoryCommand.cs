@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.CategoryCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.CategoryContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
@@ -12,19 +11,16 @@ namespace Simple.Ecommerce.App.UseCases.CategoryCases.Commands
     public class UpdateCategoryCommand : IUpdateCategoryCommand
     {
         private readonly ICategoryRepository _repository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public UpdateCategoryCommand(
             ICategoryRepository repository,
-            ISaverTransectioner unityOfWork,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
-            _saverOrTransectioner = unityOfWork;
             _cacheHandler = cacheHandler;
             _useCache = useCache;
         }
@@ -51,13 +47,6 @@ namespace Simple.Ecommerce.App.UseCases.CategoryCases.Commands
             {
                 return Result<CategoryResponse>.Failure(updateResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<CategoryResponse>.Failure(commit.Errors!);
-            }
-
             var category = updateResult.GetValue();
 
             if (_useCache.Use)

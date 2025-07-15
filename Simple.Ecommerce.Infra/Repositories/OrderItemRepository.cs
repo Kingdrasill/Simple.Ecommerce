@@ -41,7 +41,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
-            return await _deleteRepository.Delete(_context, id);
+            return await _deleteRepository.Delete(_context, id, skipSave);
         }
 
         public async Task<Result<OrderItem>> Get(int id, bool NoTracking = true)

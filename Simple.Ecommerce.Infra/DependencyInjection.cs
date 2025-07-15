@@ -23,7 +23,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -58,7 +58,7 @@ using Simple.Ecommerce.Infra.Services.Dispatcher;
 using Simple.Ecommerce.Infra.Services.Email;
 using Simple.Ecommerce.Infra.Services.JwtToken;
 using Simple.Ecommerce.Infra.Services.MongoDB;
-using Simple.Ecommerce.Infra.Services.UnityOfWork;
+using Simple.Ecommerce.Infra.Services.UnitOfWork;
 
 namespace Simple.Ecommerce.Infra
 {
@@ -116,8 +116,14 @@ namespace Simple.Ecommerce.Infra
 
         private static void AddUnitiesOfWork(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<ISaverTransectioner, SaverTransectioner>();
-            services.AddScoped<IConfirmedOrderUnityOfWork, ConfirmedOrderUnityOfWork>();
+            services.AddScoped<IAddItemsOrderUnitOfWork, AddItemsOrderUnitOfWork>();
+            services.AddScoped<IAddPhotoProductUnitOfWork, AddPhotoProductUnitOfWork>();
+            services.AddScoped<IAddPhotoUserUnitOfWork, AddPhotoUserUnitOfWork>();
+            services.AddScoped<IConfirmCredentialVerificationUnitOfWork, ConfirmCredentialVerificationUnitOfWork>();
+            services.AddScoped<IConfirmedOrderUnitOfWork, ConfirmedOrderUnitOfWork>();
+            services.AddScoped<ICreateBatchCouponUnitOfWork, CreateBatchCouponUnitOfWork>();
+            services.AddScoped<ICreateUserUnitOfWork, CreateUserUnitOfWork>();
+            services.AddScoped<IRemoveAllItemsOrderUnitOfWork, RemoveAllItemsOrderUnitOfWork>();
         }
 
         private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)

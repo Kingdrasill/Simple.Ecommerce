@@ -28,7 +28,7 @@ namespace Simple.Ecommerce.Infra.Services.Email
             email.To.Add(MailboxAddress.Parse(to));
             email.Subject = "Confirme seu e-mail";
 
-            var verificationLink = $"{_emailSettings.VerificationBaseUrl}?token={token}";
+            var verificationLink = $"{_emailSettings.VerificationBaseUrl}/{token}";
             var bodyBuilder = new BodyBuilder
             {
                 HtmlBody = $@"

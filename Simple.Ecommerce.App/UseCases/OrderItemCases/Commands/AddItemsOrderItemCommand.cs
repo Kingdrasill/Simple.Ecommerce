@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
@@ -16,58 +15,41 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 {
     public class AddItemsOrderItemCommand : IAddItemsOrderItemCommand
     {
-        private readonly IOrderItemRepository _repository;
-        private readonly IOrderRepository _orderRepository;
-        private readonly IProductRepository _productRepository;
-        private readonly IDiscountRepository _discountRepository;
-        private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
+        private readonly IAddItemsOrderUnitOfWork _addItemsOrderUoW;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public AddItemsOrderItemCommand(
-            IOrderItemRepository repository, 
-            IOrderRepository orderRepository, 
-            IProductRepository productRepository, 
-            IDiscountRepository discountRepository,
-            IDiscountBundleItemRepository discountBundleItemRepository,
-            ISaverTransectioner unityOfWork,
+            IAddItemsOrderUnitOfWork addItemsOrderUoW,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
-            _repository = repository;
-            _orderRepository = orderRepository;
-            _productRepository = productRepository;
-            _discountRepository = discountRepository;
-            _discountBundleItemRepository = discountBundleItemRepository;
-            _saverOrTransectioner = unityOfWork;
+            _addItemsOrderUoW = addItemsOrderUoW;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
 
         public async Task<Result<OrderItemsResponse>> Execute(OrderItemsRequest request)
         {
-            await _saverOrTransectioner.BeginTransaction();
+            await _addItemsOrderUoW.BeginTransaction();
             try
             {
-                var getOrder = await _orderRepository.Get(request.OrderId);
+                var getOrder = await _addItemsOrderUoW.Orders.Get(request.OrderId);
                 if (getOrder.IsFailure)
                 {
                     throw new ResultException(getOrder.Errors!);
                 }
-
                 var order = getOrder.GetValue();
 
-                var getOrderItemsDiscountInfo = await _repository.GetOrdemItemsDiscountInfo(order.Id);
+                var getOrderItemsDiscountInfo = await _addItemsOrderUoW.OrderItems.GetOrdemItemsDiscountInfo(order.Id);
                 if (getOrderItemsDiscountInfo.IsFailure)
                 {
                     throw new ResultException(getOrderItemsDiscountInfo.Errors!);
                 }
-
                 var orderItemsDiscountInfo = getOrderItemsDiscountInfo.GetValue();
+                
                 OrderItemsResponse response = new OrderItemsResponse(new List<OrderItemResponse>());
-
                 foreach (var orderItemRequest in request.OrderItems)
                 {
                     if (request.OrderId != order.Id)
@@ -75,15 +57,14 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                         throw new ResultException(new Error("AddItemsOrderItemCommand.NotRelated.OrderId", "Um dos itens é de um pedido diferente!"));
                     }
 
-                    var getProduct = await _productRepository.Get(orderItemRequest.ProductId);
+                    var getProduct = await _addItemsOrderUoW.Products.Get(orderItemRequest.ProductId);
                     if (getProduct.IsFailure)
                     {
                         throw new ResultException(getProduct.Errors!);
                     }
-
                     var product = getProduct.GetValue();
 
-                    var getDiscount = orderItemRequest.DiscountId is null ? null : await _discountRepository.Get(orderItemRequest.DiscountId.Value);
+                    var getDiscount = orderItemRequest.DiscountId is null ? null : await _addItemsOrderUoW.Discounts.Get(orderItemRequest.DiscountId.Value);
                     if (getDiscount is not null)
                     {
                         if (getDiscount.IsFailure)
@@ -100,7 +81,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 
                     OrderItemResponse itemResponse = new OrderItemResponse(0, 0, 0, 0, 0, null);
 
-                    var getOrderItem = await _repository.GetByOrderIdAndProductId(order.Id, product.Id);
+                    var getOrderItem = await _addItemsOrderUoW.OrderItems.GetByOrderIdAndProductId(order.Id, product.Id);
                     if (getOrderItem.IsSuccess)
                     {
                         var orderItem = getOrderItem.GetValue();
@@ -112,7 +93,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                             throw new ResultException(validateOrderItem.Errors!);
                         }
 
-                        var updateResult = await _repository.Update(orderItem);
+                        var updateResult = await _addItemsOrderUoW.OrderItems.Update(orderItem, true);
                         if (updateResult.IsFailure)
                         {
                             throw new ResultException(updateResult.Errors!);
@@ -144,12 +125,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                             throw new ResultException(instance.Errors!);
                         }
 
-                        var createResult = await _repository.Create(instance.GetValue());
+                        var createResult = await _addItemsOrderUoW.OrderItems.Create(instance.GetValue(), true);
                         if (createResult.IsFailure)
                         {
                             throw new ResultException(createResult.Errors!);
                         }
-
                         var orderItem = createResult.GetValue();
 
                         itemResponse = new OrderItemResponse(
@@ -168,12 +148,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                         itemResponse.DiscountId,
                         getDiscount is null ? null : getDiscount.GetValue().DiscountType
                     ));
-
                     response.OrderItems.Add(itemResponse);
                 }
 
-                await _saverOrTransectioner.Commit();
-
+                await _addItemsOrderUoW.Commit();
                 if (_useCache.Use)
                     _cacheHandler.SetItemStale<OrderItem>();
 
@@ -181,12 +159,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             }
             catch (ResultException rex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _addItemsOrderUoW.Rollback();
                 return Result<OrderItemsResponse>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _saverOrTransectioner.Rollback();
+                await _addItemsOrderUoW.Rollback();
                 return Result<OrderItemsResponse>.Failure(new List<Error> { new("AddItemsOrderItemCommand.Unknown", ex.Message) });
             }
         }
@@ -212,7 +190,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 
             if (discount.DiscountType == DiscountType.Bundle)
             {
-                var getProductIdsOfBundle = await _discountBundleItemRepository.GetProductIdsByDiscountId(discount.Id);
+                var getProductIdsOfBundle = await _addItemsOrderUoW.DiscountBundleItems.GetProductIdsByDiscountId(discount.Id);
                 if (getProductIdsOfBundle.IsFailure)
                 {
                     return Result<bool>.Failure(getProductIdsOfBundle.Errors!);
@@ -235,7 +213,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             }
             else
             {
-                var getProductBundles = await _discountBundleItemRepository.GetByProductId(product.Id);
+                var getProductBundles = await _addItemsOrderUoW.DiscountBundleItems.GetByProductId(product.Id);
                 if (getProductBundles.IsFailure)
                 {
                     return Result<bool>.Failure(getProductBundles.Errors!);
@@ -243,7 +221,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
 
                 foreach (var bundle in getProductBundles.GetValue())
                 {
-                    var getProductsIdsOfBundle = await _discountBundleItemRepository.GetProductIdsByDiscountId(bundle.DiscountId);
+                    var getProductsIdsOfBundle = await _addItemsOrderUoW.DiscountBundleItems.GetProductIdsByDiscountId(bundle.DiscountId);
                     if (getProductsIdsOfBundle.IsFailure)
                     {
                         return Result<bool>.Failure(getProductsIdsOfBundle.Errors!);
@@ -268,7 +246,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             {
                 return Result<bool>.Failure(errors);
             }
-
             return Result<bool>.Success(true);
         }
     }

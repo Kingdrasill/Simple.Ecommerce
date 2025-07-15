@@ -1,7 +1,6 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.App.Interfaces.Services.Cache;
+﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
@@ -19,14 +18,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
     public class ProcessConfirmedOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedOrderCommand, Result<Order>>
     {
-        private readonly IConfirmedOrderUnityOfWork _confirmedOrderUoW;
+        private readonly IConfirmedOrderUnitOfWork _confirmedOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
         private readonly IOrderProcessingChain _orderChain;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ProcessConfirmedOrderCommandHandler(
-            IConfirmedOrderUnityOfWork confirmedOrderUoW,
+            IConfirmedOrderUnitOfWork confirmedOrderUoW,
             IOrderProcessingDispatcher orderDispatcher,
             IOrderProcessingChain orderChain,
             UseCache useCache,

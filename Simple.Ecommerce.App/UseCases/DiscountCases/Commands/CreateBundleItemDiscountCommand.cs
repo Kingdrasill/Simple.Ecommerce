@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.DiscountCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.UnityOfWork;
 using Simple.Ecommerce.Contracts.DiscountBundleItemContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
@@ -14,21 +13,18 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
     {
         private readonly IDiscountRepository _repository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
-        private readonly ISaverTransectioner _saverOrTransectioner;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public CreateBundleItemDiscountCommand(
             IDiscountRepository repository, 
             IDiscountBundleItemRepository discountBundleItemRepository, 
-            ISaverTransectioner unityOfWork,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _discountBundleItemRepository = discountBundleItemRepository;
-            _saverOrTransectioner = unityOfWork;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -63,13 +59,6 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             {
                 return Result<DiscountBundleItemResponse>.Failure(createResult.Errors!);
             }
-
-            var commit = await _saverOrTransectioner.SaveChanges();
-            if (commit.IsFailure)
-            {
-                return Result<DiscountBundleItemResponse>.Failure(commit.Errors!);
-            }
-
             var discountBundleItem = createResult.GetValue();
 
             if (_useCache.Use)

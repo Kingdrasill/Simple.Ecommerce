@@ -56,7 +56,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<Login>> Create(Login entity, bool skipSave = false)
         {
-            return await _createRepository.Create(_context, entity);
+            return await _createRepository.Create(_context, entity, skipSave);
         }
 
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
@@ -96,7 +96,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<Login>> Update(Login entity, bool skipSave = false)
         {
-            return await _updateRepository.Update(_context, entity);
+            return await _updateRepository.Update(_context, entity, skipSave);
         }
     }
 }
