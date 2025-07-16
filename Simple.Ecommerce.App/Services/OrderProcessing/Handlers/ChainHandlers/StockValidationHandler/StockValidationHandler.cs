@@ -1,6 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.StockEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.StockValidationHandler
@@ -33,9 +34,20 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.S
                     throw new ResultException(new Error("StockValidationHandler.Missing", $"O produto {item.ProductName} só possui em estoque {product.Stock} e para esse pedido é necessário {item.Quantity}!"));
                 }
 
-                // Adicionar um lágica de reservar estoque
+                product.ChangeStock(-item.Quantity);
+                var updateProduct = await _productRepository.Update(product, true);
+                if (updateProduct.IsFailure)
+                {
+                    throw new ResultException(new Error("StockValidationHandler.StockChange", $"Não foi possível alterar o estoque do produto {item.ProductName}!"));
+                }
 
-                Console.WriteLine($"\t\t-Reservando {item.Quantity} de {item.ProductName} (Produto ID: {item.Id})");
+                Console.WriteLine($"\t[StockValidationHandler] Reservando {item.Quantity} de {item.ProductName} (Produto ID: {item.Id})");
+                var stockReservationEvent = new StockReservedEvent(
+                    orderInProcess.Id,
+                    item.ProductId,
+                    item.Quantity
+                );
+                orderInProcess.AddEvent(stockReservationEvent);
             } 
 
             // Passando para o Próximo Handler

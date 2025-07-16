@@ -28,5 +28,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
         public bool IsFreeItem { get; set; }
         [BsonElement("isBundleItem")]
         public bool IsBundleItem { get; set; }
+        [BsonElement("bundleId")]
+        public Guid? BundleId { get; set; }
     }
 }

@@ -62,6 +62,11 @@ namespace Simple.Ecommerce.Domain.Entities.ProductEntity
             return new ProductValidator().Validate(new Product(id, name, price, description, stock));
         }
 
+        public void ChangeStock(int value)
+        {
+            Stock += value;
+        }
+
         public override void MarkAsDeleted(bool raiseEvent = true)
         {
             if (Deleted)

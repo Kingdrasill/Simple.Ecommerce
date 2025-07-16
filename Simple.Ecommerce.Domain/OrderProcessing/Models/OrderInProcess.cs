@@ -207,8 +207,8 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                     new AppliedDiscountDetail(discountId, discountName, discountType)
                 ));
             }
-            
-            Bundles.Add(new AppliedBundle(discountId, discountName, discountType, bundle));
+            var appliedBundle = new AppliedBundle(discountId, discountName, discountType, bundle);
+            Bundles.Add(appliedBundle);
             TotalDiscount += amountDiscountedTotal;
             CurrentTotalPrice -= amountDiscountedTotal;
 
@@ -220,7 +220,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 b.CurrentPrice,
                 b.AmountDiscountedPrice
             )).ToList();
-            var publishEvent = new BundleDiscountAppliedEvent(Id, discountId, discountName, discountType, bundleItemEntries, amountDiscountedTotal, CurrentTotalPrice);
+            var publishEvent = new BundleDiscountAppliedEvent(Id, discountId, discountName, discountType, appliedBundle.Id, bundleItemEntries, amountDiscountedTotal, CurrentTotalPrice);
             AddEvent(publishEvent);
             return publishEvent;
         }
@@ -245,7 +245,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             UnAppliedDiscounts.Remove(orderDiscountInProcess);
         }
 
-        private void AddEvent(IOrderProcessingEvent @event) 
+        public void AddEvent(IOrderProcessingEvent @event) 
         {
             _events.Add(@event);
         }

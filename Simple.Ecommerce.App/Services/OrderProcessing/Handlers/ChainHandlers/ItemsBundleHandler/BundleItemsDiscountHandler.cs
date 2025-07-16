@@ -40,7 +40,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 
                     var bundleItems = getBundleItems.GetValue();
                     var productIds = bundleItems.Select(bi => bi.ProductId).ToList();
-                    var orderBundleItems = orderInProcess.Items.Where(i => productIds.Contains(i.Id)).ToList();
+                    var orderBundleItems = orderInProcess.Items.Where(i => productIds.Contains(i.ProductId)).ToList();
 
                     if (orderBundleItems.Count == bundleItems.Count)
                     {
@@ -82,11 +82,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 
                             for (var i = 0; i < bundleCount; i++)
                             {
-                                foreach (var information in bundleItemsInformation)
-                                {
-                                    var publishEvent = orderInProcess.ApplyBundleItemDiscount(bundleDetails, discount.Id, discount.Name, discount.DiscountType);
-                                    Console.WriteLine($"\t[BundleItemDiscountsHandler] Desconto {discount.Name} aplicado ao pedido. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {publishEvent.CurrentTotal:C}.");
-                                }
+                                var publishEvent = orderInProcess.ApplyBundleItemDiscount(bundleDetails, discount.Id, discount.Name, discount.DiscountType);
+                                Console.WriteLine($"\t[BundleItemDiscountsHandler] Desconto {discount.Name} aplicado ao pedido. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {publishEvent.CurrentTotal:C}.");
                             }
                         }
                         else

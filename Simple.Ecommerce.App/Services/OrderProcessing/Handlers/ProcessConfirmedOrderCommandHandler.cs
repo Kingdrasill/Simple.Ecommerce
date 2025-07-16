@@ -16,7 +16,7 @@ using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
-    public class ProcessConfirmedOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedOrderCommand, Result<Order>>
+    public class ProcessConfirmedOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedOrderCommand, Result<bool>>
     {
         private readonly IConfirmedOrderUnitOfWork _confirmedOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
@@ -39,7 +39,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<Order>> Handle(ProcessConfirmedOrderCommand command)
+        public async Task<Result<bool>> Handle(ProcessConfirmedOrderCommand command)
         {
             Console.WriteLine($"\n[ProcessConfirmedOrderCommandHandler] Començando o processamento do pedido {command.OrderId}.");
             await _confirmedOrderUoW.BeginTransaction();
@@ -54,7 +54,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
                 var order = getOrder.GetValue();
 
-                if (order.Status is not ("Created" or "Confirmed" or "Canceled" or "Failed"))
+                if (order.Status is not ("Created" or "Canceled" or "Failed Confirmed"))
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!");
                     throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido { command.OrderId } já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!"));
@@ -164,7 +164,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     _cacheHandler.SetItemStale<OrderItem>();
                 }
 
-                return Result<Order>.Success(order);
+                return Result<bool>.Success(true);
             }
             catch (ResultException rex)
             {
@@ -175,13 +175,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed", false, 0);
+                    order.UpdateStatus("Failed Confirmed", false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
 
-                return Result<Order>.Failure(rex.Errors);
+                return Result<bool>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
@@ -192,13 +192,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed", false, 0);
+                    order.UpdateStatus("Failed Confirmed", false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
 
-                return Result<Order>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Unknown", ex.Message) });
+                return Result<bool>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Unknown", ex.Message) });
             }
         }
 

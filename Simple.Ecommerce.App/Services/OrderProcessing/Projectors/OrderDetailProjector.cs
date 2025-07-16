@@ -65,6 +65,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                     IsFreeItem = false,
                     IsBundleItem = false
                 }).ToList(),
+                AppliedDiscount = null,
                 AppliedDiscounts = new List<string>()
             };
             await _orderDetailReadModelRepository.Upsert(readModel);
@@ -188,7 +189,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                         IsTieredItem = false,
                         TierName = null,
                         IsFreeItem = false,
-                        IsBundleItem = true
+                        IsBundleItem = true,
+                        BundleId = @event.BundleId
                     });
                 }
                 readModel.AmountDiscounted += @event.AmountDiscountedTotal;
@@ -205,6 +207,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             {
                 readModel.AmountDiscounted += @event.AmountDiscounted;
                 readModel.CurrentTotal = @event.CurrentTotal;
+                readModel.AppliedDiscount = (@event.DiscountId, @event.DiscountName);
                 readModel.AppliedDiscounts.Add(@event.DiscountName);
                 await _orderDetailReadModelRepository.Upsert(readModel);
             }
