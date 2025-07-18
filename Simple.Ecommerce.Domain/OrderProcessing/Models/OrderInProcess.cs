@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.OrderType;
-using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Interfaces.OrderProcessingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBOGOEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBundleEvent;
@@ -10,7 +9,7 @@ using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ShippingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.TaxEvent;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 
 namespace Simple.Ecommerce.Domain.OrderProcessing.Models
 {
@@ -20,8 +19,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
         public int UserId { get; private set; }
         public OrderType OrderType { get; private set; }
         public Address Address { get; private set; }
-        public PaymentMethod? PaymentMethod { get; private set; }
-        public CardInformation? CardInformation { get; private set; }
+        public PaymentInformation? PaymentInformation { get; private set; }
         public decimal OrginalTotalPrice { get; private set; }
         public decimal CurrentTotalPrice { get; private set; }
         public List<OrderItemInProcess> Items { get; private set; }
@@ -37,14 +35,13 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
 
         private readonly List<IOrderProcessingEvent> _events = new List<IOrderProcessingEvent>();
 
-        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, CardInformation? cardInformation, decimal originalTotalPrice, List<OrderItemInProcess> items, List<OrderDiscountInProcess> unAppliedDiscounts, string initialStatus)
+        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, decimal originalTotalPrice, List<OrderItemInProcess> items, List<OrderDiscountInProcess> unAppliedDiscounts, string initialStatus)
         {
             Id = id;
             UserId = userId;
             OrderType = orderType;
             Address = address;
-            PaymentMethod = paymentMethod;
-            CardInformation = cardInformation;
+            PaymentInformation = paymentInformation;
             OrginalTotalPrice = originalTotalPrice;
             CurrentTotalPrice = originalTotalPrice;
             Items = items;

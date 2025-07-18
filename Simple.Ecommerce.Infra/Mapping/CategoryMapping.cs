@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.CategoryEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.CategoryEntity;
 
 namespace Simple.Ecommerce.Infra.Mapping
 {

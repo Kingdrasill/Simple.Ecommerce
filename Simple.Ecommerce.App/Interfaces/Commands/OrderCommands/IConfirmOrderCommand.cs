@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Contracts.OrderContracts;
+﻿using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.App.Interfaces.Commands.OrderCommands

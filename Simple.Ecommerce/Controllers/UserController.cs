@@ -4,8 +4,8 @@ using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.UserCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.UserQueries;
 using Simple.Ecommerce.Contracts.UserAddressContracts;
-using Simple.Ecommerce.Contracts.UserCardContracts;
 using Simple.Ecommerce.Contracts.UserContracts;
+using Simple.Ecommerce.Contracts.UserPaymentContracts;
 using Simple.Ecommerce.Contracts.UserPhotoContracts;
 
 namespace Simple.Ecommerce.Api.Controllers
@@ -20,13 +20,13 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IGetUserQuery _getUserQuery;
         private readonly IListUserQuery _listUserQuery;
         private readonly IAddAddressUserCommand _addAddressUserCommand;
-        private readonly IAddCardUserCommand _addCardUserCommand;
+        private readonly IAddPaymentUserCommand _addCardUserCommand;
         private readonly IAddPhotoUserCommand _addPhotoUserCommand;
         private readonly IRemoveAddressUserCommand _deleteAddressUserCommand;
-        private readonly IRemoveCardUserCommand _deleteCardUserCommand;
+        private readonly IRemovePaymentUserCommand _deleteCardUserCommand;
         private readonly IRemovePhotoUserCommand _deletePhotoUserCommand;
         private readonly IGetAddressesUserQuery _getAddressesUserQuery;
-        private readonly IGetCardsUserQuery _getCardsUserQuery;
+        private readonly IGetPaymentsUserQuery _getCardsUserQuery;
         private readonly IGetPhotoUserQuery _getPhotoUserQuery;
 
         public UserController(
@@ -36,13 +36,13 @@ namespace Simple.Ecommerce.Api.Controllers
             IGetUserQuery getUserQuery,
             IListUserQuery listUserQuery,
             IAddAddressUserCommand addAddressUserCommand, 
-            IAddCardUserCommand addCardUserCommand,
+            IAddPaymentUserCommand addCardUserCommand,
             IAddPhotoUserCommand addPhotoUserCommand,
             IRemoveAddressUserCommand deleteAddressUserCommand,
-            IRemoveCardUserCommand deleteCardUserCommand,
+            IRemovePaymentUserCommand deleteCardUserCommand,
             IRemovePhotoUserCommand deletePhotoUserCommand,
             IGetAddressesUserQuery getAddressesUserQuery, 
-            IGetCardsUserQuery getCardsUserQuery,
+            IGetPaymentsUserQuery getCardsUserQuery,
             IGetPhotoUserQuery getPhotoUserQuery
         )
         {
@@ -82,7 +82,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpPost("Card")]
         [Authorize]
-        public async Task<ActionResult<bool>> AddCard([FromBody] UserCardRequest request)
+        public async Task<ActionResult<bool>> AddCard([FromBody] UserPaymentRequest request)
         {
             var result = await _addCardUserCommand.Execute(request);
 
@@ -183,7 +183,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("Card/{userId}")]
         [Authorize]
-        public async Task<ActionResult<UserCardsReponse>> GetCards(int userId)
+        public async Task<ActionResult<UserPaymentsResponse>> GetCards(int userId)
         {
             var result = await _getCardsUserQuery.Execute(userId);
          

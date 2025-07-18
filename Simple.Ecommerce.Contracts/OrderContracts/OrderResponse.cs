@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Contracts.AddressContracts;
+using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain.Enums.OrderType;
-using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 
 namespace Simple.Ecommerce.Contracts.OrderContracts
 {
@@ -10,7 +10,7 @@ namespace Simple.Ecommerce.Contracts.OrderContracts
         int UserId,
         OrderType OrderType,
         OrderAddressResponse Address,
-        PaymentMethod? PaymentMethod,
+        PaymentInformationOrderResponse? PaymentInformation,
         decimal? TotalPrice,
         DateTime? OrderDate,
         bool Confirmation,

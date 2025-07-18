@@ -33,7 +33,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             }
             var order = getOrder.GetValue();
 
-            if (order.PaymentMethod is null)
+            if (order.PaymentInformation is null)
             {
                 return Result<bool>.Success(true);
             }

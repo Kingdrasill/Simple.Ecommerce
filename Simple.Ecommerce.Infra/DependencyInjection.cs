@@ -37,8 +37,8 @@ using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
-using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
+using Simple.Ecommerce.Domain.Entities.UserPaymentEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.Settings.AesSettings;
@@ -259,7 +259,7 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<IBaseListRepository<Review>, ReviewRepository>();
             services.AddScoped<IBaseListRepository<User>, UserRepository>();
             services.AddScoped<IBaseListRepository<UserAddress>, UserAddressRepository>();
-            services.AddScoped<IBaseListRepository<UserCard>, UserCardRepository>();
+            services.AddScoped<IBaseListRepository<UserPayment>, UserPaymentRepository>();
         }
 
         private static void AddRepositories(IServiceCollection services, IConfiguration configuration)
@@ -281,7 +281,7 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<IReviewRepository, ReviewRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserAddressRepository, UserAddressRepository>();
-            services.AddScoped<IUserCardRepository, UserCardRepository>();
+            services.AddScoped<IUserPaymentRepository, UserPaymentRepository>();
         }
 
         private static void AddDeletedEvents(IServiceCollection services, IConfiguration configuration)
@@ -304,7 +304,7 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<IDeleteEventHandler<ReviewDeletedEvent>, ReviewDeletedEventHandler>();
             services.AddScoped<IDeleteEventHandler<UserDeletedEvent>, UserDeletedEventHandler>();
             services.AddScoped<IDeleteEventHandler<UserAddressDeletedEvent>, UserAddressDeletedEventHandler>();
-            services.AddScoped<IDeleteEventHandler<UserCardDeletedEvent>, UserCardDeletedEventHandler>();
+            services.AddScoped<IDeleteEventHandler<UserPaymentDeletedEvent>, UserPaymentDeletedEventHandler>();
         }
     }
 }

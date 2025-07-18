@@ -3,11 +3,14 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
-using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
+using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
@@ -57,8 +60,8 @@ namespace Simple.Ecommerce.Infra.Repositories
                 return Result<bool>.Failure(new List<Error> { new Error("NotFound", "Pedido não encontrado!") });
             }
 
-            order.UpdatePaymentMethod(null, null);
-            _context.Entry(order).Reference(o => o.CardInformation).IsModified = true;
+            order.UpdatePaymentInformation(null);
+            _context.Entry(order).Reference(o => o.PaymentInformation).IsModified = true;
 
             await _context.SaveChangesAsync();
             return Result<bool>.Success(true);
@@ -246,7 +249,19 @@ namespace Simple.Ecommerce.Infra.Repositories
                     order.Order.Address.Complement,
                     order.Order.Address.CEP
                 ),
-                order.Order.PaymentMethod,
+                order.Order.PaymentInformation is null
+                    ? null
+                    : new PaymentInformationOrderResponse(
+                        order.Order.PaymentInformation.PaymentMethod,
+                        order.Order.PaymentInformation.PaymentName,
+                        order.Order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.CreditCard)
+                            ? order.Order.PaymentInformation.PaymentKey
+                            : null,
+                        order.Order.PaymentInformation.ExpirationMonth,
+                        order.Order.PaymentInformation.ExpirationYear,
+                        order.Order.PaymentInformation.CardFlag,
+                        order.Order.PaymentInformation.Last4Digits
+                    ),
                 order.Order.TotalPrice,
                 order.Order.OrderDate,
                 order.Order.Confirmation,

@@ -1,4 +1,5 @@
-﻿using Simple.Ecommerce.Domain.Enums.Discount;
+﻿using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 
 namespace Simple.Ecommerce.App.Services.Cache
@@ -33,6 +34,11 @@ namespace Simple.Ecommerce.App.Services.Cache
         public static PaymentMethod? GetNullablePaymentMethod(this IDictionary<string, object> dict, string key)
         {
             return dict.TryGetValue(key, out var value) && value is not null ? (PaymentMethod)Convert.ToInt32(value) : null;
+        }
+
+        public static CardFlag? GetNullableCardFlag(this IDictionary<string, object> dict, string key)
+        {
+            return dict.TryGetValue(key, out var value) && value is not null ? (CardFlag)Convert.ToInt32(value) : null;
         }
 
         public static bool GetBoolean(this IDictionary<string, object> dict, string key)

@@ -6,8 +6,9 @@ using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
-using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
@@ -15,13 +16,13 @@ using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
-using Simple.Ecommerce.Domain.Enums.CardFlag;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.OrderType;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {
@@ -296,7 +297,19 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     order.Address.Complement,
                     order.Address.CEP
                 ),
-                order.PaymentMethod,
+                order.PaymentInformation is null 
+                    ? null 
+                    : new PaymentInformationOrderResponse(
+                        order.PaymentInformation.PaymentMethod,
+                        order.PaymentInformation.PaymentName,
+                        order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.CreditCard)
+                            ? order.PaymentInformation.PaymentKey
+                            : null,
+                        order.PaymentInformation.ExpirationMonth,
+                        order.PaymentInformation.ExpirationYear,
+                        order.PaymentInformation.CardFlag,
+                        order.PaymentInformation.Last4Digits
+                    ),
                 order.TotalPrice,
                 order.OrderDate,
                 order.Confirmation,
@@ -312,7 +325,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 
         private Result<Order> GetOrderFromcCache(int orderId)
         {
-            return _cacheHandler.GetFromCache<Order, Address, CardInformation, Order>(orderId, nameof(Address), nameof(CardInformation),
+            return _cacheHandler.GetFromCache<Order, Address, PaymentInformation, Order>(orderId, nameof(Address), nameof(PaymentInformation),
                 (cache, prop) => new Address().Create(
                     Convert.ToInt32(cache[$"{prop}_Number"]),
                     Convert.ToString(cache[$"{prop}_Street"])!,
@@ -322,28 +335,30 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     cache.GetNullableString($"{prop}_Complement"),
                     Convert.ToString(cache[$"{prop}_CEP"])!
                 ).GetValue(),
-                (cache, prop) => cache.ContainsKey($"{prop}_CardNumber")
-                    ? new CardInformation().Create(
-                        Convert.ToString(cache[$"{prop}_CardHolderName"])!,
-                        Convert.ToString(cache[$"{prop}_CardNumber"])!,
-                        Convert.ToString(cache[$"{prop}_ExpirationMonth"])!,
-                        Convert.ToString(cache[$"{prop}_ExpirationYear"])!,
-                        (CardFlag)Convert.ToInt32(cache[$"{prop}_CardFlag"]),
-                        Convert.ToString(cache[$"{prop}_Last4Digits"])!
+                (cache, prop) => cache.ContainsKey($"{prop}_PaymentMethod")
+                    ? new PaymentInformation().Create(
+                        (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]),
+                        cache.GetNullableString($"{prop}_PaymentName"),
+                        (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]) is not (PaymentMethod.CreditCard or PaymentMethod.DebitCard)
+                            ? cache.GetNullableString($"{prop}_PaymentKey")
+                            : null,
+                        cache.GetNullableString($"{prop}_ExpirationMonth"),
+                        cache.GetNullableString($"{prop}_ExpirationYear"),
+                        cache.GetNullableCardFlag($"{prop}_CardFlag"),
+                        cache.GetNullableString($"{prop}_Last4Digits")
                     ).GetValue()
                     : null,
-                (cache, address, cardInfo) => new Order().Create(
+                (cache, address, paymentInfo) => new Order().Create(
                     Convert.ToInt32(cache["Id"]),
                     Convert.ToInt32(cache["UserId"]),
                     (OrderType)Convert.ToInt32(cache["OrderType"]),
                     address!,
-                    cache.GetNullablePaymentMethod("PaymentMethod"),
                     cache.GetNullableDecimal("TotalPrice"),
                     cache.GetNullableDateTime("OrderDate"),
                     Convert.ToBoolean(cache["Confirmation"]),
                     Convert.ToString(cache["Status"])!,
                     cache.GetNullableInt("DiscountId"),
-                    cardInfo
+                    paymentInfo
                 ).GetValue()
             );
         }

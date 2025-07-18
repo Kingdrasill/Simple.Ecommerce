@@ -1,9 +1,8 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Simple.Ecommerce.Domain.Enums.OrderType;
-using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 
 namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
 {
@@ -17,11 +16,8 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
         public OrderType OrderType { get; set; }
         [BsonElement("address")]
         public Address Address { get; set; }
-        [BsonElement("paymentMethod")]
-        [BsonRepresentation(BsonType.Int32)]
-        public PaymentMethod PaymentMethod { get; set; }
-        [BsonElement("cardInformation")]
-        public CardInformation? CardInformation { get; set; }
+        [BsonElement("paymentInformation")]
+        public PaymentInformation? PaymentInformation { get; set; }
         [BsonElement("orderDate")]
         public DateTime OrderDate { get; set; }
         [BsonElement("status")]

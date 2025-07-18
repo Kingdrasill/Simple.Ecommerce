@@ -3,17 +3,17 @@ using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Services.Cache;
-using Simple.Ecommerce.Contracts.CardInformationContracts;
-using Simple.Ecommerce.Contracts.OrderContracts;
-using Simple.Ecommerce.Domain.Entities.OrderEntity;
-using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Contracts.OrderContracts.PaymentInformations;
+using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
-using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {
-    public class GetPaymentMethodOrderQuery : IGetPaymentMethodOrderQuery
+    public class GetPaymentMethodOrderQuery : IGetPaymentInformationOrderQuery
     {
         private readonly IOrderRepository _repository;
         private readonly IRepositoryHandler _repositoryHandler;
@@ -33,47 +33,56 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<OrderPaymentMethodResponse>> Execute(int orderId)
+        public async Task<Result<OrderPaymentInformationResponse>> Execute(int orderId)
         {
             if (_useCache.Use)
             {
-                var cacheResponse = _cacheHandler.GetFromCache<Order, OrderCardInformationResponse, OrderPaymentMethodResponse>(orderId, nameof(CardInformation),
+                var cacheResponse = _cacheHandler.GetFromCache<Order, PaymentInformationOrderResponse, OrderPaymentInformationResponse>(orderId, nameof(PaymentInformation),
                     (cache, propName) => {
-                        if (cache.TryGetValue($"{propName}_CardHolderName", out var cardHolderName) && cardHolderName is not null)
-                                return new OrderCardInformationResponse(
-                                    Convert.ToString(cardHolderName)!,
-                                    Convert.ToString(cache[$"{propName}_ExpirationMonth"])!,
-                                    Convert.ToString(cache[$"{propName}_ExpirationYear"])!,
-                                    (CardFlag)Convert.ToInt32(cache[$"{propName}_CardFlag"]),
-                                    Convert.ToString(cache[$"{propName}_Last4Digits"])!
-                                );
+                        if (cache.TryGetValue($"{propName}_PaymentMethod", out var cardHolderName) && cardHolderName is not null)
+                            return new PaymentInformationOrderResponse(
+                                (PaymentMethod)Convert.ToInt32(cache[$"{propName}_PaymentMethod"]),
+                                cache.GetNullableString($"{propName}_PaymentName"),
+                                (PaymentMethod)Convert.ToInt32(cache[$"{propName}_PaymentMethod"]) is not (PaymentMethod.CreditCard or PaymentMethod.DebitCard)
+                                    ? cache.GetNullableString($"{propName}_PaymentKey")
+                                    : null,
+                                cache.GetNullableString($"{propName}_ExpirationMonth"),
+                                cache.GetNullableString($"{propName}_ExpirationYear"),
+                                cache.GetNullableCardFlag($"{propName}_CardFlag"),
+                                cache.GetNullableString($"{propName}_Last4Digits")
+                            );
                         return null;
                     }, 
-                    (cache, cardInformation) => new OrderPaymentMethodResponse(
+                    (cache, cardInformation) => new OrderPaymentInformationResponse(
                         Convert.ToInt32(cache["Id"]),
-                        cache.GetNullablePaymentMethod("PaymentMethod"),
                         cardInformation
                     ));
                 if (cacheResponse.IsSuccess)
                     return cacheResponse;
             }
 
-            var repoResponse = await _repositoryHandler.GetFromRepository<Order, OrderPaymentMethodResponse>(
+            var repoResponse = await _repositoryHandler.GetFromRepository<Order, OrderPaymentInformationResponse>(
                 orderId,
                 async (id) => await _repository.Get(id),
                 order => {
-                    if (order.PaymentMethod is null)
-                        return new OrderPaymentMethodResponse(order.Id, null, null);
-                    return new OrderPaymentMethodResponse(
+                    if (order.PaymentInformation is null)
+                        return new OrderPaymentInformationResponse(order.Id, null);
+                    return new OrderPaymentInformationResponse(
                         orderId,
-                        order.PaymentMethod,
-                        order.CardInformation is null ? null : new OrderCardInformationResponse(
-                            order.CardInformation.CardHolderName,
-                            order.CardInformation.ExpirationMonth,
-                            order.CardInformation.ExpirationYear,
-                            order.CardInformation.CardFlag,
-                            order.CardInformation.Last4Digits
-                    ));
+                        order.PaymentInformation is null 
+                            ? null 
+                            : new PaymentInformationOrderResponse(
+                                order.PaymentInformation.PaymentMethod,
+                                order.PaymentInformation.PaymentName,
+                                order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.DebitCard)
+                                    ? order.PaymentInformation.PaymentKey
+                                    : null,
+                                order.PaymentInformation.ExpirationMonth,
+                                order.PaymentInformation.ExpirationYear,
+                                order.PaymentInformation.CardFlag,
+                                order.PaymentInformation.Last4Digits
+                            )
+                    );
                 });
             if (repoResponse.IsSuccess && _useCache.Use)
                 await _cacheHandler.SendToCache<Order>();

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.App.Interfaces.ReadData;
+﻿using Simple.Ecommerce.App.Interfaces.ReadData;
 using Simple.Ecommerce.Domain.Interfaces.OrderProcessingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBOGOEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBundleEvent;

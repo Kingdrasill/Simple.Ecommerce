@@ -2,7 +2,7 @@
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility;
-using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
@@ -100,8 +100,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     getUser.GetValue().Name,
                     order.OrderType,
                     order.Address,
-                    order.PaymentMethod!.Value,
-                    order.CardInformation,
+                    order.PaymentInformation,
                     order.OrderDate!.Value,
                     order.Status,
                     orderInProcess.CurrentTotalPrice,
@@ -257,8 +256,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 order.UserId,
                 order.OrderType,
                 order.Address,
-                order.PaymentMethod,
-                order.CardInformation,
+                order.PaymentInformation,
                 originalTotalPrice,
                 orderItemsInProcess,
                 unAppliedDiscounts,

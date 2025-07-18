@@ -304,11 +304,11 @@ namespace Simple.Ecommerce.App
         {
             services.AddScoped<ICancelOrderCommand, CancelOrderCommand>();
             services.AddScoped<IChangeDiscountOrderCommand, ChangeDiscountOrderCommand>();
-            services.AddScoped<IChangePaymentMethodOrderCommand, ChangePaymentMethodOrderCommand>();
+            services.AddScoped<IChangePaymentInformationOrderCommand, ChangePaymentInformationOrderCommand>();
             services.AddScoped<IConfirmOrderCommand, ConfirmOrderCommand>();
             services.AddScoped<IRemovePaymentMethodOrderCommand, RemovePaymentMethodOrderCommand>();
             services.AddScoped<IGetCompleteOrderQuery, GetCompleteOrderQuery>();
-            services.AddScoped<IGetPaymentMethodOrderQuery, GetPaymentMethodOrderQuery>();
+            services.AddScoped<IGetPaymentInformationOrderQuery, GetPaymentMethodOrderQuery>();
             //CRUD
             services.AddScoped<ICreateOrderCommand, CreateOrderCommand>();
             services.AddScoped<IDeleteOrderCommand, DeleteOrderCommand>();
@@ -361,13 +361,13 @@ namespace Simple.Ecommerce.App
         private static void AddUserBatch(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<IAddAddressUserCommand, AddAddressUserCommand>();
-            services.AddScoped<IAddCardUserCommand, AddCardUserCommand>();
+            services.AddScoped<IAddPaymentUserCommand, AddPaymentUserCommand>();
             services.AddScoped<IAddPhotoUserCommand, AddPhotoUserCommand>();
             services.AddScoped<IRemoveAddressUserCommand, RemoveAddressUserCommand>();
-            services.AddScoped<IRemoveCardUserCommand, RemoveCardUserCommand>();
+            services.AddScoped<IRemovePaymentUserCommand, RemovePaymentUserCommand>();
             services.AddScoped<IRemovePhotoUserCommand, RemovePhotoUserCommand>();
             services.AddScoped<IGetAddressesUserQuery, GetAddressesUserQuery>();
-            services.AddScoped<IGetCardsUserQuery, GetCardsUserQuery>();
+            services.AddScoped<IGetPaymentsUserQuery, GetPaymentsUserQuery>();
             services.AddScoped<IGetPhotoUserQuery, GetPhotoUserQuery>();
             // CRUD
             services.AddScoped<ICreateUserCommand, CreateUserCommand>();

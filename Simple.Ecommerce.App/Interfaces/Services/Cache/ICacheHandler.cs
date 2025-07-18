@@ -35,6 +35,13 @@ namespace Simple.Ecommerce.App.Interfaces.Services.Cache
             Func<IDictionary<string, object>, string, TSecondaryResponse> secondaryFactory,
             Func<IDictionary<string, object>, TSecondaryResponse, TPrimaryResponse> primaryFactory
         );
+        Result<List<TPrimary>> ListFromCache<TEntity, TNested1, TNested2, TPrimary>(
+            string nested1PropName,
+            string nested2PropName,
+            Func<IDictionary<string, object>, string, TNested1?> nested1Factory,
+            Func<IDictionary<string, object>, string, TNested2?> nested2Factory,
+            Func<IDictionary<string, object>, TNested1?, TNested2?, TPrimary> primaryFactory
+        );
         Result<List<TResponse>> ListFromCacheByProperty<TEntity, TResponse>(
             string propName,
             object propValue,

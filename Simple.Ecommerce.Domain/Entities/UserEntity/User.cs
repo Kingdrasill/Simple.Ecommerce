@@ -2,13 +2,13 @@
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
-using Simple.Ecommerce.Domain.Entities.UserCardEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
+using Simple.Ecommerce.Domain.Entities.UserPaymentEntity;
 
 namespace Simple.Ecommerce.Domain.Entities.UserEntity
 {
@@ -22,7 +22,7 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
         [IgnoreDataMember, NotMapped]
         public ICollection<UserAddress> UserAddresses { get; private set; }
         [IgnoreDataMember, NotMapped]
-        public ICollection<UserCard> UserCards { get; private set; }
+        public ICollection<UserPayment> UserPayments { get; private set; }
         [IgnoreDataMember, NotMapped]
         public ICollection<Review> Reviews { get; private set; }
         [IgnoreDataMember, NotMapped]
@@ -33,7 +33,7 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
         public User() 
         {
             UserAddresses = new HashSet<UserAddress>();
-            UserCards = new HashSet<UserCard>();
+            UserPayments = new HashSet<UserPayment>();
             Reviews = new HashSet<Review>();
             Orders = new HashSet<Order>();
             Logins = new HashSet<Login>();
@@ -49,7 +49,7 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
             Photo = photo;
 
             UserAddresses = new HashSet<UserAddress>();
-            UserCards = new HashSet<UserCard>();
+            UserPayments = new HashSet<UserPayment>();
             Reviews = new HashSet<Review>();
             Orders = new HashSet<Order>();
             Logins = new HashSet<Login>();

@@ -3,10 +3,9 @@ using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Enums.OrderType;
-using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
-using Simple.Ecommerce.Domain.ValueObjects.CardInformationObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
 
@@ -18,14 +17,13 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
         public User User { get; private set; } = null!;
         public OrderType OrderType { get; private set; }
         public Address Address { get; private set; }
-        public PaymentMethod? PaymentMethod { get; private set; }
         public decimal? TotalPrice { get; private set; }
         public DateTime? OrderDate { get; private set; }
         public bool Confirmation { get; private set; }
         public string Status { get; private set; }
-        public CardInformation? CardInformation { get; private set; } = null;
         public int? DiscountId { get; private set; }
         public Discount? Discount { get; private set; } = null;
+        public PaymentInformation? PaymentInformation { get; private set; } = null;
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
 
@@ -34,26 +32,25 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderItems = new HashSet<OrderItem>();
         }
 
-        private Order(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, CardInformation? cardInformation = null)
+        private Order(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, PaymentInformation? paymentInformation = null)
         {
             Id = id;
             UserId = userId;
             OrderType = orderType;
             Address = address;
-            PaymentMethod = paymentMethod;
             TotalPrice = totalPrice;
             OrderDate = orderDate;
             Confirmation = confirmation;
             Status = status;
             DiscountId = discountId;
-            CardInformation = cardInformation;
+            PaymentInformation = paymentInformation;
 
             OrderItems = new HashSet<OrderItem>();
         }
 
-        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, PaymentMethod? paymentMethod, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, CardInformation? cardInformation = null)
+        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, PaymentInformation? paymentInformation = null)
         {
-            return new OrderValidator().Validate(new Order(id, userId, orderType, address, paymentMethod, totalPrice, orderDate, confirmation, status, discountId, cardInformation));
+            return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, discountId, paymentInformation));
         }
 
         public void UpdateDiscountId(int? discountId)
@@ -61,10 +58,9 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             DiscountId = discountId;
         }
 
-        public void UpdatePaymentMethod(PaymentMethod? paymentmethod, CardInformation? cardInformation)
+        public void UpdatePaymentInformation(PaymentInformation? paymentInformation)
         {
-            PaymentMethod = paymentmethod;
-            CardInformation = cardInformation;
+            PaymentInformation = paymentInformation;
         }
 
         public void UpdateStatus(string status, bool? confirmation = null, decimal? newTotalPrice = null)

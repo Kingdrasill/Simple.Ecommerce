@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
-using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using System.Security.Cryptography;
 using System.Text;
 

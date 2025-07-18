@@ -4,7 +4,7 @@ using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
-using Simple.Ecommerce.Domain.Entities.UserCardEntity;
+using Simple.Ecommerce.Domain.Entities.UserPaymentEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -57,13 +57,13 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                 userAddress.MarkAsDeleted(raiseEvent: false);
             }
 
-            var userCards = await _context.UserCards
+            var userPayments = await _context.UserPayments
                 .Where(uc => uc.UserId == domainEvent.UserId)
                 .ToListAsync();
 
-            foreach (var userCard in userCards)
+            foreach (var userPayment in userPayments)
             {
-                userCard.MarkAsDeleted(raiseEvent: false);
+                userPayment.MarkAsDeleted(raiseEvent: false);
             }
 
             var reviews = await _context.Reviews
@@ -83,8 +83,8 @@ namespace Simple.Ecommerce.Infra.Handlers.DeletedEvent
                     _cacheHandler.SetItemStale<Order>();
                 if (userAddresses.Any())
                     _cacheHandler.SetItemStale<UserAddress>();
-                if (userCards.Any())
-                    _cacheHandler.SetItemStale<UserCard>();
+                if (userPayments.Any())
+                    _cacheHandler.SetItemStale<UserPayment>();
                 if (reviews.Any())
                     _cacheHandler.SetItemStale<Review>();
             }

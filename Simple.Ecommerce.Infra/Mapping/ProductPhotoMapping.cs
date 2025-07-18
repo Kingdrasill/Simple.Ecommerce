@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 
 namespace Simple.Ecommerce.Infra.Mapping
 {

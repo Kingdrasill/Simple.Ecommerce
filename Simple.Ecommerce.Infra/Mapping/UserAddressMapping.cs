@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 
 namespace Simple.Ecommerce.Infra.Mapping
 {

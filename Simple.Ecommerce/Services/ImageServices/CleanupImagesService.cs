@@ -1,5 +1,5 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.ImageCleanup;
-using ImageFile.Library.Core.Services;
+﻿using ImageFile.Library.Core.Services;
+using Simple.Ecommerce.App.Interfaces.Services.ImageCleanup;
 
 namespace Simple.Ecommerce.Api.Services.ImageServices
 {

@@ -5,11 +5,14 @@ using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.PaymentInformationContracts;
+using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.OrderType;
-using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
+using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 {
@@ -37,22 +40,35 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
         {
             if (_useCache.Use)
             {
-                var cacheResponse = _cacheHandler.ListFromCache<Order, OrderAddressResponse, OrderResponse>(nameof(Address),
-                    (cache, propName) => new OrderAddressResponse(
-                        Convert.ToInt32(cache[$"{propName}_Number"]),
-                        Convert.ToString(cache[$"{propName}_Street"])!,
-                        Convert.ToString(cache[$"{propName}_Neighbourhood"])!,
-                        Convert.ToString(cache[$"{propName}_City"])!,
-                        Convert.ToString(cache[$"{propName}_Country"])!,
-                        cache.GetNullableString($"{propName}_Complement"),
-                        Convert.ToString(cache[$"{propName}_CEP"])!
+                var cacheResponse = _cacheHandler.ListFromCache<Order, OrderAddressResponse, PaymentInformationOrderResponse, OrderResponse>(nameof(Address), nameof(PaymentInformation),
+                    (cache, prop) => new OrderAddressResponse(
+                        Convert.ToInt32(cache[$"{prop}_Number"]),
+                        Convert.ToString(cache[$"{prop}_Street"])!,
+                        Convert.ToString(cache[$"{prop}_Neighbourhood"])!,
+                        Convert.ToString(cache[$"{prop}_City"])!,
+                        Convert.ToString(cache[$"{prop}_Country"])!,
+                        cache.GetNullableString($"{prop}_Complement"),
+                        Convert.ToString(cache[$"{prop}_CEP"])!
                     ),
-                    (cache, address) => new OrderResponse(
+                    (cache, prop) => cache.ContainsKey($"{prop}_PaymentMethod")
+                        ? new PaymentInformationOrderResponse(
+                            (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]),
+                            cache.GetNullableString($"{prop}_PaymentName"),
+                            (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]) is not (PaymentMethod.CreditCard or PaymentMethod.DebitCard)
+                                ? cache.GetNullableString($"{prop}_PaymentKey")
+                                : null,
+                            cache.GetNullableString($"{prop}_ExpirationMonth"),
+                            cache.GetNullableString($"{prop}_ExpirationYear"),
+                            cache.GetNullableCardFlag($"{prop}_CardFlag"),
+                            cache.GetNullableString($"{prop}_Last4Digits")
+                        )
+                        : null,
+                    (cache, address, paymentInfo) => new OrderResponse(
                         Convert.ToInt32(cache["Id"]),
                         Convert.ToInt32(cache["UserId"]),
                         (OrderType)Convert.ToInt32(cache["OrderType"])!,
-                        address,
-                        cache.GetNullablePaymentMethod("PaymentMethod"),
+                        address!,
+                        paymentInfo,
                         cache.GetNullableDecimal("TotalPrice"),
                         cache.GetNullableDateTime("OrderDate"),
                         Convert.ToBoolean(cache["Confirmation"]),
@@ -80,7 +96,19 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                         order.UserId,
                         order.OrderType,
                         addressResponse,
-                        order.PaymentMethod,
+                        order.PaymentInformation is null
+                            ? null
+                            : new PaymentInformationOrderResponse(
+                                order.PaymentInformation.PaymentMethod,
+                                order.PaymentInformation.PaymentName,
+                                order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.CreditCard)
+                                    ? order.PaymentInformation.PaymentKey
+                                    : null,
+                                order.PaymentInformation.ExpirationMonth,
+                                order.PaymentInformation.ExpirationYear,
+                                order.PaymentInformation.CardFlag,
+                                order.PaymentInformation.Last4Digits
+                            ),
                         order.TotalPrice,
                         order.OrderDate,
                         order.Confirmation,
@@ -92,44 +120,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                 await _cacheHandler.SendToCache<Order>();
 
             return repoResponse;
-        }
-
-        private async Task<Result<List<OrderResponse>>> GetFromRepository()
-        {
-            var listResult = await _repository.List();
-            if (listResult.IsFailure)
-            {
-                return Result<List<OrderResponse>>.Failure(listResult.Errors!);
-            }
-
-            var response = new List<OrderResponse>();
-            foreach (var order in listResult.GetValue())
-            {
-                var addressResponse = new OrderAddressResponse(
-                    order.Address.Number,
-                    order.Address.Street,
-                    order.Address.Neighbourhood,
-                    order.Address.City,
-                    order.Address.Country,
-                    order.Address.Complement,
-                    order.Address.CEP
-                );
-
-                response.Add(new OrderResponse(
-                    order.Id,
-                    order.UserId,
-                    order.OrderType,
-                    addressResponse,
-                    order.PaymentMethod,
-                    order.TotalPrice,
-                    order.OrderDate,
-                    order.Confirmation,
-                    order.Status,
-                    order.DiscountId
-                ));
-            }
-
-            return Result<List<OrderResponse>>.Success(response);
         }
     }
 }

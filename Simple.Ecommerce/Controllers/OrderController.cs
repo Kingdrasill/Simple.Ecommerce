@@ -4,6 +4,8 @@ using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
+using Simple.Ecommerce.Contracts.OrderContracts.PaymentInformations;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -19,10 +21,10 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly ICancelOrderCommand _cancelOrderCommand;
         private readonly IConfirmOrderCommand _confirmOrderCommand;
         private readonly IChangeDiscountOrderCommand _changeDiscountOrderCommand;
-        private readonly IChangePaymentMethodOrderCommand _changePaymentMethodOrderCommand;
+        private readonly IChangePaymentInformationOrderCommand _changePaymentMethodOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
         private readonly IGetCompleteOrderQuery _getCompleteOrderQuery;
-        private readonly IGetPaymentMethodOrderQuery _getPaymentMethodOrderQuery;
+        private readonly IGetPaymentInformationOrderQuery _getPaymentMethodOrderQuery;
 
         public OrderController(
             ICreateOrderCommand createOrderCommand,
@@ -33,10 +35,10 @@ namespace Simple.Ecommerce.Api.Controllers
             ICancelOrderCommand cancelOrderCommand,
             IConfirmOrderCommand confirmOrderCommand,
             IChangeDiscountOrderCommand changeDiscountOrderCommand,
-            IChangePaymentMethodOrderCommand changePaymentMethodOrderCommand,
+            IChangePaymentInformationOrderCommand changePaymentMethodOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
             IGetCompleteOrderQuery getCompleteOrderQuery,
-            IGetPaymentMethodOrderQuery getPaymentMethodOrderQuery
+            IGetPaymentInformationOrderQuery getPaymentMethodOrderQuery
         )
         {
             _createOrderCommand = createOrderCommand;
@@ -108,7 +110,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpPut("PaymentMethod/Change")]
         [Authorize]
-        public async Task<ActionResult<OrderPaymentMethodResponse>> ChangePaymentMethod([FromBody] OrderPaymentMethodRequest request)
+        public async Task<ActionResult<OrderPaymentInformationResponse>> ChangePaymentMethod([FromBody] OrderPaymentInformationRequest request)
         {
             var result = await _changePaymentMethodOrderCommand.Execute(request);
 
@@ -144,7 +146,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("ConfirmedOrder/{orderId}")]
         [Authorize]
-        public async Task<ActionResult<OrderPaymentMethodResponse>> GetCompleteOrder(int orderId)
+        public async Task<ActionResult<OrderPaymentInformationResponse>> GetCompleteOrder(int orderId)
         {
             var result = await _getCompleteOrderQuery.Execute(orderId);
 
@@ -153,7 +155,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("PaymentMethod/{orderId}")]
         [Authorize]
-        public async Task<ActionResult<OrderPaymentMethodResponse>> GetPaymentMethod(int orderId)
+        public async Task<ActionResult<OrderPaymentInformationResponse>> GetPaymentMethod(int orderId)
         {
             var result = await _getPaymentMethodOrderQuery.Execute(orderId);
 

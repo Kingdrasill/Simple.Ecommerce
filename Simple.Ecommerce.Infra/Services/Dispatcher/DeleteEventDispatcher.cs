@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Simple.Ecommerce.App.Interfaces.Services.Dispatcher;
 using Simple.Ecommerce.Domain.Interfaces.DeleteEvent;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Simple.Ecommerce.Infra.Services.Dispatcher
 {

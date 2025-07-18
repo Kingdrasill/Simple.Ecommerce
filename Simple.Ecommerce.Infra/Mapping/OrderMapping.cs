@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.OrderEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.OrderEntity;
 
 namespace Simple.Ecommerce.Infra.Maooing
 {
@@ -15,7 +15,6 @@ namespace Simple.Ecommerce.Infra.Maooing
 
             builder.Property(o => o.UserId).IsRequired();
             builder.Property(o => o.OrderType).IsRequired();
-            builder.Property(o => o.PaymentMethod);
             builder.Property(o => o.TotalPrice);
             builder.Property(o => o.OrderDate);
             builder.Property(o => o.Confirmation).IsRequired();
@@ -36,15 +35,16 @@ namespace Simple.Ecommerce.Infra.Maooing
                 a.WithOwner();
             });
 
-            builder.OwnsOne(o => o.CardInformation, ci =>
+            builder.OwnsOne(o => o.PaymentInformation, pi =>
             {
-                ci.Property(ci => ci.CardHolderName).HasColumnName("CardHolderName");
-                ci.Property(ci => ci.CardNumber).HasColumnName("CardNumber");
-                ci.Property(ci => ci.ExpirationMonth).HasColumnName("ExpirationMonth");
-                ci.Property(ci => ci.ExpirationYear).HasColumnName("ExpirationYear");
-                ci.Property(ci => ci.CardFlag).HasColumnName("CardFlag");
-                ci.Property(ci => ci.Last4Digits).HasColumnName("Last4Digits");
-                ci.WithOwner();
+                pi.Property(pi => pi.PaymentMethod).HasColumnName("PaymentMethod");
+                pi.Property(pi => pi.PaymentName).HasColumnName("PaymentName");
+                pi.Property(pi => pi.PaymentKey).HasColumnName("PaymentKey");
+                pi.Property(pi => pi.ExpirationMonth).HasColumnName("ExpirationMonth");
+                pi.Property(pi => pi.ExpirationYear).HasColumnName("ExpirationYear");
+                pi.Property(pi => pi.CardFlag).HasColumnName("CardFlag");
+                pi.Property(pi => pi.Last4Digits).HasColumnName("Last4Digits");
+                pi.WithOwner();
             });
 
             builder

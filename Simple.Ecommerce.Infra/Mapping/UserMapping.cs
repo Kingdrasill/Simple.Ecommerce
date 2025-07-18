@@ -37,9 +37,9 @@ namespace Simple.Ecommerce.Infra.Mapping
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder
-                .HasMany(u => u.UserCards)
-                .WithOne(uc => uc.User)
-                .HasForeignKey(uc => uc.UserId)
+                .HasMany(u => u.UserPayments)
+                .WithOne(up => up.User)
+                .HasForeignKey(up => up.UserId)
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Cascade);
 

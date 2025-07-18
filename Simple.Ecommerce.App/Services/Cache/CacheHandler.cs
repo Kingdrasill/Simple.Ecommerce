@@ -139,6 +139,31 @@ namespace Simple.Ecommerce.App.Services.Cache
             return Result<List<TPrimaryResponse>>.Success(response);
         }
 
+        public Result<List<TPrimary>> ListFromCache<TEntity, TNested1, TNested2, TPrimary>(
+            string nested1PropName,
+            string nested2PropName,
+            Func<IDictionary<string, object>, string, TNested1?> nested1Factory,
+            Func<IDictionary<string, object>, string, TNested2?> nested2Factory,
+            Func<IDictionary<string, object>, TNested1?, TNested2?, TPrimary> primaryFactory
+        )
+        {
+            var entity = typeof(TEntity).Name;
+            var getCache = _cache.GetItems(entity, out _);
+            if (getCache is null)
+            {
+                return Result<List<TPrimary>>.Failure(new());
+            }
+            var response = new List<TPrimary>();
+            foreach (var item in getCache)
+            {
+                var nested1 = nested1Factory(item, nested1PropName);
+                var nested2 = nested2Factory(item, nested2PropName);
+                var primary = primaryFactory(item, nested1, nested2);
+                response.Add(primary);
+            }
+            return Result<List<TPrimary>>.Success(response);
+        }
+
         public Result<List<TResponse>> ListFromCacheByProperty<TEntity, TResponse>(
             string propName, 
             object propValue, 

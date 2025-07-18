@@ -52,10 +52,10 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             }
 
             var login = authenticateResult.GetValue();
-            //if (!login.IsVerified)
-            //{
-            //    return Result<AuthenticateResponse>.Failure(new List<Error> { new Error("Locked", "A credencial usada para este login não foi verificada!") });
-            //}
+            if (!login.IsVerified)
+            {
+                return Result<AuthenticateResponse>.Failure(new List<Error> { new Error("Locked", "A credencial usada para este login não foi verificada!") });
+            }
 
             var getUser = await GetUser(login);
             if (getUser.IsFailure)

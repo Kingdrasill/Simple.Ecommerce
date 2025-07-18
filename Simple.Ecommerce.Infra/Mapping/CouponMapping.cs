@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 
 namespace Simple.Ecommerce.Infra.Mapping
 {

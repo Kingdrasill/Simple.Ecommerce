@@ -1,6 +1,6 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Simple.Ecommerce.Infra.Services.CacheFrequencyInitializer
 {

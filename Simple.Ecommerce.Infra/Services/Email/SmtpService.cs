@@ -1,9 +1,9 @@
-﻿using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
-using Simple.Ecommerce.Domain.Settings.EmailSettings;
-using Simple.Ecommerce.Domain.Settings.SmtpSettings;
-using MailKit.Net.Smtp;
+﻿using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
+using Simple.Ecommerce.App.Interfaces.Services.CredentialService;
+using Simple.Ecommerce.Domain.Settings.EmailSettings;
+using Simple.Ecommerce.Domain.Settings.SmtpSettings;
 
 namespace Simple.Ecommerce.Infra.Services.Email
 {

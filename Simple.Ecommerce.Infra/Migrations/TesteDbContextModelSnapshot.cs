@@ -289,9 +289,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Property<int>("OrderType")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PaymentMethod")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -496,25 +493,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.ToTable("UsuariosEnderecos", (string)null);
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserCardEntity.UserCard", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Deleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UsuariosCartoes", (string)null);
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserEntity.User", b =>
                 {
                     b.Property<int>("Id")
@@ -552,6 +530,25 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .IsUnique();
 
                     b.ToTable("Usuarios", (string)null);
+                });
+
+            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserPaymentEntity.UserPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UsuariosPagamentos", (string)null);
                 });
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.CouponEntity.Coupon", b =>
@@ -682,39 +679,38 @@ namespace Simple.Ecommerce.Infra.Migrations
                                 .HasForeignKey("OrderId");
                         });
 
-                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.CardInformationObject.CardInformation", "CardInformation", b1 =>
+                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject.PaymentInformation", "PaymentInformation", b1 =>
                         {
                             b1.Property<int>("OrderId")
                                 .HasColumnType("int");
 
-                            b1.Property<int>("CardFlag")
+                            b1.Property<int?>("CardFlag")
                                 .HasColumnType("int")
                                 .HasColumnName("CardFlag");
 
-                            b1.Property<string>("CardHolderName")
-                                .IsRequired()
-                                .HasColumnType("longtext")
-                                .HasColumnName("CardHolderName");
-
-                            b1.Property<string>("CardNumber")
-                                .IsRequired()
-                                .HasColumnType("longtext")
-                                .HasColumnName("CardNumber");
-
                             b1.Property<string>("ExpirationMonth")
-                                .IsRequired()
                                 .HasColumnType("longtext")
                                 .HasColumnName("ExpirationMonth");
 
                             b1.Property<string>("ExpirationYear")
-                                .IsRequired()
                                 .HasColumnType("longtext")
                                 .HasColumnName("ExpirationYear");
 
                             b1.Property<string>("Last4Digits")
-                                .IsRequired()
                                 .HasColumnType("longtext")
                                 .HasColumnName("Last4Digits");
+
+                            b1.Property<string>("PaymentKey")
+                                .HasColumnType("longtext")
+                                .HasColumnName("PaymentKey");
+
+                            b1.Property<int>("PaymentMethod")
+                                .HasColumnType("int")
+                                .HasColumnName("PaymentMethod");
+
+                            b1.Property<string>("PaymentName")
+                                .HasColumnType("longtext")
+                                .HasColumnName("PaymentName");
 
                             b1.HasKey("OrderId");
 
@@ -727,9 +723,9 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("Address")
                         .IsRequired();
 
-                    b.Navigation("CardInformation");
-
                     b.Navigation("Discount");
+
+                    b.Navigation("PaymentInformation");
 
                     b.Navigation("User");
                 });
@@ -915,65 +911,6 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserCardEntity.UserCard", b =>
-                {
-                    b.HasOne("Simple.Ecommerce.Domain.Entities.UserEntity.User", "User")
-                        .WithMany("UserCards")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.CardInformationObject.CardInformation", "CardInformation", b1 =>
-                        {
-                            b1.Property<int>("UserCardId")
-                                .HasColumnType("int");
-
-                            b1.Property<int>("CardFlag")
-                                .HasColumnType("int")
-                                .HasColumnName("CardFlag");
-
-                            b1.Property<string>("CardHolderName")
-                                .IsRequired()
-                                .HasMaxLength(50)
-                                .HasColumnType("varchar(50)")
-                                .HasColumnName("CardHolderName");
-
-                            b1.Property<string>("CardNumber")
-                                .IsRequired()
-                                .HasColumnType("longtext")
-                                .HasColumnName("CardNumber");
-
-                            b1.Property<string>("ExpirationMonth")
-                                .IsRequired()
-                                .HasMaxLength(2)
-                                .HasColumnType("varchar(2)")
-                                .HasColumnName("ExpirationMonth");
-
-                            b1.Property<string>("ExpirationYear")
-                                .IsRequired()
-                                .HasMaxLength(5)
-                                .HasColumnType("varchar(5)")
-                                .HasColumnName("ExpirationYear");
-
-                            b1.Property<string>("Last4Digits")
-                                .IsRequired()
-                                .HasColumnType("longtext")
-                                .HasColumnName("Last4Digits");
-
-                            b1.HasKey("UserCardId");
-
-                            b1.ToTable("UsuariosCartoes");
-
-                            b1.WithOwner()
-                                .HasForeignKey("UserCardId");
-                        });
-
-                    b.Navigation("CardInformation")
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserEntity.User", b =>
                 {
                     b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.PhotoObject.Photo", "Photo", b1 =>
@@ -995,6 +932,64 @@ namespace Simple.Ecommerce.Infra.Migrations
                         });
 
                     b.Navigation("Photo");
+                });
+
+            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.UserPaymentEntity.UserPayment", b =>
+                {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.UserEntity.User", "User")
+                        .WithMany("UserPayments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject.PaymentInformation", "PaymentInformation", b1 =>
+                        {
+                            b1.Property<int>("UserPaymentId")
+                                .HasColumnType("int");
+
+                            b1.Property<int?>("CardFlag")
+                                .HasColumnType("int")
+                                .HasColumnName("CardFlag");
+
+                            b1.Property<string>("ExpirationMonth")
+                                .HasMaxLength(2)
+                                .HasColumnType("varchar(2)")
+                                .HasColumnName("ExpirationMonth");
+
+                            b1.Property<string>("ExpirationYear")
+                                .HasMaxLength(5)
+                                .HasColumnType("varchar(5)")
+                                .HasColumnName("ExpirationYear");
+
+                            b1.Property<string>("Last4Digits")
+                                .HasColumnType("longtext")
+                                .HasColumnName("Last4Digits");
+
+                            b1.Property<string>("PaymentKey")
+                                .HasColumnType("longtext")
+                                .HasColumnName("PaymentKey");
+
+                            b1.Property<int>("PaymentMethod")
+                                .HasColumnType("int")
+                                .HasColumnName("PaymentMethod");
+
+                            b1.Property<string>("PaymentName")
+                                .HasMaxLength(50)
+                                .HasColumnType("varchar(50)")
+                                .HasColumnName("PaymentName");
+
+                            b1.HasKey("UserPaymentId");
+
+                            b1.ToTable("UsuariosPagamentos");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserPaymentId");
+                        });
+
+                    b.Navigation("PaymentInformation")
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.CategoryEntity.Category", b =>
@@ -1052,7 +1047,7 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Navigation("UserAddresses");
 
-                    b.Navigation("UserCards");
+                    b.Navigation("UserPayments");
                 });
 #pragma warning restore 612, 618
         }
