@@ -1,5 +1,6 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 using Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject;
@@ -18,6 +19,9 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
         public Address Address { get; set; }
         [BsonElement("paymentInformation")]
         public PaymentInformation? PaymentInformation { get; set; }
+        [BsonElement("orderLock")]
+        [BsonRepresentation(BsonType.Int32)]
+        public OrderLock OrderLock { get; set; }
         [BsonElement("orderDate")]
         public DateTime OrderDate { get; set; }
         [BsonElement("status")]

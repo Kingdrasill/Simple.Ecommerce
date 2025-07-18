@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace Simple.Ecommerce.Infra.Migrations
 {
     /// <inheritdoc />
-    public partial class RemakeDatabaseChangingCardInfoToPaymentInfo : Migration
+    public partial class RemakeDatabaseAddedOrderLockToOrder : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -347,6 +347,7 @@ namespace Simple.Ecommerce.Infra.Migrations
                     ExpirationYear = table.Column<string>(type: "longtext", nullable: true),
                     CardFlag = table.Column<int>(type: "int", nullable: true),
                     Last4Digits = table.Column<string>(type: "longtext", nullable: true),
+                    OrderLock = table.Column<int>(type: "int", nullable: false),
                     Deleted = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>

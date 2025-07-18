@@ -8,6 +8,7 @@ using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -44,6 +45,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (getOrder.IsFailure)
             {
                 return Result<OrderPaymentInformationResponse>.Failure(getOrder.Errors!);
+            }
+            var order = getOrder.GetValue();
+
+            if (order.OrderLock is not (OrderLock.Unlock or OrderLock.LockPrice))
+            {
+                return Result<OrderPaymentInformationResponse>.Failure(new List<Error> { new("OrderPaymentInformationResponse.OrderLocked", "O pedido está bloqueado à mudança de dados do pedido.") });
             }
 
             PaymentInformation? paymentInformation = null;
@@ -100,33 +107,32 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 }
                 paymentInformation = instacePaymentInformation.GetValue();
             }
+            order.UpdatePaymentInformation(paymentInformation);
+            order.UpdateStatus("Altered", order.OrderLock);
 
-            var instace = getOrder.GetValue();
-            instace.UpdatePaymentInformation(paymentInformation);
-
-            var updateResult = await _repository.Update(instace);
+            var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)
             {
                 return Result<OrderPaymentInformationResponse>.Failure(updateResult.Errors!);
             }
-            var order = updateResult.GetValue();
+            var orderResponse = updateResult.GetValue();
 
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<Order>();
 
             var response = new OrderPaymentInformationResponse
             (
-                order.Id,
-                order.PaymentInformation is null ? null : new PaymentInformationOrderResponse(
-                    order.PaymentInformation.PaymentMethod,
-                    order.PaymentInformation.PaymentName,
-                    order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.CreditCard)
-                        ? order.PaymentInformation.PaymentKey
+                orderResponse.Id,
+                orderResponse.PaymentInformation is null ? null : new PaymentInformationOrderResponse(
+                    orderResponse.PaymentInformation.PaymentMethod,
+                    orderResponse.PaymentInformation.PaymentName,
+                    orderResponse.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or PaymentMethod.CreditCard)
+                        ? orderResponse.PaymentInformation.PaymentKey
                         : null,
-                    order.PaymentInformation.ExpirationMonth,
-                    order.PaymentInformation.ExpirationYear,
-                    order.PaymentInformation.CardFlag,
-                    order.PaymentInformation.Last4Digits
+                    orderResponse.PaymentInformation.ExpirationMonth,
+                    orderResponse.PaymentInformation.ExpirationYear,
+                    orderResponse.PaymentInformation.CardFlag,
+                    orderResponse.PaymentInformation.Last4Digits
                 )
             );
 

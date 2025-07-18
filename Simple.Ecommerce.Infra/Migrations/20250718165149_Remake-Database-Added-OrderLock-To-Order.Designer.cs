@@ -11,8 +11,8 @@ using Simple.Ecommerce.Infra;
 namespace Simple.Ecommerce.Infra.Migrations
 {
     [DbContext(typeof(TesteDbContext))]
-    [Migration("20250718141538_Remake-Database-Changing-CardInfo-To-PaymentInfo")]
-    partial class RemakeDatabaseChangingCardInfoToPaymentInfo
+    [Migration("20250718165149_Remake-Database-Added-OrderLock-To-Order")]
+    partial class RemakeDatabaseAddedOrderLockToOrder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -288,6 +288,9 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.Property<DateTime?>("OrderDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("OrderLock")
+                        .HasColumnType("int");
 
                     b.Property<int>("OrderType")
                         .HasColumnType("int");

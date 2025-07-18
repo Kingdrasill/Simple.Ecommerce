@@ -3,6 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -31,9 +32,19 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             {
                 return Result<bool>.Failure(getOrder.Errors!);
             }
-
             var order = getOrder.GetValue();
-            order.UpdateStatus("Canceled", false);
+
+            if (order.OrderLock is OrderLock.LockPrice)
+            {
+                // handle stock de-reservation
+            }
+            else if (order.OrderLock is OrderLock.LockData)
+            {
+                // handle stock de-reservation
+                // Handle payment cancelation
+            }
+
+                order.UpdateStatus("Canceled", OrderLock.LockStatus, false);
 
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)

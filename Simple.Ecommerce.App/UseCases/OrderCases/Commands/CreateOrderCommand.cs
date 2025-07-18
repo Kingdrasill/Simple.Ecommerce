@@ -10,6 +10,7 @@ using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
 using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -167,6 +168,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 false,
                 "Created",
                 request.DiscountId,
+                OrderLock.Unlock,
                 paymentInformation
             );
             if (instance.IsFailure) 

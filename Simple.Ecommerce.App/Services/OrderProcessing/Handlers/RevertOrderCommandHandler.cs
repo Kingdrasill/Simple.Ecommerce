@@ -3,6 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
@@ -48,10 +49,10 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
                 var order = getOrder.GetValue();
 
-                if (order.Status is "Created" or "Failed Confirmed")
+                if (order.OrderLock is OrderLock.Unlock)
                 {
-                    Console.WriteLine($"[ProcessCanceledOrderCommandHandler] O pedido {command.OrderId} não confimardo anteriormento não é necessário cancelar ele.");
-                    order.UpdateStatus("Canceled", false, 0);
+                    Console.WriteLine($"[ProcessCanceledOrderCommandHandler] O pedido {command.OrderId} não pode ser revertido no seu estado atual.");
+                    order.UpdateStatus("Failed Reverted", order.OrderLock);
                     var updateResult = await _canceledOrderUoW.Orders.Update(order);
                     if (updateResult.IsFailure)
                     {
@@ -59,13 +60,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     }
                     return Result<bool>.Success(true);
                 }
-                else if (order.Status is "Delivered" or "Pickedup")
+                else if (order.OrderLock is not OrderLock.LockPrice)
                 {
-                    Console.WriteLine($"[ProcessCanceledOrderCommandHandler] O pedido {command.OrderId} já foi entregue ou recolhido, logo não pode ser cancelado.");
-                    throw new ResultException(new Error("ProcessCanceledOrderCommandHandler.OrderCompleted", $"O pedido {command.OrderId} já foi entregue ou recolhido, logo não pode ser cancelado."));
+                    Console.WriteLine($"[ProcessCanceledOrderCommandHandler] O pedido {command.OrderId} já foi pago não se pode reverter ele.");
+                    throw new ResultException(new Error("ProcessCanceledOrderCommandHandler.OrderCompleted", $"O pedido {command.OrderId} já foi pago não se pode reverter ele."));
                 }
 
-                order.UpdateStatus("Cancelation", false);
+                order.UpdateStatus("Revert", OrderLock.Unlock, false);
 
                 var getUser = await _canceledOrderUoW.Users.Get(order.UserId);
                 if (getUser.IsFailure)
@@ -80,12 +81,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             {
                 await _canceledOrderUoW.Rollback();
 
-                Console.WriteLine($"[ProcessCanceledOrderCommandHandler] Falha ao cancelar o pedido {command.OrderId}.");
+                Console.WriteLine($"[ProcessCanceledOrderCommandHandler] Falha ao reverter o pedido {command.OrderId}.");
                 var getOrder = await _canceledOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed Canceled");
+                    order.UpdateStatus("Failed Reverted", order.OrderLock);
                     await _canceledOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
@@ -96,12 +97,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             {
                 await _canceledOrderUoW.Rollback();
 
-                Console.WriteLine($"[ProcessCanceledOrderCommandHandler] Falha ao cancelar o pedido {command.OrderId}.");
+                Console.WriteLine($"[ProcessCanceledOrderCommandHandler] Falha ao reverter o pedido {command.OrderId}.");
                 var getOrder = await _canceledOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed Canceled");
+                    order.UpdateStatus("Failed Reverted", order.OrderLock);
                     await _canceledOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }

@@ -17,6 +17,7 @@ using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
@@ -358,6 +359,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     Convert.ToBoolean(cache["Confirmation"]),
                     Convert.ToString(cache["Status"])!,
                     cache.GetNullableInt("DiscountId"),
+                    (OrderLock)Convert.ToInt32(cache["OrderLock"]),
                     paymentInfo
                 ).GetValue()
             );

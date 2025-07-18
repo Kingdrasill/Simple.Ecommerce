@@ -7,6 +7,7 @@ using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
@@ -54,13 +55,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
                 var order = getOrder.GetValue();
 
-                if (order.Status is not ("Created" or "Canceled" or "Failed Confirmed"))
+                if (order.OrderLock is not OrderLock.Unlock)
                 {
-                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!");
-                    throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido { command.OrderId } já foi processado sucessivelmente anteriormente! Cancele ele para processar novamente!"));
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} está bloqueado para processamento de pedido!");
+                    throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido {command.OrderId} está bloqueado para processamento de pedido!"));
                 }
 
-                order.UpdateStatus("Confirmed", true);
+                order.UpdateStatus("Confirmed", OrderLock.Unlock, confirmation: true);
 
                 // Pegando dados do usuário que fez o pedido
                 var getUser = await _confirmedOrderUoW.Users.Get(order.UserId);
@@ -101,6 +102,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     order.OrderType,
                     order.Address,
                     order.PaymentInformation,
+                    order.OrderLock,
                     order.OrderDate!.Value,
                     order.Status,
                     orderInProcess.CurrentTotalPrice,
@@ -142,13 +144,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Atualizando o status do pedido para Processado
-                order.UpdateStatus("Processed", newTotalPrice: orderInProcess.CurrentTotalPrice);
+                order.UpdateStatus("Processed", OrderLock.LockPrice, newTotalPrice: orderInProcess.CurrentTotalPrice);
                 
                 // Enviando o evento de pedido processado
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Pedido {command.OrderId} processado com sucesso. Total: {order.TotalPrice:C}.");
-                await _orderDispatcher.Dispatch(new OrderProcessedEvent(order.Id, order.Status, order.TotalPrice!.Value));
+                await _orderDispatcher.Dispatch(new OrderProcessedEvent(order.Id, order.Status, order.TotalPrice!.Value, order.OrderLock));
 
-                order.UpdateStatus("Pending Payment");
+                order.UpdateStatus("Pending Payment", order.OrderLock);
                 var updateOrderResult = await _confirmedOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
                 {
@@ -174,7 +176,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed Confirmed", false, 0);
+                    order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
@@ -191,7 +193,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
-                    order.UpdateStatus("Failed Confirmed", false, 0);
+                    order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
 
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
@@ -257,6 +259,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 order.OrderType,
                 order.Address,
                 order.PaymentInformation,
+                order.OrderLock,
                 originalTotalPrice,
                 orderItemsInProcess,
                 unAppliedDiscounts,

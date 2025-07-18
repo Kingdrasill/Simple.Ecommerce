@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Simple.Ecommerce.Infra\Simple.Ecommerce.Infra.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

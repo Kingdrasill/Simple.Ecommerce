@@ -1,4 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Interfaces.OrderProcessingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBOGOEvent;
@@ -20,6 +21,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
         public OrderType OrderType { get; private set; }
         public Address Address { get; private set; }
         public PaymentInformation? PaymentInformation { get; private set; }
+        public OrderLock OrderLock { get; private set; }
         public decimal OrginalTotalPrice { get; private set; }
         public decimal CurrentTotalPrice { get; private set; }
         public List<OrderItemInProcess> Items { get; private set; }
@@ -35,13 +37,14 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
 
         private readonly List<IOrderProcessingEvent> _events = new List<IOrderProcessingEvent>();
 
-        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, decimal originalTotalPrice, List<OrderItemInProcess> items, List<OrderDiscountInProcess> unAppliedDiscounts, string initialStatus)
+        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, OrderLock orderLock, decimal originalTotalPrice, List<OrderItemInProcess> items, List<OrderDiscountInProcess> unAppliedDiscounts, string initialStatus)
         {
             Id = id;
             UserId = userId;
             OrderType = orderType;
             Address = address;
             PaymentInformation = paymentInformation;
+            OrderLock = orderLock;
             OrginalTotalPrice = originalTotalPrice;
             CurrentTotalPrice = originalTotalPrice;
             Items = items;

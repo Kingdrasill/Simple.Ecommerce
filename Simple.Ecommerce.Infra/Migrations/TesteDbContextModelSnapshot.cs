@@ -286,6 +286,9 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Property<DateTime?>("OrderDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("OrderLock")
+                        .HasColumnType("int");
+
                     b.Property<int>("OrderType")
                         .HasColumnType("int");
 

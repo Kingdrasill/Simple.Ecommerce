@@ -1,8 +1,11 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.Contracts.OrderContracts.PaymentInformations;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
 namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
@@ -32,6 +35,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 return Result<bool>.Failure(getOrder.Errors!);
             }
             var order = getOrder.GetValue();
+
+            if (order.OrderLock is not (OrderLock.Unlock or OrderLock.LockPrice))
+            {
+                return Result<bool>.Failure(new List<Error> { new("OrderPaymentInformationResponse.OrderLocked", "O pedido está bloqueado à mudança de dados do pedido.") });
+            }
 
             if (order.PaymentInformation is null)
             {

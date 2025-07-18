@@ -10,6 +10,7 @@ using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
 using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -53,6 +54,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             if (getOrder.IsFailure)
             {
                 return Result<OrderResponse>.Failure(getOrder.Errors!);
+            }
+            var order = getOrder.GetValue();
+
+            if (order.OrderLock is not OrderLock.Unlock)
+            {
+                return Result<OrderResponse>.Failure(new List<Error> { new("UpdateOrderCommand.OrderLocked", "Não é possível mudar os dados do pedido!") });
             }
 
             var getUser = await _userRepository.Get(request.UserId);
@@ -157,6 +164,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 paymentInformation = instancePaymentInformation.GetValue();
             }
 
+            order.UpdateStatus("Altered", order.OrderLock);
             var instance = new Order().Create(
                 request.Id,
                 request.UserId,
@@ -164,9 +172,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 address.GetValue(),
                 request.TotalPrice,
                 request.OrderDate,
-                getOrder.GetValue().Confirmation,
-                getOrder.GetValue().Status,
+                order.Confirmation,
+                order.Status,
                 request.DiscountId,
+                order.OrderLock,
                 paymentInformation
             );
             if (instance.IsFailure)
@@ -179,44 +188,44 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             {
                 return Result<OrderResponse>.Failure(updateResult.Errors!);
             }
-            var order = updateResult.GetValue();
+            var orderResponse = updateResult.GetValue();
 
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<Order>();
 
             var addressResponse = new OrderAddressResponse(
-                order.Address.Number,
-                order.Address.Street,
-                order.Address.Neighbourhood,
-                order.Address.City,
-                order.Address.Country,
-                order.Address.Complement,
-                order.Address.CEP
+                orderResponse.Address.Number,
+                orderResponse.Address.Street,
+                orderResponse.Address.Neighbourhood,
+                orderResponse.Address.City,
+                orderResponse.Address.Country,
+                orderResponse.Address.Complement,
+                orderResponse.Address.CEP
             );
 
             var response = new OrderResponse(
-                order.Id,
-                order.UserId,
-                order.OrderType,
+                orderResponse.Id,
+                orderResponse.UserId,
+                orderResponse.OrderType,
                 addressResponse,
-                order.PaymentInformation is null
+                orderResponse.PaymentInformation is null
                     ? null
                     : new PaymentInformationOrderResponse(
-                        order.PaymentInformation.PaymentMethod,
-                        order.PaymentInformation.PaymentName,
-                        order.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or  PaymentMethod.CreditCard) 
-                            ? order.PaymentInformation.PaymentKey 
+                        orderResponse.PaymentInformation.PaymentMethod,
+                        orderResponse.PaymentInformation.PaymentName,
+                        orderResponse.PaymentInformation.PaymentMethod is not (PaymentMethod.CreditCard or  PaymentMethod.CreditCard) 
+                            ? orderResponse.PaymentInformation.PaymentKey 
                             : null,
-                        order.PaymentInformation.ExpirationMonth,
-                        order.PaymentInformation.ExpirationYear,
-                        order.PaymentInformation.CardFlag,
-                        order.PaymentInformation.Last4Digits
+                        orderResponse.PaymentInformation.ExpirationMonth,
+                        orderResponse.PaymentInformation.ExpirationYear,
+                        orderResponse.PaymentInformation.CardFlag,
+                        orderResponse.PaymentInformation.Last4Digits
                     ),
-                order.TotalPrice,
-                order.OrderDate,
-                order.Confirmation,
-                order.Status,
-                order.DiscountId
+                orderResponse.TotalPrice,
+                orderResponse.OrderDate,
+                orderResponse.Confirmation,
+                orderResponse.Status,
+                orderResponse.DiscountId
             );
 
             return Result<OrderResponse>.Success(response);

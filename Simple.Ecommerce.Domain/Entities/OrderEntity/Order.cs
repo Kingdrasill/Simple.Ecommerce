@@ -2,6 +2,7 @@
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Enums.OrderType;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
@@ -24,6 +25,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
         public int? DiscountId { get; private set; }
         public Discount? Discount { get; private set; } = null;
         public PaymentInformation? PaymentInformation { get; private set; } = null;
+        public OrderLock OrderLock { get; private set; }
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
 
@@ -32,7 +34,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderItems = new HashSet<OrderItem>();
         }
 
-        private Order(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, PaymentInformation? paymentInformation = null)
+        private Order(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation = null)
         {
             Id = id;
             UserId = userId;
@@ -44,13 +46,14 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             Status = status;
             DiscountId = discountId;
             PaymentInformation = paymentInformation;
+            OrderLock = orderLock;
 
             OrderItems = new HashSet<OrderItem>();
         }
 
-        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, PaymentInformation? paymentInformation = null)
+        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation = null)
         {
-            return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, discountId, paymentInformation));
+            return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, discountId, orderLock, paymentInformation));
         }
 
         public void UpdateDiscountId(int? discountId)
@@ -63,10 +66,11 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             PaymentInformation = paymentInformation;
         }
 
-        public void UpdateStatus(string status, bool? confirmation = null, decimal? newTotalPrice = null)
+        public void UpdateStatus(string status, OrderLock orderLock, bool? confirmation = null, decimal? newTotalPrice = null)
         {
             OrderDate = DateTime.UtcNow;
             Status = status;
+            OrderLock = orderLock;
             if (confirmation.HasValue)
             {
                 Confirmation = confirmation.Value;

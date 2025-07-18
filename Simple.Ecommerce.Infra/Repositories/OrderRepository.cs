@@ -61,6 +61,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             }
 
             order.UpdatePaymentInformation(null);
+            order.UpdateStatus("Altered", order.OrderLock);
             _context.Entry(order).Reference(o => o.PaymentInformation).IsModified = true;
 
             await _context.SaveChangesAsync();

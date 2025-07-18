@@ -42,6 +42,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 OrderType = @event.OrderType,
                 Address = @event.Address,
                 PaymentInformation = @event.PaymentInformation,
+                OrderLock = @event.OrderLock,
                 OrderDate = @event.OrderDate,
                 Status = @event.Status,
                 OriginalTotal = @event.InitialTotal,
@@ -229,7 +230,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             if (readModel != null)
             {
                 readModel.CurrentTotal = @event.FinalTotal;
-                readModel.Status = "Processed";
+                readModel.Status = @event.Status;
+                readModel.OrderLock = @event.OrderLock;
                 await _orderDetailReadModelRepository.Upsert(readModel);
             }
         }
