@@ -1,7 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Validation.Validators;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
-using Microsoft.EntityFrameworkCore;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
 {
@@ -26,13 +25,13 @@ namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
             return new AddressValidator().Validate(new Address(number, street, neighbourhood, city, country, complement, cep));
         }
 
-        public int Number { get; }
-        public string Street { get; }
-        public string Neighbourhood { get; }
-        public string City { get; }
-        public string Country { get; }
-        public string? Complement { get; }
-        public string CEP { get; }
+        public int Number { get; set; }
+        public string Street { get; set; }
+        public string Neighbourhood { get; set; }
+        public string City { get; set; }
+        public string Country { get; set; }
+        public string? Complement { get; set; }
+        public string CEP { get; set; }
 
         public override IEnumerable<object?> GetEqualityComponents()
         {

@@ -25,7 +25,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             AppliedDiscount = null;
         }
 
-        private OrderItemInProcess(int id, int productId, string productName, int quantity, decimal unitPrice, decimal currentPrice, decimal discountAmount, AppliedDiscountDetail? appliedDiscount)
+        public OrderItemInProcess(int id, int productId, string productName, int quantity, decimal unitPrice, decimal currentPrice, decimal discountAmount, AppliedDiscountDetail? appliedDiscount)
         {
             Id = id;
             ProductId = productId;
@@ -42,6 +42,18 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             DiscountAmount = discountAmount;
             CurrentPrice -= discountAmount;
             AppliedDiscount = new AppliedDiscountDetail(discountId, discountName, discountType);
+        }
+
+        public void RevertDiscount(decimal amountReverted)
+        {
+            DiscountAmount -= amountReverted;
+            CurrentPrice += amountReverted;
+            AppliedDiscount = null;
+        }
+
+        public void AddNItems(int n)
+        {
+            Quantity += n;
         }
 
         public OrderItemInProcess RemoveNItems(int n)

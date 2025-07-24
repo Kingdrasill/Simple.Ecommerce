@@ -15,11 +15,11 @@ using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility
 {
-    public class OrderProcessingChain : IOrderProcessingChain
+    public class ConfirmOrderProcessingChain : IOrderProcessingChain
     {
         private readonly IOrderProcessingHandler _firstHandler;
 
-        public OrderProcessingChain(
+        public ConfirmOrderProcessingChain(
             DiscountsValidationHandler discountsValidationHandler,
             BOGOItemsDiscountHandler bogoItemsDiscountHandler,
             BundleItemsDiscountHandler bundleItemsDiscountHandler,
@@ -47,7 +47,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility
                 .SetNext(orderDiscountHandler);
             orderDiscountHandler
                 .SetNext(taxHandler);
-            // Add a payment method handler
 
             _firstHandler = stockValidationHandler;
         }

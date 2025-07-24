@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
-using Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility;
 using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
@@ -21,21 +20,21 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
     {
         private readonly IConfirmedOrderUnitOfWork _confirmedOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
-        private readonly IOrderProcessingChain _orderChain;
+        private readonly IOrderProcessingChain _confirmChain;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ProcessConfirmedOrderCommandHandler(
             IConfirmedOrderUnitOfWork confirmedOrderUoW,
             IOrderProcessingDispatcher orderDispatcher,
-            IOrderProcessingChain orderChain,
+            IOrderProcessingChain confirmChain,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
             _confirmedOrderUoW = confirmedOrderUoW;
             _orderDispatcher = orderDispatcher;
-            _orderChain = orderChain;
+            _confirmChain = confirmChain;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -55,12 +54,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
                 var order = getOrder.GetValue();
 
+                // Verificando a trava do pedido
                 if (order.OrderLock is not OrderLock.Unlock)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} está bloqueado para processamento de pedido!");
                     throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido {command.OrderId} está bloqueado para processamento de pedido!"));
                 }
 
+                // Atualizando o status do pedido
                 order.UpdateStatus("Confirmed", OrderLock.Unlock, confirmation: true);
 
                 // Pegando dados do usuário que fez o pedido
@@ -116,7 +117,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 ));
 
                 // Processando o pedido com a cadeia de responsabilidade
-                var processingResult = await _orderChain.Process(orderInProcess);
+                var processingResult = await _confirmChain.Process(orderInProcess);
                 if (processingResult.IsFailure)
                 {
                     throw new ResultException(processingResult.Errors!);
@@ -150,6 +151,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Pedido {command.OrderId} processado com sucesso. Total: {order.TotalPrice:C}.");
                 await _orderDispatcher.Dispatch(new OrderProcessedEvent(order.Id, order.Status, order.TotalPrice!.Value, order.OrderLock));
 
+                // Atualizando o status do pedido para Pagamento Pendente
                 order.UpdateStatus("Pending Payment", order.OrderLock);
                 var updateOrderResult = await _confirmedOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
@@ -359,6 +361,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 if (updateResult.IsFailure)
                 {
                     updatedItemsErros.AddRange(updateResult.Errors!);
+                    continue;
                 }
             }
 

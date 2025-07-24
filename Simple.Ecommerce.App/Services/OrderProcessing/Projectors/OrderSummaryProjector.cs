@@ -13,6 +13,7 @@ using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
 {
     public class OrderSummaryProjector :
+        // Confirmação
         IOrderProcessingEventHandler<OrderProcessingStartedEvent>,
         IOrderProcessingEventHandler<OrderStatusChangedEvent>,
         IOrderProcessingEventHandler<ShippingFeeAppliedEvent>,
@@ -22,7 +23,17 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<BundleDiscountAppliedEvent>,
         IOrderProcessingEventHandler<OrderDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TaxAppliedEvent>,
-        IOrderProcessingEventHandler<OrderProcessedEvent>
+        IOrderProcessingEventHandler<OrderProcessedEvent>,
+        // Reversão
+        IOrderProcessingEventHandler<OrderRevertingStartedEvent>,
+        IOrderProcessingEventHandler<TaxRevertedEvent>,
+        IOrderProcessingEventHandler<OrderDiscountRevertedEvent>,
+        IOrderProcessingEventHandler<BundleDiscountRevertEvent>,
+        IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<ShippingFeeRevertedEvent>,
+        IOrderProcessingEventHandler<OrderRevertedEvent>
     {
         private readonly IOrderSummaryReadModelRepository _orderSummaryReadModelRepository;
 
@@ -33,6 +44,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             _orderSummaryReadModelRepository = orderSummaryReadModelRepository;
         }
 
+        // Confirmação
         public async Task Handle(OrderProcessingStartedEvent @event)
         {
             var orderSummary = new OrderSummaryReadModel
@@ -42,7 +54,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 OrderDate = @event.OrderDate,
                 Status = @event.Status,
                 TotalAmount = @event.InitialTotal,
-                ItemsCount = @event.Items.Count
+                ItemsCount = @event.Items.Sum(item => item.Quantity)
             };
             await _orderSummaryReadModelRepository.Upsert(orderSummary);
         }
@@ -74,6 +86,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         public async Task Handle(BundleDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(OrderDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(TaxAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        
         public async Task Handle(OrderProcessedEvent @event)
         {
             var orderSummary = await _orderSummaryReadModelRepository.GetById(@event.AggregateId);
@@ -81,6 +94,41 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             {
                 orderSummary.Status = @event.Status;
                 orderSummary.TotalAmount = @event.FinalTotal;
+                await _orderSummaryReadModelRepository.Upsert(orderSummary);
+            }
+        }
+
+        // Reversão
+        public async Task Handle(OrderRevertingStartedEvent @event)
+        {
+            int count = @event.Items.Sum(item => item.Quantity) + @event.FreeItems.Sum(item => item.Quantity) + @event.Bundles.Sum(bundle => bundle.BundleItems.Sum(item => item.Quantity));
+            var orderSummary = new OrderSummaryReadModel
+            {
+                OrderId = @event.AggregateId,
+                UserId = @event.UserId,
+                OrderDate = @event.OrderDate,
+                Status = @event.Status,
+                TotalAmount = @event.FinalTotal,
+                ItemsCount = count
+            };
+            await _orderSummaryReadModelRepository.Upsert(orderSummary);
+        }
+
+        public async Task Handle(TaxRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(OrderDiscountRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BundleDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BOGOItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(TieredItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(SimpleItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(ShippingFeeRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+
+        public async Task Handle(OrderRevertedEvent @event)
+        {
+            var orderSummary = await _orderSummaryReadModelRepository.GetById(@event.AggregateId);
+            if (orderSummary != null)
+            {
+                orderSummary.Status = @event.Status;
+                orderSummary.TotalAmount = @event.OriginalTotal;
                 await _orderSummaryReadModelRepository.Upsert(orderSummary);
             }
         }

@@ -8,5 +8,8 @@ namespace Simple.Ecommerce.App.Interfaces.ReadData
         : IReadModelRepository<OrderEventStreamReadModel, ObjectId>
     {
         Task<int> GetLastVersionForOrder(int orderId);
+        Task<List<OrderEventStreamReadModel>> GetEventsForOrder(int orderId);
+        Task<(OrderEventStreamReadModel Start, OrderEventStreamReadModel End)?> GetLastProcessingCycle(int orderId);
+        Task<List<OrderEventStreamReadModel>> GetEventsInWindow(int orderId, DateTime start, DateTime end);
     }
 }

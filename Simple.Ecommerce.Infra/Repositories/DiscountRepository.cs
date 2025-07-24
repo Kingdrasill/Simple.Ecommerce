@@ -1,6 +1,8 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -44,6 +46,20 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<Discount>> Get(int id, bool NoTracking = true)
         {
             return await _getRepository.Get(_context, id, NoTracking);
+        }
+
+        public async Task<Result<List<Discount>>> GetByDiscountIds(List<int> ids)
+        {
+            var discounts = await _context.Discounts
+                .Where(d => ids.Contains(d.Id) && !d.Deleted)
+                .ToListAsync();
+
+            if (discounts.Count != ids.Count)
+            {
+                return Result<List<Discount>>.Failure(new List<Error>{ new("DiscountRepository.NotFound", "Um ou mais descontons não foram encontrados!") });
+            }
+
+            return Result<List<Discount>>.Success(discounts);
         }
 
         public async Task<Result<List<Discount>>> List()

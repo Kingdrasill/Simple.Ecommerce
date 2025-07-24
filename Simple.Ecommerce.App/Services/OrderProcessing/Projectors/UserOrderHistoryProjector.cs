@@ -13,6 +13,7 @@ using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
 {
     public class UserOrderHistoryProjector :
+        // Confirmação
         IOrderProcessingEventHandler<OrderProcessingStartedEvent>,
         IOrderProcessingEventHandler<OrderStatusChangedEvent>,
         IOrderProcessingEventHandler<ShippingFeeAppliedEvent>,
@@ -22,7 +23,17 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<BundleDiscountAppliedEvent>,
         IOrderProcessingEventHandler<OrderDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TaxAppliedEvent>,
-        IOrderProcessingEventHandler<OrderProcessedEvent>
+        IOrderProcessingEventHandler<OrderProcessedEvent>,
+        // Reversão
+        IOrderProcessingEventHandler<OrderRevertingStartedEvent>,
+        IOrderProcessingEventHandler<TaxRevertedEvent>,
+        IOrderProcessingEventHandler<OrderDiscountRevertedEvent>,
+        IOrderProcessingEventHandler<BundleDiscountRevertEvent>,
+        IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<ShippingFeeRevertedEvent>,
+        IOrderProcessingEventHandler<OrderRevertedEvent>
     {
         private readonly IUserOrderHistoryReadModelRepository _userOrderHistoryReadModelRepository;
 
@@ -33,6 +44,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             _userOrderHistoryReadModelRepository = userOrderHistoryReadModelRepository;
         }
 
+        // Confirmação
         public async Task Handle(OrderProcessingStartedEvent @event)
         {
             var readModel = await _userOrderHistoryReadModelRepository.GetByUserId(@event.UserId);
@@ -125,7 +137,45 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 if (orderEntry != null)
                 {
                     orderEntry.TotalAmount = @event.FinalTotal;
-                    orderEntry.Status = "Processed";
+                    orderEntry.Status = @event.Status;
+                    await _userOrderHistoryReadModelRepository.Upsert(readModel);
+                }
+            }
+        }
+
+        // Reversão
+        public async Task Handle(OrderRevertingStartedEvent @event)
+        {
+            var readModel = await _userOrderHistoryReadModelRepository.GetByUserId(@event.UserId);
+            if (readModel != null)
+            {
+                var orderEntry = readModel.Orders.FirstOrDefault(o => o.OrderId == @event.AggregateId);
+                if (orderEntry != null)
+                {
+                    orderEntry.Status = @event.Status;
+                }
+                await _userOrderHistoryReadModelRepository.Upsert(readModel);
+            }
+        }
+
+        public async Task Handle(TaxRevertedEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(OrderDiscountRevertedEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BundleDiscountRevertEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BOGOItemDiscountRevertEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(TieredItemDiscountRevertEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(SimpleItemDiscountRevertEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(ShippingFeeRevertedEvent @event) => await HandleGenericEvent(@event.AggregateId, @event.CurrentTotal);
+
+        public async Task Handle(OrderRevertedEvent @event)
+        {
+            var readModel = await _userOrderHistoryReadModelRepository.GetByOrderId(@event.AggregateId);
+            if (readModel != null)
+            {
+                var orderEntry = readModel.Orders.FirstOrDefault(o => o.OrderId == @event.AggregateId);
+                if (orderEntry != null)
+                {
+                    orderEntry.TotalAmount = @event.OriginalTotal;
+                    orderEntry.Status = @event.Status;
                     await _userOrderHistoryReadModelRepository.Upsert(readModel);
                 }
             }

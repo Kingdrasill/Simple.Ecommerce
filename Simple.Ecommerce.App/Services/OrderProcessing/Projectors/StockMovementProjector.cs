@@ -6,7 +6,8 @@ using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
 {
     public class StockMovementProjector :
-        IOrderProcessingEventHandler<StockReservedEvent>
+        IOrderProcessingEventHandler<StockReservedEvent>,
+        IOrderProcessingEventHandler<StockReleasedEvent>
     {
         private readonly IStockMovementReadModelRepository _stockMovementReadModelRepository;
 
@@ -25,6 +26,21 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 ProductId = @event.ProductId,
                 QuantityChanged = -@event.Quantity,
                 MovementType = "Reserved",
+                OrderId = @event.AggregateId,
+                Timestamp = @event.Timestamp
+            };
+
+            await _stockMovementReadModelRepository.InsertOne(readModel);
+        }
+
+        public async Task Handle(StockReleasedEvent @event)
+        {
+            var readModel = new StockMovementReadModel
+            {
+                MovementId = Guid.NewGuid(),
+                ProductId = @event.ProductId,
+                QuantityChanged = @event.Quantity,
+                MovementType = "Released",
                 OrderId = @event.AggregateId,
                 Timestamp = @event.Timestamp
             };

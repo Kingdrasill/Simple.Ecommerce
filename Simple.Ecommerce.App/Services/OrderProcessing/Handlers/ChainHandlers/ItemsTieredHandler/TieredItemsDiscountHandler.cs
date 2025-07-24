@@ -41,7 +41,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                     var tierToApply = getItemTiers.GetValue()
                         .Where(it => it.MinQuantity <= item.Quantity)
                         .OrderByDescending(it  => it.MinQuantity)
-                        .LastOrDefault();
+                        .FirstOrDefault();
 
                     if (tierToApply is not null)
                     {
@@ -54,7 +54,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                         {
                             amountDiscountedPrice = discount.Value!.Value;
                         }
-                        var publishEvent = orderInProcess.ApplyTieredItemDiscount(item.Id, discount.Id, discount.Name, discount.DiscountType, tierToApply.Name, amountDiscountedPrice);
+                        var publishEvent = orderInProcess.ApplyTieredItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, tierToApply.Name, amountDiscountedPrice);
                         Console.WriteLine($"\t[TieredItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.NewItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
                     }
                     else
@@ -62,7 +62,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                         Console.WriteLine($"\t[TieredItemDiscountsHandler] O desconto {discount.Name} não foi aplicado ao item {item.ProductName} por não ter a quantidade miníma do tier mais baixo.");
                     }
 
-                    orderInProcess.UnAppliedDiscounts.Remove(discount);
+                    orderInProcess.RemoveAppliedDiscount(discount);
                     tieredDiscounts.RemoveAt(index);
                     index = tieredDiscounts.Count - 1;
                 }

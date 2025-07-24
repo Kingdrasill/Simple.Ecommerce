@@ -34,7 +34,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             var getCompleteOrder = await _repository.GetCompleteOrder(id);
             if (getCompleteOrder.IsFailure)
             {
-                List<Error> errors = new List<Error>{ new("ConfirmOrderCommand.ProcessedError", "O pedido foi processado mas falhou de buscar os dados do pedido.") };
+                List<Error> errors = new List<Error>{ new("ConfirmOrderCommand.ProcessedError", "O pedido foi processado mas falhou na horas de buscar os dados do pedido.") };
                 errors.AddRange(getCompleteOrder.Errors!);
                 return Result<OrderCompleteDTO>.Failure(errors);
             }

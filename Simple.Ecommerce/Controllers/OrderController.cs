@@ -23,6 +23,7 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IChangeDiscountOrderCommand _changeDiscountOrderCommand;
         private readonly IChangePaymentInformationOrderCommand _changePaymentMethodOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
+        private readonly IRevertProcessedOrderCommand _revertProcessedOrderCommand;
         private readonly IGetCompleteOrderQuery _getCompleteOrderQuery;
         private readonly IGetPaymentInformationOrderQuery _getPaymentMethodOrderQuery;
 
@@ -37,6 +38,7 @@ namespace Simple.Ecommerce.Api.Controllers
             IChangeDiscountOrderCommand changeDiscountOrderCommand,
             IChangePaymentInformationOrderCommand changePaymentMethodOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
+            IRevertProcessedOrderCommand revertProcessedOrderCommand,
             IGetCompleteOrderQuery getCompleteOrderQuery,
             IGetPaymentInformationOrderQuery getPaymentMethodOrderQuery
         )
@@ -51,6 +53,7 @@ namespace Simple.Ecommerce.Api.Controllers
             _changeDiscountOrderCommand = changeDiscountOrderCommand;
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
+            _revertProcessedOrderCommand = revertProcessedOrderCommand;
             _getCompleteOrderQuery = getCompleteOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
@@ -95,6 +98,15 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<bool>> Confirm(int orderId)
         {
             var result = await _confirmOrderCommand.Execute(orderId);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Revert/{orderId}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> Revert(int orderId)
+        {
+            var result = await _revertProcessedOrderCommand.Execute(orderId);
 
             return ResultHandler.HandleResult(this, result);
         }

@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
-namespace Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility
+namespace Simple.Ecommerce.App.Interfaces.Services.OrderProcessing
 {
     public interface IOrderProcessingChain
     {

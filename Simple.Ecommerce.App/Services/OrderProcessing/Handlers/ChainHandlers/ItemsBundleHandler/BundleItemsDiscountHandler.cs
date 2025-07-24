@@ -98,6 +98,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 
                     foreach (var bd in sameBundleDiscounts)
                     {
+                        orderInProcess.RemoveAppliedDiscount(bd);
                         bundleDiscounts.Remove(bd);
                     }
                     index = bundleDiscounts.Count - 1;

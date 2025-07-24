@@ -26,13 +26,13 @@ namespace Simple.Ecommerce.Domain.ValueObjects.PaymentInformationObject
             return new PaymentInformationValidator().Validate(new PaymentInformation(paymentMethod, paymentName, paymentKey, expirationMonth, expirationYear, cardFlag, last4Digits));
         }
 
-        public PaymentMethod PaymentMethod { get; private set; }
-        public string? PaymentName { get; private set; }
-        public string? PaymentKey { get; private set; }
-        public string? ExpirationMonth { get; private set; }
-        public string? ExpirationYear { get; private set; }
-        public CardFlag? CardFlag { get; private set; }
-        public string? Last4Digits { get; private set; }
+        public PaymentMethod PaymentMethod { get; set; }
+        public string? PaymentName { get; set; }
+        public string? PaymentKey { get; set; }
+        public string? ExpirationMonth { get; set; }
+        public string? ExpirationYear { get; set; }
+        public CardFlag? CardFlag { get; set; }
+        public string? Last4Digits { get; set; }
 
         public override IEnumerable<object?> GetEqualityComponents()
         {

@@ -9,5 +9,12 @@ namespace Simple.Ecommerce.Infra.ReadModelRepositories
     {
         public OrderDetailMongoDBReadModelRepository(IMongoDatabase database)
             : base(database, "orders_details") { }
+
+        public async Task<OrderDetailReadModel?> GetOrderDetails(int orderId)
+        {
+            return await _collection
+                .Find(c => c.OrderId == orderId)
+                .FirstOrDefaultAsync();
+        }
     }
 }

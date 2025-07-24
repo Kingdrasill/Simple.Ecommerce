@@ -23,7 +23,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 
                     if (item.Quantity > 1)
                     {
-                        var publishEvent = orderInProcess.ApplyBOGOItemDiscount(item.Id, discount.Id, discount.Name, discount.DiscountType);
+                        var publishEvent = orderInProcess.ApplyBOGOItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType);
                         Console.WriteLine($"\t[BOGOItemsDiscountsHandler] O desconto de {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Total descontado do pedido: {publishEvent.AmountDiscounted:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
                     }
                     else
@@ -31,6 +31,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                         Console.WriteLine($"\t[BOGOItemsDiscountsHandler] O desconto {discount.Name} não foi aplicado ao item {item.ProductName} por não ter a quantidade necessária para o desconto.");
                     }
 
+                    orderInProcess.RemoveAppliedDiscount(discount);
                     bogoDiscounts.RemoveAt(index);
                     index = bogoDiscounts.Count - 1;
                 }

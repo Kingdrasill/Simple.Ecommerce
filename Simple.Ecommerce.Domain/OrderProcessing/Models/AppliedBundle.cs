@@ -18,5 +18,14 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             DiscountType = discountType;
             Items = items;
         }
+
+        public AppliedBundle(Guid bundleId, int discountId, string discountName, DiscountType discountType, List<AppliedDiscountItem> items)
+        {
+            Id = bundleId;
+            DiscountId = discountId;
+            DiscountName = discountName;
+            DiscountType = discountType;
+            Items = items;
+        }
     }
 }

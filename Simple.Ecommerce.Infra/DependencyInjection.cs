@@ -124,6 +124,7 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<ICreateBatchCouponUnitOfWork, CreateBatchCouponUnitOfWork>();
             services.AddScoped<ICreateUserUnitOfWork, CreateUserUnitOfWork>();
             services.AddScoped<IRemoveAllItemsOrderUnitOfWork, RemoveAllItemsOrderUnitOfWork>();
+            services.AddScoped<IRevertedOrderUnitOfWork, RevertedOrderUnitOfWork>();
         }
 
         private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)

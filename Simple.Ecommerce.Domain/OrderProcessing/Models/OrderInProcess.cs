@@ -22,7 +22,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
         public Address Address { get; private set; }
         public PaymentInformation? PaymentInformation { get; private set; }
         public OrderLock OrderLock { get; private set; }
-        public decimal OrginalTotalPrice { get; private set; }
+        public decimal OriginalTotalPrice { get; private set; }
         public decimal CurrentTotalPrice { get; private set; }
         public List<OrderItemInProcess> Items { get; private set; }
         public List<AppliedDiscountItem> FreeItems { get; private set; }
@@ -45,7 +45,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             Address = address;
             PaymentInformation = paymentInformation;
             OrderLock = orderLock;
-            OrginalTotalPrice = originalTotalPrice;
+            OriginalTotalPrice = originalTotalPrice;
             CurrentTotalPrice = originalTotalPrice;
             Items = items;
             FreeItems = new();
@@ -57,6 +57,28 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TaxAmount = 0;
             Status = initialStatus;
             shippingFeeApplied = false;
+        }
+
+        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, OrderLock orderLock, decimal totalPrice, List<OrderItemInProcess> items, List<AppliedDiscountItem> freeItems, List<AppliedBundle> bundles, AppliedDiscountDetail? appliedDiscount, decimal totalDiscount, decimal shippingFee, decimal taxAmount, string finalStatus)
+        {
+            Id = id;
+            UserId = userId;
+            OrderType = orderType;
+            Address = address;
+            PaymentInformation = paymentInformation;
+            OrderLock = orderLock;
+            OriginalTotalPrice = totalPrice;
+            CurrentTotalPrice = totalPrice;
+            Items = items;
+            FreeItems = freeItems;
+            Bundles = bundles;
+            UnAppliedDiscounts = new();
+            AppliedDiscount = appliedDiscount;
+            TotalDiscount = totalDiscount;
+            ShippingFee = shippingFee;
+            TaxAmount = taxAmount;
+            Status = finalStatus;
+            shippingFeeApplied = true;
         }
 
         public OrderDiscountAppliedEvent ApplyOrderDiscount(int discountId, string discountName, DiscountType discountType, decimal amountDiscounted)
@@ -90,6 +112,16 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             return publishEvent;
         }
 
+        public OrderDiscountRevertedEvent RevertOrderDiscount(int discountId, string discountName, DiscountType discountType, decimal amountReverted)
+        {
+            TotalDiscount -= amountReverted;
+            CurrentTotalPrice += amountReverted;
+            AppliedDiscount = null;
+            var publishEvent = new OrderDiscountRevertedEvent(Id, discountId, discountName, discountType, amountReverted, CurrentTotalPrice);
+            AddEvent(publishEvent);
+            return publishEvent;
+        }
+
         public SimpleItemDiscountAppliedEvent ApplySimpleItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, decimal amountDiscountedPrice)
         {
             var item = Items.First(i => i.ProductId == productId);
@@ -98,13 +130,17 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
             }
 
-            if (discountType == DiscountType.BuyOneGetOne)
+            if (discountType == DiscountType.Tiered)
             {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos do tipo compre 1 leve 1!", nameof(discountType));
+                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de níveis!", nameof(discountType));
+            }
+            else if (discountType == DiscountType.BuyOneGetOne)
+            {
+                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de compre 1 leve 1!", nameof(discountType));
             }
             else if (discountType == DiscountType.Bundle)
             {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos do tipo de pacote!", nameof(discountType));
+                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de pacote!", nameof(discountType));
             }
 
             decimal itemTotal = item.GetTotal();
@@ -119,6 +155,19 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             return publishEvent;
         }
 
+        public SimpleItemDiscountRevertEvent RevertSimpleItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, decimal amountRevertedPrice, decimal amountRevertedTotal)
+        {
+            var item = Items.First(i => i.Id == orderItemId);
+            item.RevertDiscount(amountRevertedPrice);
+
+            TotalDiscount -= amountRevertedTotal;
+            CurrentTotalPrice += amountRevertedTotal;
+
+            var publishEvent = new SimpleItemDiscountRevertEvent(Id, orderItemId, discountId, discountName, discountType, amountRevertedPrice, item.CurrentPrice, amountRevertedTotal, CurrentTotalPrice);
+            AddEvent(publishEvent);
+            return publishEvent;
+        }
+
         public TieredItemDiscountAppliedEvent ApplyTieredItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, string tierName, decimal amountDiscountedPrice)
         {
             var item = Items.First(i => i.ProductId == productId);
@@ -127,13 +176,9 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
             }
 
-            if (discountType == DiscountType.BuyOneGetOne)
+            if (discountType != DiscountType.Tiered)
             {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos do tipo compre 1 leve 1!", nameof(discountType));
-            }
-            else if (discountType == DiscountType.Bundle)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos do tipo de pacote!", nameof(discountType));
+                throw new ArgumentException($"O metódo ApplyTieredItemDiscount só trata de descontos de níveis!", nameof(discountType));
             }
 
             decimal itemTotal = item.GetTotal();
@@ -148,6 +193,19 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             return publishEvent;
         }
 
+        public TieredItemDiscountRevertEvent RevertTieredItemDiscount(int orderItemId, int discountId, string discountname, DiscountType discountType, string tierName, decimal amountRevertedPrice, decimal amountRevertedTotal)
+        {
+            var item = Items.First(i => i.Id == orderItemId);
+            item.RevertDiscount(amountRevertedPrice);
+
+            TotalDiscount -= amountRevertedTotal;
+            CurrentTotalPrice += amountRevertedTotal;
+
+            var publishEvent = new TieredItemDiscountRevertEvent(Id, orderItemId, discountId, discountname, discountType, tierName, amountRevertedPrice, item.CurrentPrice, amountRevertedTotal, CurrentTotalPrice);
+            AddEvent(publishEvent); 
+            return publishEvent;
+        }
+
         public BOGOItemDiscountAppliedEvent ApplyBOGOItemDiscount(int productId, int discountId, string discountName, DiscountType discountType)
         {
             var item = Items.First(i => i.ProductId == productId);
@@ -158,7 +216,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
 
             if (discountType != DiscountType.BuyOneGetOne)
             {
-                throw new ArgumentException($"O metódo ApplyOrderItemBuyOneGetOneDiscount só trata de descontos do tipo de compre 1 leve 1!", nameof(discountType));
+                throw new ArgumentException($"O metódo ApplyOrderItemBuyOneGetOneDiscount só trata de descontos de compre 1 leve 1!", nameof(discountType));
             }
 
             decimal amountDiscounted = item.UnitPrice;
@@ -174,11 +232,27 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             return publishEvent;
         }
 
+        public BOGOItemDiscountRevertEvent RevertBOGOItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, decimal amountReverted)
+        {
+            var item = Items.First(item => item.Id == orderItemId);
+            var freeItem = FreeItems.First(item => item.OriginalOrderItemId == orderItemId);
+
+            item.AddNItems(1);
+            FreeItems.Remove(freeItem);
+
+            TotalDiscount -= amountReverted;
+            CurrentTotalPrice += amountReverted;
+
+            var publishEvent = new BOGOItemDiscountRevertEvent(Id, orderItemId, item.ProductId, item.ProductName, discountId, discountName, discountType, amountReverted, CurrentTotalPrice);
+            AddEvent(publishEvent); 
+            return publishEvent;
+        }
+
         public BundleDiscountAppliedEvent ApplyBundleItemDiscount(List<BundleItemDetail> bundleItems, int discountId, string discountName, DiscountType discountType)
         {
             if (discountType != DiscountType.Bundle)
             {
-                throw new ArgumentException($"O metódo ApplyOrderItemBundleDiscount só trata de descontos do tipo de pacote!", nameof(discountType));
+                throw new ArgumentException($"O metódo ApplyOrderItemBundleDiscount só trata de descontos de pacote!", nameof(discountType));
             }
 
             var bundle = new List<AppliedDiscountItem>();
@@ -217,10 +291,40 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 b.ProductId,
                 b.ProductName,
                 b.Quantity,
-                b.CurrentPrice,
-                b.AmountDiscountedPrice
+                b.AmountDiscountedPrice,
+                b.CurrentPrice
             )).ToList();
             var publishEvent = new BundleDiscountAppliedEvent(Id, discountId, discountName, discountType, appliedBundle.Id, bundleItemEntries, amountDiscountedTotal, CurrentTotalPrice);
+            AddEvent(publishEvent);
+            return publishEvent;
+        }
+
+        public BundleDiscountRevertEvent RevertBundleItemDiscount(Guid bundleId, List<BundleItemRevertDetail> bundleItems, int discountId, string discountName, DiscountType discountType, decimal amountRevertedTotal)
+        {
+            var bundle = Bundles.First(b => b.Id == bundleId);
+            List<BundleItemRevertEntry> bundleItemRevertEntries = new(); 
+            foreach (var bundleItem in bundleItems)
+            {
+                var item = Items.First(i => i.Id == bundleItem.OriginalOrderItemId);
+                var bItem = bundle.Items.First(b => b.OriginalOrderItemId == bundleItem.OriginalOrderItemId);
+
+                item.AddNItems(bItem.Quantity);
+                bundle.Items.Remove(bItem);
+
+                bundleItemRevertEntries.Add(new BundleItemRevertEntry(
+                    bundleItem.OriginalOrderItemId,
+                    bundleItem.ProductId,
+                    item.ProductName,
+                    bundleItem.Quantity,
+                    bundleItem.AmountRevertedPrice,
+                    item.CurrentPrice
+                ));
+            }
+            Bundles.Remove(bundle);
+            TotalDiscount -= amountRevertedTotal;
+            CurrentTotalPrice += amountRevertedTotal;
+
+            var publishEvent = new BundleDiscountRevertEvent(Id, discountId, discountName, discountType, bundleId, bundleItemRevertEntries, amountRevertedTotal, CurrentTotalPrice);
             AddEvent(publishEvent);
             return publishEvent;
         }
@@ -233,11 +337,31 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             AddEvent(new ShippingFeeAppliedEvent(Id, fee, CurrentTotalPrice));
         }
 
+        public void RevertShippingFee(decimal fee)
+        {
+            ShippingFee -= fee;
+            CurrentTotalPrice -= fee;
+            shippingFeeApplied = false;
+            AddEvent(new ShippingFeeRevertedEvent(Id, fee, CurrentTotalPrice));
+        }
+
         public void ApplyTaxes(decimal tax)
         {
             TaxAmount = tax;
             CurrentTotalPrice += tax;
             AddEvent(new TaxAppliedEvent(Id, tax, CurrentTotalPrice));
+        }
+
+        public void RevertTaxes(decimal tax)
+        {
+            TaxAmount -= tax;
+            CurrentTotalPrice -= tax;
+            AddEvent(new TaxRevertedEvent(Id, tax, CurrentTotalPrice));
+        }
+
+        public void AddUnappliedDiscount(OrderDiscountInProcess orderDiscountInProcess)
+        {
+            UnAppliedDiscounts.Add(orderDiscountInProcess);
         }
 
         public void RemoveAppliedDiscount(OrderDiscountInProcess orderDiscountInProcess)

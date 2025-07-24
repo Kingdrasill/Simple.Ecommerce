@@ -38,7 +38,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                     simpleDiscounts.RemoveAt(index);
                     index = simpleDiscounts.Count - 1;
                 }
-
             }
 
             await base.Handle(orderInProcess, skipDiscounts);

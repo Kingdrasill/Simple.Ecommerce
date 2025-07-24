@@ -6,5 +6,6 @@ namespace Simple.Ecommerce.App.Interfaces.ReadData
     public interface IOrderDetailReadModelRepository 
         : IReadModelRepository<OrderDetailReadModel, int>
     {
+        Task<OrderDetailReadModel?> GetOrderDetails(int orderId);
     }
 }

@@ -31,6 +31,16 @@ namespace Simple.Ecommerce.Infra.Services.MongoDB
                 cm.AddKnownType(typeof(OrderDiscountAppliedEvent));
                 cm.AddKnownType(typeof(TaxAppliedEvent));
                 cm.AddKnownType(typeof(OrderProcessedEvent));
+                cm.AddKnownType(typeof(OrderRevertingStartedEvent));
+                cm.AddKnownType(typeof(TaxRevertedEvent));
+                cm.AddKnownType(typeof(OrderDiscountRevertedEvent));
+                cm.AddKnownType(typeof(BundleDiscountRevertEvent));
+                cm.AddKnownType(typeof(BOGOItemDiscountRevertEvent));
+                cm.AddKnownType(typeof(TieredItemDiscountRevertEvent));
+                cm.AddKnownType(typeof(SimpleItemDiscountRevertEvent));
+                cm.AddKnownType(typeof(ShippingFeeRevertedEvent));
+                cm.AddKnownType(typeof(StockReleasedEvent));
+                cm.AddKnownType(typeof(OrderRevertedEvent));
             });
 
             BsonClassMap.RegisterClassMap<OrderProcessingStartedEvent>(cm => cm.AutoMap());
@@ -44,6 +54,16 @@ namespace Simple.Ecommerce.Infra.Services.MongoDB
             BsonClassMap.RegisterClassMap<OrderDiscountAppliedEvent>(cm => cm.AutoMap());
             BsonClassMap.RegisterClassMap<TaxAppliedEvent>(cm => cm.AutoMap());
             BsonClassMap.RegisterClassMap<OrderProcessedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<OrderRevertingStartedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<TaxRevertedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<OrderDiscountRevertedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<BundleDiscountRevertEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<BOGOItemDiscountRevertEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<TieredItemDiscountRevertEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<SimpleItemDiscountRevertEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<ShippingFeeRevertedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<StockReleasedEvent>(cm => cm.AutoMap());
+            BsonClassMap.RegisterClassMap<OrderRevertedEvent>(cm => cm.AutoMap());
         }
     }
 }

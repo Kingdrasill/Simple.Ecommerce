@@ -9,7 +9,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.T
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
         {
             // Implementar uma Lógica de Imposto mais Real
-            decimal taxAmount = orderInProcess.CurrentTotalPrice * 0.05m;
+            decimal taxAmount = orderInProcess.CurrentTotalPrice * 0.1m;
             orderInProcess.ApplyTaxes(taxAmount);
 
             // Publicando o Evento
