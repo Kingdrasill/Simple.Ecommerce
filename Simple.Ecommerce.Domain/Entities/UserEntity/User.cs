@@ -2,13 +2,12 @@
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
+using Simple.Ecommerce.Domain.Entities.UserPaymentEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
-using Simple.Ecommerce.Domain.Entities.UserPaymentEntity;
 
 namespace Simple.Ecommerce.Domain.Entities.UserEntity
 {
@@ -58,6 +57,11 @@ namespace Simple.Ecommerce.Domain.Entities.UserEntity
         public Result<User> Create(int id, string name, string email, string phoneNumber, string password, Photo? photo = null)
         {
             return new UserValidator().Validate(new User(id, name, email, phoneNumber, password, photo));
+        }
+
+        public Result<User> Validate()
+        {
+            return new UserValidator().Validate(this);
         }
 
         public void AddOrUpdatePhoto(Photo? photo) => Photo = photo;

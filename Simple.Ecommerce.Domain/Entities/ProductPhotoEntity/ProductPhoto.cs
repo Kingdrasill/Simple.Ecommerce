@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 
@@ -24,6 +23,11 @@ namespace Simple.Ecommerce.Domain.Entities.ProductPhotoEntity
         public Result<ProductPhoto> Create(int id, int productId, Photo photo)
         {
             return new ProductPhotoValidator().Validate(new ProductPhoto(id, productId, photo));
+        }
+
+        public Result<ProductPhoto> Validate()
+        {
+            return new ProductPhotoValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

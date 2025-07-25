@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
@@ -29,6 +28,11 @@ namespace Simple.Ecommerce.Domain.Entities.CategoryEntity
         public Result<Category> Create(int id, string name)
         {
             return new CategoryValidator().Validate(new Category(id, name));
+        }
+
+        public Result<Category> Validate()
+        {
+            return new CategoryValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

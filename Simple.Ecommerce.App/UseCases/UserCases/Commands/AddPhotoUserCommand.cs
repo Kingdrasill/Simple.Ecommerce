@@ -65,7 +65,11 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 );
                 var instance = getUser.GetValue();
                 instance.AddOrUpdatePhoto(photo);
-                // Add validação depois de update
+                if (instance.Validate() is { IsFailure: true } result)
+                {
+                    throw new ResultException(result.Errors!);
+                }
+
                 var updateResult = await _addPhotoUserUoW.Users.Update(instance, true);
                 if (updateResult.IsFailure)
                 {

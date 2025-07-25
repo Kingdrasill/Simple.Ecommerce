@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 
@@ -24,6 +23,11 @@ namespace Simple.Ecommerce.Domain.Entities.UserAddressEntity
         public Result<UserAddress> Create(int id, int userId, Address address)
         {
             return new UserAddressValidator().Validate(new UserAddress(id, userId, address));
+        }
+
+        public Result<UserAddress> Validate()
+        {
+            return new UserAddressValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

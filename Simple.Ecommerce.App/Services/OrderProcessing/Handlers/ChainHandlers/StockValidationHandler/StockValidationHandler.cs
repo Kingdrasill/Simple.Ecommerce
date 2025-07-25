@@ -35,6 +35,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.S
                 }
 
                 product.ChangeStock(-item.Quantity);
+                if (product.Validate() is { IsFailure: true } result)
+                {
+                    throw new ResultException(result.Errors!);
+                }
+
                 var updateProduct = await _productRepository.Update(product, true);
                 if (updateProduct.IsFailure)
                 {

@@ -25,6 +25,11 @@ namespace Simple.Ecommerce.Domain.Entities.UserPaymentEntity
             return new UserPaymentValidator().Validate(new UserPayment(id, userId, paymentInformation));
         }
 
+        public Result<UserPayment> Validate()
+        {
+            return new UserPaymentValidator().Validate(this);
+        }
+
         public override void MarkAsDeleted(bool raiseEvent = true)
         {
             if (Deleted)

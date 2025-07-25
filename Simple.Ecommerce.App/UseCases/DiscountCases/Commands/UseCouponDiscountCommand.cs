@@ -39,13 +39,16 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             {
                 return Result<bool>.Failure(new List<Error> { new("UseCouponDiscountCommand.DateExpired.ExpirationAt", "O cupom já expirado!") });
             }
-
             if (coupon.IsUsed)
             {
                 return Result<bool>.Failure(new List<Error> { new("UseCouponDiscountCommand.AlredayUsed", "O cupom já foi usado!") });
             }
 
             coupon.SetAsUsed();
+            if (coupon.Validate() is { IsFailure: true } result)
+            {
+                return Result<bool>.Failure(result.Errors!);
+            }
 
             var updateResult = await _repository.Update(coupon);
             if (updateResult.IsFailure)

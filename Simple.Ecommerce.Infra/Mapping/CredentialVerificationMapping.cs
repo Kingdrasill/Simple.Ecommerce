@@ -10,13 +10,14 @@ namespace Simple.Ecommerce.Infra.Mapping
         {
             builder.ToTable("VerificacaoCredenciais");
 
-            builder.Property(vc => vc.Id).ValueGeneratedOnAdd();
-            builder.HasKey(vc => vc.Id);
+            builder.Property(cv => cv.Id).ValueGeneratedOnAdd();
+            builder.HasKey(cv => cv.Id);
 
-            builder.Property(vc => vc.Token).IsRequired();
-            builder.Property(vc => vc.ExpiresAt).IsRequired();
-            builder.Property(vc => vc.IsUsed).IsRequired();
-            builder.Property(vc => vc.LoginId).IsRequired();
+            builder.Property(cv => cv.Token).IsRequired();
+            builder.Property(cv => cv.ExpiresAt).IsRequired();
+            builder.Property(cv => cv.IsUsed).IsRequired();
+            builder.Property(cv => cv.LoginId).IsRequired();
+            builder.Property(cv => cv.UsedAt);
 
             builder.Property(f => f.Deleted).IsRequired();
         }

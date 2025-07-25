@@ -62,6 +62,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             {
                 var orderItem = getOrderItem.GetValue();
                 orderItem.Update(-request.Quantity, getProduct.GetValue().Price, request.DiscountId, request.Override);
+                if (orderItem.Validate() is { IsFailure: true } result)
+                {
+                    return Result<OrderItemResponse?>.Failure(result.Errors!);
+                }
 
                 if (orderItem.Quantity <= 0)
                 {

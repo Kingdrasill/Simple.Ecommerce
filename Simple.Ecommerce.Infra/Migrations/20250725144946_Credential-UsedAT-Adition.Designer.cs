@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Simple.Ecommerce.Infra;
 
@@ -10,9 +11,11 @@ using Simple.Ecommerce.Infra;
 namespace Simple.Ecommerce.Infra.Migrations
 {
     [DbContext(typeof(TesteDbContext))]
-    partial class TesteDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250725144946_Credential-UsedAT-Adition")]
+    partial class CredentialUsedATAdition
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

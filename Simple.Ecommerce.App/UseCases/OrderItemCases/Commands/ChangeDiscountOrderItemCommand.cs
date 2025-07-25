@@ -60,6 +60,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             {
                 return Result<bool>.Failure(getOrderItem.Errors!);
             }
+            var orderItem = getOrderItem.GetValue();
 
             var getDiscount = request.DiscountId is null ? null : await _discountRepository.Get(request.DiscountId.Value);
             if (getDiscount is not null)
@@ -80,8 +81,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                 }
             }
 
-            var orderItem = getOrderItem.GetValue();
             orderItem.UpdateDiscountId(request.DiscountId);
+            if (orderItem.Validate() is { IsFailure: true } result)
+            {
+                return Result<bool>.Failure(result.Errors!);
+            }
 
             var updateResult = await _repository.Update(orderItem);
             if (updateResult.IsFailure)

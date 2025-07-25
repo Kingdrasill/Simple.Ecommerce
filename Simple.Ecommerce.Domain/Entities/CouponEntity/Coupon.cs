@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.CouponEntity
@@ -31,6 +30,11 @@ namespace Simple.Ecommerce.Domain.Entities.CouponEntity
         public Result<Coupon> Create(int id, string code, DateTime expirationAt, int discountId, bool isUsed = false, DateTime? usedAt = null, DateTime? createdAt = null)
         {
             return new CouponValidator().Validate(new Coupon(id, code, expirationAt, discountId, isUsed, usedAt, createdAt));
+        }
+
+        public Result<Coupon> Validate()
+        {
+            return new CouponValidator().Validate(this);
         }
 
         public void SetAsUsed()

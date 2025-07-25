@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.ReviewEntity
@@ -29,6 +28,11 @@ namespace Simple.Ecommerce.Domain.Entities.ReviewEntity
         public Result<Review> Create(int id, int productId, int userId, int score, string? comment)
         {
             return new ReviewValidator().Validate(new Review(id, productId, userId, score, comment));
+        }
+
+        public Result<Review> Validate()
+        {
+            return new ReviewValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

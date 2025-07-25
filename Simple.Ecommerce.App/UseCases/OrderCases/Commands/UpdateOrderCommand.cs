@@ -154,7 +154,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 );
             }
 
-            order.UpdateStatus("Altered", order.OrderLock);
             var instance = new Order().Create(
                 request.Id,
                 request.UserId,
@@ -163,7 +162,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.TotalPrice,
                 request.OrderDate,
                 order.Confirmation,
-                order.Status,
+                "Altered",
                 request.DiscountId,
                 order.OrderLock,
                 paymentInformation

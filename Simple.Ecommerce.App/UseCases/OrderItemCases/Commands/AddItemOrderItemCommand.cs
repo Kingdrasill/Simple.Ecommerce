@@ -80,11 +80,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             {
                 var orderItem = getOrderItem.GetValue();
                 orderItem.Update(request.Quantity, getProduct.GetValue().Price, request.DiscountId, request.Override);
-                
-                var validateOrderItem = orderItem.Validate();
-                if (validateOrderItem.IsFailure)
+                if (orderItem.Validate() is { IsFailure: true } result)
                 {
-                    return Result<OrderItemResponse>.Failure(validateOrderItem.Errors!);
+                    return Result<OrderItemResponse>.Failure(result.Errors!);
                 }
 
                 var updateResult = await _repository.Update(orderItem);

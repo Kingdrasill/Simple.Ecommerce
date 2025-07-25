@@ -56,16 +56,15 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, discountId, orderLock, paymentInformation));
         }
 
-        public void UpdateDiscountId(int? discountId)
+        public Result<Order> Validate()
         {
-            DiscountId = discountId;
+            return new OrderValidator().Validate(this);
         }
 
-        public void UpdatePaymentInformation(PaymentInformation? paymentInformation)
-        {
-            PaymentInformation = paymentInformation;
-        }
-
+        public void UpdateAddress(Address address) => Address = address;
+        public void UpdatePaymentInformation(PaymentInformation? paymentInformation) => PaymentInformation = paymentInformation;
+        public void UpdateDiscountId(int? discountId) => DiscountId = discountId;
+        
         public void UpdateStatus(string status, OrderLock orderLock, bool? confirmation = null, decimal? newTotalPrice = null)
         {
             OrderDate = DateTime.UtcNow;

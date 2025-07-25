@@ -87,10 +87,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 // Criando instância de login por email
                 var loginEmailInstance = new Login().Create(
                     0,
+                    null,
                     user,
                     request.Email,
                     hashedPasswordResult.GetValue(),
-                    CredentialType.Email
+                    CredentialType.Email,
+                    null
                 );
                 if (loginEmailInstance.IsFailure)
                 {
@@ -106,9 +108,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 // Crianda instância para verificação do email de login
                 var credentialVerificationInstance = new CredentialVerification().Create(
                     0,
+                    null,
                     loginEmailInstance.GetValue(),
                     Guid.NewGuid().ToString("N"),
-                    DateTime.UtcNow.AddHours(24)
+                    DateTime.UtcNow.AddHours(24),
+                    null,
+                    null
                 );
                 if (credentialVerificationInstance.IsFailure)
                 {
@@ -124,10 +129,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 // Criando instância de login por número
                 var loginPhoneNumberInstance = new Login().Create(
                     0,
+                    null,
                     user,
                     request.PhoneNumber,
                     hashedPasswordResult.GetValue(),
-                    CredentialType.Phone
+                    CredentialType.Phone,
+                    null
                 );
                 if (loginPhoneNumberInstance.IsFailure)
                 {

@@ -28,6 +28,11 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountTierEntity
             return new DiscountTierValidator().Validate(new DiscountTier(id, name, minQuantity, value, discountId));
         }
 
+        public Result<DiscountTier> Validate()
+        {
+            return new DiscountTierValidator().Validate(this);
+        }
+
         public override void MarkAsDeleted(bool raiseEvent = true)
         {
             if (Deleted)

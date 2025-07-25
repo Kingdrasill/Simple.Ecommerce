@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity
@@ -27,6 +26,11 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity
         public Result<DiscountBundleItem> Create(int id, int discountId, int productId, int quantity)
         {
             return new DiscountBundleItemValidator().Validate(new DiscountBundleItem(id, discountId, productId, quantity));
+        }
+
+        public Result<DiscountBundleItem> Validate()
+        {
+            return new DiscountBundleItemValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

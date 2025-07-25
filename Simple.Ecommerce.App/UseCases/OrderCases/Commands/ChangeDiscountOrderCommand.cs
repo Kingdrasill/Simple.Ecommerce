@@ -72,6 +72,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
             order.UpdateDiscountId(request.DiscountId);
             order.UpdateStatus("Altered", order.OrderLock);
+            if (order.Validate() is { IsFailure:  true } result)
+            {
+                return Result<bool>.Failure(result.Errors!);
+            }
 
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)

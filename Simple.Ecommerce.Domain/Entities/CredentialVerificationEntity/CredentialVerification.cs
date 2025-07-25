@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.LoginEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity
@@ -12,38 +11,44 @@ namespace Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity
         public string Token { get; private set; }
         public DateTime ExpiresAt { get; private set; }
         public bool IsUsed { get; private set; }
+        public DateTime? UsedAt { get; private set; }
 
         public CredentialVerification() { }
 
-        private CredentialVerification(int id, int loginId, string token, DateTime expiresAt)
+        private CredentialVerification(int id, int? loginId, Login? login, string token, DateTime expiresAt, bool? isUsed, DateTime? usedAt)
         {
             Id = id;
-            LoginId = loginId;
+            if (loginId.HasValue)
+                LoginId = loginId.Value;
+            if (login is not null)
+                Login = login;
             Token = token;
             ExpiresAt = expiresAt;
-            IsUsed = false;
+            if (isUsed.HasValue)
+                IsUsed = isUsed.Value;
+            else
+                IsUsed = false;
+            if (usedAt.HasValue)
+                UsedAt = usedAt.Value;
+            else
+                UsedAt = null;
         }
 
-        private CredentialVerification(int id, Login login, string token, DateTime expiresAt)
+        public Result<CredentialVerification> Create(int id, int? loginId, Login? login, string token, DateTime expiresAt, bool? isUsed, DateTime? usedAt)
         {
-            Id = id;
-            Login = login;
-            Token = token;
-            ExpiresAt = expiresAt;
-            IsUsed = false;
+            return new CredentialVerificationValidator().Validate(new CredentialVerification(id, loginId, login, token, expiresAt, isUsed, usedAt));
         }
 
-        public Result<CredentialVerification> Create(int id, int loginId, string token, DateTime expiresAt)
+        public Result<CredentialVerification> Validate()
         {
-            return new CredentialVerificationValidator().Validate(new CredentialVerification(id, loginId, token, expiresAt));
+            return new CredentialVerificationValidator().Validate(this);
         }
 
-        public Result<CredentialVerification> Create(int id, Login login, string token, DateTime expiresAt)
+        public void MarkAsUsed()
         {
-            return new CredentialVerificationValidator().Validate(new CredentialVerification(id, login, token, expiresAt));
+            IsUsed = true;
+            UsedAt = DateTime.UtcNow;
         }
-
-        public void MarkAsUsed() => IsUsed = true;
 
         public override void MarkAsDeleted(bool raiseEvent = true)
         {

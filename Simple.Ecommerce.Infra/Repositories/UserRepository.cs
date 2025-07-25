@@ -51,8 +51,12 @@ namespace Simple.Ecommerce.Infra.Repositories
             }
 
             user.AddOrUpdatePhoto(null);
-            _context.Entry(user).Reference(u => u.Photo).IsModified = true;
+            if (user.Validate() is { IsFailure: true } result)
+            {
+                return Result<bool>.Failure(result.Errors!);
+            }
 
+            _context.Entry(user).Reference(u => u.Photo).IsModified = true;
             await _context.SaveChangesAsync();
             return Result<bool>.Success(true);
         }

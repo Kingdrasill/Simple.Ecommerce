@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 
 namespace Simple.Ecommerce.Domain.Entities.ProductDiscountEntity
@@ -25,6 +24,11 @@ namespace Simple.Ecommerce.Domain.Entities.ProductDiscountEntity
         public Result<ProductDiscount> Create(int id, int productId, int discountId)
         {
             return new ProductDiscountValidator().Validate(new ProductDiscount(id, productId, discountId));
+        }
+
+        public Result<ProductDiscount> Validate()
+        {
+            return new ProductDiscountValidator().Validate(this);
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

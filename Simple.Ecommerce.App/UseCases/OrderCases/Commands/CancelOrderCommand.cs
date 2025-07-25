@@ -34,17 +34,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             }
             var order = getOrder.GetValue();
 
-            if (order.OrderLock is OrderLock.LockPrice)
+            order.UpdateStatus("Canceled", OrderLock.LockStatus, false); 
+            if (order.Validate() is { IsFailure: true } result)
             {
-                // handle stock de-reservation
+                return Result<bool>.Failure(result.Errors!);
             }
-            else if (order.OrderLock is OrderLock.LockData)
-            {
-                // handle stock de-reservation
-                // Handle payment cancelation
-            }
-
-                order.UpdateStatus("Canceled", OrderLock.LockStatus, false);
 
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)

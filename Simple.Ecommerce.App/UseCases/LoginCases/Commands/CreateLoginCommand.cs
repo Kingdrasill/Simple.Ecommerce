@@ -48,9 +48,11 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
             var instance = new Login().Create(
                 request.Id,
                 request.UserId,
+                null,
                 request.Credential,
                 request.Password,
-                request.Type
+                request.Type,
+                null
             );
             if (instance.IsFailure)
             {

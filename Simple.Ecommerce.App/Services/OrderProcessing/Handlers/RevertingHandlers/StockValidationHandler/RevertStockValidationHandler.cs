@@ -4,6 +4,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Errors.BaseError;
+using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.StockEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
@@ -37,8 +38,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
                     return Result<bool>.Failure(new List<Error>{ new("RevertStockValidationHandler.NotFound", $"O produto {item.ProductName} não foi encontrado.") });
                 }
                 var product = getProduct.GetValue();
-                var orderProduct = order.Items.FirstOrDefault(i => i.Id == item.OrderItemId && i.ProductId == item.ProductId);
 
+                var orderProduct = order.Items.FirstOrDefault(i => i.Id == item.OrderItemId && i.ProductId == item.ProductId);
                 if (orderProduct is null)
                 {
                     Console.WriteLine($"\t[RevertStockValidationHandler] O produto {item.ProductName} do evento não foi encontrado no pedido {order.Id}.");
@@ -51,6 +52,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
                 }
 
                 product.ChangeStock(item.Quantity);
+                if (product.Validate() is { IsFailure: true } result)
+                {
+                    return Result<bool>.Failure(result.Errors!);
+                }
+
                 var updateProduct = await _productRepository.Update(product, true);
                 if (updateProduct.IsFailure)
                 {

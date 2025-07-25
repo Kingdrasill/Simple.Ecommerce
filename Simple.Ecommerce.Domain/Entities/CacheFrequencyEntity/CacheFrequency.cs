@@ -28,6 +28,11 @@ namespace Simple.Ecommerce.Domain.Entities.FrequencyEntity
             return new CacheFrequencyValidator().Validate(new CacheFrequency(id, entity, frequency, hoursToLive, expirable, keepCached));
         }
 
+        public Result<CacheFrequency> Validate()
+        {
+            return new CacheFrequencyValidator().Validate(this);
+        }
+
         public override void MarkAsDeleted(bool raiseEvent = true)
         {
 

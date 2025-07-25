@@ -63,6 +63,10 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido
                 order.UpdateStatus("Confirmed", OrderLock.Unlock, confirmation: true);
+                if (order.Validate() is { IsFailure: true } cResult)
+                {
+                    throw new ResultException(cResult.Errors!);
+                }
 
                 // Pegando dados do usuário que fez o pedido
                 var getUser = await _confirmedOrderUoW.Users.Get(order.UserId);
@@ -127,6 +131,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 var createResult = await CreateNewOrderItems(order.Id, orderInProcess);
                 if (createResult.IsFailure)
                 {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao criar novos itens ao pedido {command.OrderId}.");
                     throw new ResultException(createResult.Errors!);
                 }
 
@@ -134,6 +139,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 var updateResult = await UpdateExistingItems(order.Id, orderInProcess, originalItemsById);
                 if (updateResult.IsFailure)
                 {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar os itens do pedido {command.OrderId}.");
                     throw new ResultException(updateResult.Errors!);
                 }
 
@@ -146,6 +152,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido para Processado
                 order.UpdateStatus("Processed", OrderLock.LockPrice, newTotalPrice: orderInProcess.CurrentTotalPrice);
+                if (order.Validate() is { IsFailure: true } pResult)
+                {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
+                    throw new ResultException(pResult.Errors!);
+                }
                 
                 // Enviando o evento de pedido processado
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Pedido {command.OrderId} processado com sucesso. Total: {order.TotalPrice:C}.");
@@ -153,9 +164,16 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido para Pagamento Pendente
                 order.UpdateStatus("Pending Payment", order.OrderLock);
+                if (order.Validate() is { IsFailure: true } ppResult)
+                {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
+                    throw new ResultException(ppResult.Errors!);
+                }
+
                 var updateOrderResult = await _confirmedOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
                 {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
                     throw new ResultException(updateOrderResult.Errors!);
                 }
 
@@ -172,35 +190,29 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             catch (ResultException rex)
             {
                 await _confirmedOrderUoW.Rollback();
-
-                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar os dados do pedido {command.OrderId}.");
+                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar o pedido {command.OrderId}.");
                 var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
-
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
                 return Result<bool>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
                 await _confirmedOrderUoW.Rollback();
-
-                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar os dados do pedido {command.OrderId}.");
+                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar o pedido {command.OrderId}.");
                 var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
                     await _confirmedOrderUoW.Orders.Update(order);
-
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
                 return Result<bool>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Unknown", ex.Message) });
             }
         }

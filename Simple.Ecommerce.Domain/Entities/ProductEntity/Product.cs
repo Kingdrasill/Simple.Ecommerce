@@ -5,7 +5,6 @@ using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
 using Simple.Ecommerce.Domain.Entities.ProductPhotoEntity;
 using Simple.Ecommerce.Domain.Entities.ReviewEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Validation.Validators;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
@@ -60,6 +59,11 @@ namespace Simple.Ecommerce.Domain.Entities.ProductEntity
         public Result<Product> Create(int id, string name, decimal price, string description, int stock)
         {
             return new ProductValidator().Validate(new Product(id, name, price, description, stock));
+        }
+
+        public Result<Product> Validate()
+        {
+            return new ProductValidator().Validate(this);
         }
 
         public void ChangeStock(int value)

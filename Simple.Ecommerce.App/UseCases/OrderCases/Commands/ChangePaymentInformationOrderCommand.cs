@@ -105,7 +105,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             order.UpdatePaymentInformation(paymentInformation);
             if (order.Status is not ("Pending Payment" or  "Failed Payment"))
                 order.UpdateStatus("Altered", order.OrderLock);
-            // Adicionar validação depois de updates
+            if (order.Validate() is { IsFailure: true } result)
+            {
+                return Result<OrderPaymentInformationResponse>.Failure(result.Errors!);
+            }
+
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)
             {

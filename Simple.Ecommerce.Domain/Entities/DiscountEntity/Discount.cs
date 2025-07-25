@@ -70,6 +70,11 @@ namespace Simple.Ecommerce.Domain.Entities.DiscountEntity
             return new DiscountValidator().Validate(new Discount(id, name, discountType, discountScope, discountValueType, value, validFrom, validTo, isActive));
         }
 
+        public Result<Discount> Validate()
+        {
+            return new DiscountValidator().Validate(this);
+        }
+
         public void SetActivity(bool active) => IsActive = active;
 
         public override void MarkAsDeleted(bool raiseEvent = true)

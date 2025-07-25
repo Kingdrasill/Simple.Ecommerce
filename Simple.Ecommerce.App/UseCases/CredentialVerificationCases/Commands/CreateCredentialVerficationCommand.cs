@@ -37,8 +37,11 @@ namespace Simple.Ecommerce.App.UseCases.CredentialVerificationCases.Commands
             var instance = new CredentialVerification().Create(
                 0,
                 login.Id,
+                null,
                 Guid.NewGuid().ToString("N"),
-                DateTime.UtcNow.AddHours(24)
+                DateTime.UtcNow.AddHours(24),
+                null,
+                null
             );
             if (instance.IsFailure) 
             {

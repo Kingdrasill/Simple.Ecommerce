@@ -122,12 +122,12 @@ namespace Simple.Ecommerce.App.UseCases.LoginCases.Commands
                     var login = new Login().Create(
                         loginResponse.Id,
                         loginResponse.UserId,
+                        null,
                         loginResponse.Credential,
                         loginResponse.Password,
-                        loginResponse.Type
+                        loginResponse.Type,
+                        loginResponse.IsVerified
                     ).GetValue();
-                    if (loginResponse.IsVerified)
-                        login.SetVerified();
                     return Result<Login>.Success(login);
                 }
             }

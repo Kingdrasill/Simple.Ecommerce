@@ -69,6 +69,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido
                 order.UpdateStatus("Revert", OrderLock.Unlock, confirmation: false);
+                if (order.Validate() is { IsFailure: true } rResult)
+                {
+                    Console.WriteLine($"[RevertOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
+                    throw new ResultException(rResult.Errors!);
+                }
 
                 // Buscando os detalhes do pedido e atualizando os que não são afetados por eventos
                 var orderInProcessResult = await RecreateOrderInProcess(order);
@@ -173,6 +178,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
                 // Atualizando o status do pedido para Revertido
                 order.UpdateStatus("Reverted", order.OrderLock, newTotalPrice: orderInProcess.CurrentTotalPrice);
+                if (order.Validate() is { IsFailure: true } rdResult)
+                {
+                    Console.WriteLine($"[RevertOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
+                    throw new ResultException(rdResult.Errors!);
+                }
 
                 // Enviando o evento de pedido revertido
                 Console.WriteLine($"[RevertOrderCommandHandler] O pedido {command.OrderId} foi revertido com sucesso.");
@@ -198,7 +208,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             catch (ResultException rex)
             {
                 await _revertedOrderUoW.Rollback();
-
                 Console.WriteLine($"[RevertOrderCommandHandler] Falha ao reverter o pedido {command.OrderId}.");
                 var getOrder = await _revertedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
@@ -208,13 +217,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     await _revertedOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
                 return Result<bool>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
                 await _revertedOrderUoW.Rollback();
-
                 Console.WriteLine($"[RevertOrderCommandHandler] Falha ao reverter o pedido {command.OrderId}.");
                 var getOrder = await _revertedOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
@@ -224,7 +231,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     await _revertedOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
-
                 return Result<bool>.Failure(new List<Error> { new("RevertOrderCommandHandler.Unknown", ex.Message) });
             }
         }
@@ -425,6 +431,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 
                 var discount = orderInProcess.UnAppliedDiscounts.FirstOrDefault(uad => uad.OwnerId == processedItem.Id && uad.DiscountScope == DiscountScope.Product);
                 orderItem.Update(processedItem.Quantity, product.Price, discount is null ? null : discount.Id, true);
+                if (orderItem.Validate() is { IsFailure: true } result)
+                {
+                    updateErrors.AddRange(result.Errors!);
+                    continue;
+                }
 
                 var updateResult = await _revertedOrderUoW.OrderItems.Update(orderItem, true);
                 if (updateResult.IsFailure)
