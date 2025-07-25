@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.CredentialVerificationEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -17,12 +16,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<CredentialVerification>.Failure(errors);
-            }
-
-            return Result<CredentialVerification>.Success(entity);
+            return errors.Count != 0
+                ? Result<CredentialVerification>.Failure(errors)
+                : Result<CredentialVerification>.Success(entity);
         }
     }
 }

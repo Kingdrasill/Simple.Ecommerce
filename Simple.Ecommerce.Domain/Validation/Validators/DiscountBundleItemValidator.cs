@@ -18,12 +18,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var erros = _builder.Validate(entity);
 
-            if (erros.Count != 0)
-            {
-                return Result<DiscountBundleItem>.Failure(erros);
-            }
-
-            return Result<DiscountBundleItem>.Success(entity);
+            return erros.Count != 0
+                ? Result<DiscountBundleItem>.Failure(erros)
+                : Result<DiscountBundleItem>.Success(entity);
         }
     }
 }

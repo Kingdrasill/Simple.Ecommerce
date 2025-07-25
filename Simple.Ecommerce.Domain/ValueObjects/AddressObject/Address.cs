@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
 
 namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
@@ -9,7 +8,7 @@ namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
     {
         public Address() { }
 
-        private Address(int number, string street, string neighbourhood, string city, string country, string? complement, string cep)
+        public Address(int number, string street, string neighbourhood, string city, string country, string? complement, string cep)
         {
             Number = number;
             Street = street;
@@ -18,11 +17,6 @@ namespace Simple.Ecommerce.Domain.ValueObjects.AddressObject
             Country = country;
             Complement = complement;
             CEP = cep;
-        }
-
-        public Result<Address> Create(int number, string street, string neighbourhood, string city, string country, string? complement, string cep)
-        {
-            return new AddressValidator().Validate(new Address(number, street, neighbourhood, city, country, complement, cep));
         }
 
         public int Number { get; set; }

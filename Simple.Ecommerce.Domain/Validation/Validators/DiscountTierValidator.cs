@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -21,12 +20,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<DiscountTier>.Failure(errors);
-            }
-
-            return Result<DiscountTier>.Success(entity);
+            return errors.Count != 0
+                ? Result<DiscountTier>.Failure(errors)
+                : Result<DiscountTier>.Success(entity);
         }
     }
 }

@@ -37,7 +37,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 return Result<bool>.Failure(getUser.Errors!);
             }
 
-            var address = new Address().Create(
+            var address = new Address(
                 request.Address.Number,
                 request.Address.Street,
                 request.Address.Neighbourhood,
@@ -46,15 +46,10 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 request.Address.Complement,
                 request.Address.CEP
             );
-            if (address.IsFailure)
-            {
-                return Result<bool>.Failure(address.Errors!);
-            }
-
             var instance = new UserAddress().Create(
                 0,
                 request.UserId,
-                address.GetValue()
+                address
             );
             if (instance.IsFailure)
             {

@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -25,12 +24,18 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
+            if (entity.Photo is not null)
             {
-                return Result<User>.Failure(errors);
+                var photoValidator = new PhotoValidator();
+                var photoResult = photoValidator.Validate(entity.Photo);
+
+                if (photoResult.IsFailure)
+                    errors.AddRange(photoResult.Errors!);
             }
 
-            return Result<User>.Success(entity);
+            return errors.Count != 0
+                ? Result<User>.Failure(errors)
+                : Result<User>.Success(entity);
         }
     }
 }

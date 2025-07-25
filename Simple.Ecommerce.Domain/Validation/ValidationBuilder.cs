@@ -5,6 +5,7 @@ namespace Simple.Ecommerce.Domain.Validation
     public class ValidationBuilder
     {
         private readonly Dictionary<string, List<ValidationRule>> _rules = new();
+        private readonly Dictionary<string, List<ValidationRule>> _entityRules = new();
 
         public ValidationBuilder AddRule(string propertyName, Func<object, bool> rule, string errorType, string errorMessage) 
         {
@@ -12,6 +13,15 @@ namespace Simple.Ecommerce.Domain.Validation
                 _rules[propertyName] = new List<ValidationRule>();
 
             _rules[propertyName].Add(new ValidationRule(rule, errorType, errorMessage));
+            return this;
+        }
+
+        public ValidationBuilder AddEntityRule(string propertyName, Func<object, bool> rule, string errorType, string errorMessage)
+        {
+            if (!_entityRules.ContainsKey(propertyName))
+                _entityRules[propertyName] = new List<ValidationRule>();
+
+            _entityRules[propertyName].Add(new ValidationRule(rule, errorType, errorMessage));
             return this;
         }
 
@@ -30,7 +40,7 @@ namespace Simple.Ecommerce.Domain.Validation
                 }
             }
 
-            return ValidationProcessor.Validate(_rules, values);
+            return ValidationProcessor.Validate(_rules, values, _entityRules, source);
         }
     } 
 }

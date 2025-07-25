@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductCategoryEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -17,12 +16,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<ProductCategory>.Failure(errors);
-            }
-
-            return Result<ProductCategory>.Success(entity);
+            return errors.Count != 0
+                ? Result<ProductCategory>.Failure(errors)
+                : Result<ProductCategory>.Success(entity);
         }
     }
 }

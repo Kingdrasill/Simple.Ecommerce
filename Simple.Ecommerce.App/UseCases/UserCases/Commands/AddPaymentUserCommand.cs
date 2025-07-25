@@ -84,7 +84,7 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                     return Result<bool>.Failure(new List<Error> { new("AddPaymentUserCommand.InvalidPaymentMethod", "O método de pagamento passado não é válido.") });
             }
 
-            var paymentInformation = new PaymentInformation().Create(
+            var paymentInformation = new PaymentInformation(
                 request.PaymentInformation.PaymentMethod,
                 request.PaymentInformation.PaymentName,
                 encryptedKey,
@@ -93,15 +93,10 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
                 cardFlag,
                 last4Digits
             );
-            if (paymentInformation.IsFailure)
-            {
-                return Result<bool>.Failure(paymentInformation.Errors!);
-            }
-
             var instance = new UserPayment().Create(
                 0,
                 request.UserId,
-                paymentInformation.GetValue()
+                paymentInformation
             );
             if (instance.IsFailure)
             {

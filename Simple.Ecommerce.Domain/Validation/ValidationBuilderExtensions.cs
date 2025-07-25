@@ -37,5 +37,23 @@
             builder.AddRule(propertyName, s => ((string)s).Length < minLength, $"{className}.MaxLength", $"Não pode ser ter menos de {minLength} caracteres!");
             return builder;
         }
+
+        public static ValidationBuilder AddInvalidDateRange<T>(this ValidationBuilder builder, string propertyName, string className, Func<T, DateTime?> startSelector, Func<T, DateTime?> endSelector)
+        {
+            builder.AddRule(
+                propertyName,
+                e =>
+                {
+                    var start = startSelector((T)e);
+                    var end = endSelector((T)e);
+                    if (start == null && end == null) return false;
+                    if (start == null || end == null) return true;
+                    return end <= start;
+                },
+                $"{className}.InvalidDateRange",
+                "Ambas as datas devem ser vazias, ou a de término deve ser posterior à de começo!"
+            );
+            return builder;
+        }
     }
 }

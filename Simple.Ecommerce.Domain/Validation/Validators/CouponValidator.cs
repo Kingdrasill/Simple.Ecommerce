@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -17,12 +16,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var erros = _builder.Validate(entity);
 
-            if (erros.Count != 0)
-            {
-                return Result<Coupon>.Failure(erros);
-            }
-
-            return Result<Coupon>.Success(entity);
+            return erros.Count != 0
+                ? Result<Coupon>.Failure(erros)
+                : Result<Coupon>.Success(entity);
         }
     }
 }

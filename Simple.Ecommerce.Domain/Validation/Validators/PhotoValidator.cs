@@ -1,5 +1,4 @@
 ﻿using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.ValueObjects.PhotoObject;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
@@ -18,12 +17,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var erros = _builder.Validate(photo);
 
-            if (erros.Count != 0)
-            {
-                return Result<Photo>.Failure(erros);
-            }
-
-            return Result<Photo>.Success(photo);
+            return erros.Count != 0
+                ? Result<Photo>.Failure(erros)
+                : Result<Photo>.Success(photo);
         }
     }
 }

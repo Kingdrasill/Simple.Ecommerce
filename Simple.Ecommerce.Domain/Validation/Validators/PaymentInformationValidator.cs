@@ -19,12 +19,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var erros = _builder.Validate(entity);
 
-            if (erros.Count != 0)
-            {
-                return Result<PaymentInformation>.Failure(erros);
-            }
-
-            return Result<PaymentInformation>.Success(entity);
+            return erros.Count != 0
+                ? Result<PaymentInformation>.Failure(erros)
+                : Result<PaymentInformation>.Success(entity);
         }
     }
 }

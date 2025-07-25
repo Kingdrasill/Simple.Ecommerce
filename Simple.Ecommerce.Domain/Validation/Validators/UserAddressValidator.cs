@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.UserAddressEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -17,12 +16,15 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<UserAddress>.Failure(errors);
-            }
+            var addressValidator = new AddressValidator();
+            var addressResult = addressValidator.Validate(entity.Address);
 
-            return Result<UserAddress>.Success(entity);
+            if (addressResult.IsFailure)
+                errors.AddRange(addressResult.Errors!);
+
+            return errors.Count != 0
+                ? Result<UserAddress>.Failure(errors)
+                : Result<UserAddress>.Success(entity);
         }
     }
 }

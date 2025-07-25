@@ -1,5 +1,4 @@
 ﻿using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.ValueObjects.AddressObject;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
@@ -29,12 +28,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<Address>.Failure(errors);
-            }
-
-            return Result<Address>.Success(entity);
+            return errors.Count != 0
+                ? Result<Address>.Failure(errors)
+                : Result<Address>.Success(entity);
         }
     }
 }

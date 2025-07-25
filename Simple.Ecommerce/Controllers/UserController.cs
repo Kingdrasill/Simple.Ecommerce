@@ -26,7 +26,7 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IRemovePaymentUserCommand _deleteCardUserCommand;
         private readonly IRemovePhotoUserCommand _deletePhotoUserCommand;
         private readonly IGetAddressesUserQuery _getAddressesUserQuery;
-        private readonly IGetPaymentsUserQuery _getCardsUserQuery;
+        private readonly IGetPaymentsUserQuery _getPaymentsUserQuery;
         private readonly IGetPhotoUserQuery _getPhotoUserQuery;
 
         public UserController(
@@ -42,7 +42,7 @@ namespace Simple.Ecommerce.Api.Controllers
             IRemovePaymentUserCommand deleteCardUserCommand,
             IRemovePhotoUserCommand deletePhotoUserCommand,
             IGetAddressesUserQuery getAddressesUserQuery, 
-            IGetPaymentsUserQuery getCardsUserQuery,
+            IGetPaymentsUserQuery getPaymentsUserQuery,
             IGetPhotoUserQuery getPhotoUserQuery
         )
         {
@@ -58,7 +58,7 @@ namespace Simple.Ecommerce.Api.Controllers
             _deleteCardUserCommand = deleteCardUserCommand;
             _deletePhotoUserCommand = deletePhotoUserCommand;
             _getAddressesUserQuery = getAddressesUserQuery;
-            _getCardsUserQuery = getCardsUserQuery;
+            _getPaymentsUserQuery = getPaymentsUserQuery;
             _getPhotoUserQuery = getPhotoUserQuery;
         }
 
@@ -80,7 +80,7 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
-        [HttpPost("Card")]
+        [HttpPost("Payment")]
         [Authorize]
         public async Task<ActionResult<bool>> AddCard([FromBody] UserPaymentRequest request)
         {
@@ -185,7 +185,7 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<UserPaymentsResponse>> GetCards(int userId)
         {
-            var result = await _getCardsUserQuery.Execute(userId);
+            var result = await _getPaymentsUserQuery.Execute(userId);
          
             return ResultHandler.HandleResult(this, result);
         }

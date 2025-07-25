@@ -92,7 +92,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         return Result<OrderPaymentInformationResponse>.Failure(new List<Error> { new("ChangePaymentInformationOrderCommand.InvalidPaymentMethod", "O método de pagamento passado não é válido.") });
                 }
 
-                var instacePaymentInformation = new PaymentInformation().Create(
+                paymentInformation = new PaymentInformation(
                     request.PaymentInformation.PaymentMethod,
                     request.PaymentInformation.PaymentName,
                     encryptedKey,
@@ -101,15 +101,11 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                     cardFlag,
                     last4Digits
                 );
-                if (instacePaymentInformation.IsFailure)
-                {
-                    return Result<OrderPaymentInformationResponse>.Failure(instacePaymentInformation.Errors!);
-                }
-                paymentInformation = instacePaymentInformation.GetValue();
             }
             order.UpdatePaymentInformation(paymentInformation);
-            order.UpdateStatus("Altered", order.OrderLock);
-
+            if (order.Status is not ("Pending Payment" or  "Failed Payment"))
+                order.UpdateStatus("Altered", order.OrderLock);
+            // Adicionar validação depois de updates
             var updateResult = await _repository.Update(order);
             if (updateResult.IsFailure)
             {

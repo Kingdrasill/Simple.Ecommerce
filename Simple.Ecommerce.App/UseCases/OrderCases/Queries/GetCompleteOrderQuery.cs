@@ -327,7 +327,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
         private Result<Order> GetOrderFromcCache(int orderId)
         {
             return _cacheHandler.GetFromCache<Order, Address, PaymentInformation, Order>(orderId, nameof(Address), nameof(PaymentInformation),
-                (cache, prop) => new Address().Create(
+                (cache, prop) => new Address(
                     Convert.ToInt32(cache[$"{prop}_Number"]),
                     Convert.ToString(cache[$"{prop}_Street"])!,
                     Convert.ToString(cache[$"{prop}_Neighbourhood"])!,
@@ -335,9 +335,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     Convert.ToString(cache[$"{prop}_Country"])!,
                     cache.GetNullableString($"{prop}_Complement"),
                     Convert.ToString(cache[$"{prop}_CEP"])!
-                ).GetValue(),
+                ),
                 (cache, prop) => cache.ContainsKey($"{prop}_PaymentMethod")
-                    ? new PaymentInformation().Create(
+                    ? new PaymentInformation(
                         (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]),
                         cache.GetNullableString($"{prop}_PaymentName"),
                         (PaymentMethod)Convert.ToInt32(cache[$"{prop}_PaymentMethod"]) is not (PaymentMethod.CreditCard or PaymentMethod.DebitCard)
@@ -347,7 +347,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                         cache.GetNullableString($"{prop}_ExpirationYear"),
                         cache.GetNullableCardFlag($"{prop}_CardFlag"),
                         cache.GetNullableString($"{prop}_Last4Digits")
-                    ).GetValue()
+                    )
                     : null,
                 (cache, address, paymentInfo) => new Order().Create(
                     Convert.ToInt32(cache["Id"]),

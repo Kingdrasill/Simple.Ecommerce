@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Simple.Ecommerce.Domain;
-using Simple.Ecommerce.Domain.Validation.Validators;
 using Simple.Ecommerce.Domain.ValueObjects.BaseObject;
 
 namespace Simple.Ecommerce.Domain.ValueObjects.PhotoObject
@@ -10,14 +8,9 @@ namespace Simple.Ecommerce.Domain.ValueObjects.PhotoObject
     {
         public Photo() { }
 
-        private Photo(string fileName)
+        public Photo(string fileName)
         {
             FileName = fileName;
-        }
-
-        public Result<Photo> Create(string fileName)
-        {
-            return new PhotoValidator().Validate(new Photo(fileName));
         }
 
         public string FileName { get; }

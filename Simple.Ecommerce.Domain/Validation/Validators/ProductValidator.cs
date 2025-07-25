@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -23,12 +22,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<Product>.Failure(errors);
-            }
-
-            return Result<Product>.Success(entity);
+            return errors.Count != 0
+                ? Result<Product>.Failure(errors)
+                : Result<Product>.Success(entity);
         }
     }
 }

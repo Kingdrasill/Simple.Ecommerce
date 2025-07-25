@@ -16,12 +16,24 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
+            var addressValidator = new AddressValidator();
+            var addressResult = addressValidator.Validate(entity.Address);
+
+            if (addressResult.IsFailure) 
+                errors.AddRange(addressResult.Errors!);
+
+            if (entity.PaymentInformation is not null)
             {
-                return Result<Order>.Failure(errors);
+                var paymentValidator = new PaymentInformationValidator();
+                var paymentResult = paymentValidator.Validate(entity.PaymentInformation);
+
+                if (paymentResult.IsFailure)
+                    errors.AddRange(paymentResult.Errors!);
             }
 
-            return Result<Order>.Success(entity);
+            return errors.Count != 0
+                ? Result<Order>.Failure(errors) 
+                : Result<Order>.Success(entity);
         }
     }
 }

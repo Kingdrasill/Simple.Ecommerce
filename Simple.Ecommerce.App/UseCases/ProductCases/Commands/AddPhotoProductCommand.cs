@@ -60,18 +60,13 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Commands
 
                 savedImage = imageFile.Image;
 
-                var photo = new Photo().Create(
+                var photo = new Photo(
                     imageFile.Image!.Name
                 );
-                if (photo.IsFailure)
-                {
-                    throw new ResultException(photo.Errors!);
-                }
-
                 var instance = new ProductPhoto().Create(
                     0,
                     request.ProductId,
-                    photo.GetValue()
+                    photo
                 );
                 if (instance.IsFailure)
                 {

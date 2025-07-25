@@ -60,17 +60,12 @@ namespace Simple.Ecommerce.App.UseCases.UserCases.Commands
 
                 savedImage = imageFile.Image;
 
-                var photo = new Photo().Create(
+                var photo = new Photo(
                     imageFile.Image!.Name
                 );
-                if (photo.IsFailure)
-                {
-                    throw new ResultException(photo.Errors!);
-                }
-
                 var instance = getUser.GetValue();
-                instance.AddOrUpdatePhoto(photo.GetValue());
-
+                instance.AddOrUpdatePhoto(photo);
+                // Add validação depois de update
                 var updateResult = await _addPhotoUserUoW.Users.Update(instance, true);
                 if (updateResult.IsFailure)
                 {

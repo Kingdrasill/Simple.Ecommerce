@@ -16,12 +16,15 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var erros = _builder.Validate(entity);
 
-            if (erros.Count != 0)
-            {
-                return Result<UserPayment>.Failure(erros);
-            }
+            var paymentValidator = new PaymentInformationValidator();
+            var paymentResult = paymentValidator.Validate(entity.PaymentInformation);
 
-            return Result<UserPayment>.Success(entity);
+            if (paymentResult.IsFailure)
+                erros.AddRange(paymentResult.Errors!);
+
+            return erros.Count != 0
+                ? Result<UserPayment>.Failure(erros)
+                : Result<UserPayment>.Success(entity);
         }
     }
 }

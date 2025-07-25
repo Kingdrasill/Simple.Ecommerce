@@ -1,6 +1,5 @@
 ﻿using Simple.Ecommerce.Domain.Entities.FrequencyEntity;
 using Simple.Ecommerce.Domain.Interfaces.BaseValidator;
-using Simple.Ecommerce.Domain;
 
 namespace Simple.Ecommerce.Domain.Validation.Validators
 {
@@ -18,12 +17,9 @@ namespace Simple.Ecommerce.Domain.Validation.Validators
         {
             var errors = _builder.Validate(entity);
 
-            if (errors.Count != 0)
-            {
-                return Result<CacheFrequency>.Failure(errors);
-            }
-
-            return Result<CacheFrequency>.Success(entity);
+            return errors.Count != 0
+                ? Result<CacheFrequency>.Failure(errors)
+                : Result<CacheFrequency>.Success(entity);
         }
     }
 }

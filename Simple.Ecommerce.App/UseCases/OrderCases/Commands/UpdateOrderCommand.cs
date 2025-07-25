@@ -95,7 +95,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 }
             }
 
-            var address = new Address().Create(
+            var address = new Address(
                 request.Address.Number,
                 request.Address.Street,
                 request.Address.Neighbourhood,
@@ -104,11 +104,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.Address.Complement,
                 request.Address.CEP
             );
-            if (address.IsFailure)
-            {
-                return Result<OrderResponse>.Failure(address.Errors!);
-            }
-
             PaymentInformation? paymentInformation = null;
             if (request.PaymentInformation is not null)
             {
@@ -148,7 +143,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         return Result<OrderResponse>.Failure(new List<Error> { new("UpdateOrderCommand.InvalidPaymentMethod", "O método de pagamento passado não válido.") });
                 }
 
-                var instancePaymentInformation = new PaymentInformation().Create(
+                paymentInformation = new PaymentInformation(
                     request.PaymentInformation.PaymentMethod,
                     request.PaymentInformation.PaymentName,
                     encryptedKey,
@@ -157,11 +152,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                     cardFlag,
                     last4Digits
                 );
-                if (instancePaymentInformation.IsFailure)
-                {
-                    return Result<OrderResponse>.Failure(instancePaymentInformation.Errors!);
-                }
-                paymentInformation = instancePaymentInformation.GetValue();
             }
 
             order.UpdateStatus("Altered", order.OrderLock);
@@ -169,7 +159,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.Id,
                 request.UserId,
                 request.OrderType,
-                address.GetValue(),
+                address,
                 request.TotalPrice,
                 request.OrderDate,
                 order.Confirmation,
