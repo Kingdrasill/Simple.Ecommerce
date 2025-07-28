@@ -1,7 +1,6 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Interfaces.Services.RepositoryHandler;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
@@ -30,19 +29,16 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
     public class GetCompleteOrderQuery : IGetCompleteOrderQuery
     {
         private readonly IOrderRepository _repository;
-        private readonly IRepositoryHandler _repositoryHandler;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public GetCompleteOrderQuery(
             IOrderRepository repository, 
-            IRepositoryHandler repositoryHandler, 
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
-            _repositoryHandler = repositoryHandler;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -232,11 +228,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     }
                     else if (discount.DiscountType == DiscountType.Bundle)
                     {
-                        bool bundleWithItem = bundledItems
-                            .Where(bi => bi.Id == discount.Id)
-                            .Any(bi => bi.BundleItems.Any(bid => bid.ProductId == item.ProductId));
+                        var existingBundle = bundledItems
+                            .Where(bi => bi.Id == item.Discount!.Id)
+                            .FirstOrDefault(bi => !bi.BundleItems.Any(bid => bid.ProductId == item.ProductId));
 
-                        if (bundleWithItem || !bundledItems.Any(bi => bi.Id == discount.Id))
+                        if (existingBundle is not null)
+                        {
+                            existingBundle.BundleItems.Add(new BundleItemDTO(
+                                item.Id,
+                                item.ProductId,
+                                productName,
+                                item.Quantity,
+                                item.Price
+                            ));
+                        }
+                        else
                         {
                             bundledItems.Add(new BundleItemsDTO(
                                 discount.Id,
@@ -256,17 +262,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                                         item.Quantity,
                                         item.Price
                                     )}
-                            ));
-                        }
-                        else
-                        {
-                            var bundle = bundledItems.First(bi => bi.Id == discount.Id && !bi.BundleItems.Any(bid => bid.ProductId == item.ProductId));
-                            bundle.BundleItems.Add(new BundleItemDTO(
-                                item.Id,
-                                item.ProductId,
-                                productName,
-                                item.Quantity,
-                                item.Price
                             ));
                         }
                     }

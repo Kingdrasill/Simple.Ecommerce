@@ -13,6 +13,7 @@ using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
+using System.Reflection.Metadata;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {
@@ -128,7 +129,7 @@ namespace Simple.Ecommerce.Infra.Repositories
                 .ToList();
 
             var allDiscountTiers = await _context.DiscountTiers
-                .Where(dt => tieredDiscountIds.Contains(dt.Id) && !dt.Deleted)
+                .Where(dt => tieredDiscountIds.Contains(dt.DiscountId) && !dt.Deleted)
                 .Select(dt => new
                 {
                     dt.DiscountId,
@@ -188,11 +189,21 @@ namespace Simple.Ecommerce.Infra.Repositories
                     }
                     else if (item.Discount.DiscountType == DiscountType.Bundle)
                     {
-                        bool bundleWithItem = bundledItems
+                        var existingBundle = bundledItems
                             .Where(bi => bi.Id == item.Discount.Id)
-                            .Any(bi => bi.BundleItems.Any(bid => bid.ProductId == item.OrderItem.ProductId));
+                            .FirstOrDefault(bi => !bi.BundleItems.Any(bid => bid.ProductId == item.OrderItem.ProductId));
 
-                        if (bundleWithItem || !bundledItems.Any(bi => bi.Id == item.Discount.Id))
+                        if (existingBundle is not null)
+                        {
+                            existingBundle.BundleItems.Add(new BundleItemDTO(
+                                item.OrderItem.Id,
+                                item.OrderItem.ProductId,
+                                item.ProductName,
+                                item.OrderItem.Quantity,
+                                item.OrderItem.Price
+                            ));
+                        }
+                        else
                         {
                             bundledItems.Add(new BundleItemsDTO(
                                 item.Discount.Id,
@@ -212,17 +223,6 @@ namespace Simple.Ecommerce.Infra.Repositories
                                         item.OrderItem.Quantity,
                                         item.OrderItem.Price
                                     )}
-                            ));
-                        }
-                        else
-                        {
-                            var bundle = bundledItems.First(bi => bi.Id == item.Discount.Id && !bi.BundleItems.Any(bid => bid.ProductId == item.OrderItem.ProductId));
-                            bundle.BundleItems.Add(new BundleItemDTO(
-                                item.OrderItem.Id,
-                                item.OrderItem.ProductId,
-                                item.ProductName,
-                                item.OrderItem.Quantity,
-                                item.OrderItem.Price
                             ));
                         }
                     }
