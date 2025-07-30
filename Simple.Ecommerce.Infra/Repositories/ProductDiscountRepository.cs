@@ -11,6 +11,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<ProductDiscount> _createRepository;
         private readonly IGenericDeleteRepository<ProductDiscount> _deleteRepository;
+        private readonly IGenericDetachRepository<ProductDiscount> _detachRepository;
         private readonly IGenericGetRepository<ProductDiscount> _getRepository;
         private readonly IGenericListRepository<ProductDiscount> _listRepository;
 
@@ -18,6 +19,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             TesteDbContext context, 
             IGenericCreateRepository<ProductDiscount> createRepository, 
             IGenericDeleteRepository<ProductDiscount> deleteRepository, 
+            IGenericDetachRepository<ProductDiscount > detachRepository,
             IGenericGetRepository<ProductDiscount> getRepository, 
             IGenericListRepository<ProductDiscount> listRepository
         )
@@ -25,6 +27,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context = context;
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
+            _detachRepository = detachRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
         }
@@ -39,14 +42,14 @@ namespace Simple.Ecommerce.Infra.Repositories
             return await _deleteRepository.Delete(_context, id);
         }
 
+        public void Detach(ProductDiscount entity)
+        {
+            _detachRepository.Detach(_context, entity);
+        }
+
         public async Task<Result<ProductDiscount>> Get(int id, bool NoTracking = true)
         {
             return await _getRepository.Get(_context, id, NoTracking);
-        }
-
-        public async Task<Result<List<ProductDiscount>>> List()
-        {
-            return await _listRepository.List(_context);
         }
 
         public async Task<Result<List<ProductDiscount>>> GetByDiscountId(int discountId)
@@ -66,5 +69,18 @@ namespace Simple.Ecommerce.Infra.Repositories
 
             return Result<List<ProductDiscount>>.Success(productDiscounts);
         }
+
+        public async Task<Result<List<ProductDiscount>>> GetProductDiscountsByIds(List<int> ids)
+        {
+            return Result<List<ProductDiscount>>.Success(await _context.ProductDiscounts
+                .Where(pd => ids.Contains(pd.Id) && !pd.Deleted)
+                .ToListAsync());
+        }
+
+        public async Task<Result<List<ProductDiscount>>> List()
+        {
+            return await _listRepository.List(_context);
+        }
+
     }
 }

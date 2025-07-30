@@ -13,6 +13,7 @@ namespace Simple.Ecommerce.App.Interfaces.Data
     {
         Task<Result<List<DiscountBundleItem>>> GetByDiscountId(int discountId);
         Task<Result<List<DiscountBundleItem>>> GetByProductId(int productId);
+        Task<Result<DiscountBundleItem>> GetByDiscountIdProductId(int discountId, int productId);
         Task<Result<List<int>>> GetProductIdsByDiscountId(int discountId);
     }
 }

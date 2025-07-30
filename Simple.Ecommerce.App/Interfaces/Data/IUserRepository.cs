@@ -7,6 +7,7 @@ namespace Simple.Ecommerce.App.Interfaces.Data
     public interface IUserRepository :
         IBaseCreateRepository<User>,
         IBaseDeleteRepository<User>,
+        IBaseDetachRepository<User>,
         IBaseUpdateRepository<User>,
         IBaseGetRepository<User>,
         IBaseListRepository<User>

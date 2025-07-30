@@ -1,12 +1,14 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
+using Simple.Ecommerce.App.Services.DiscountValidation.UseDiscountValidation;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
-using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -42,13 +44,98 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                 }
                 var order = getOrder.GetValue();
 
+                if (order.OrderLock is not OrderLock.Unlock)
+                {
+                    return Result<OrderItemsResponse>.Failure(new List<Error> { new("AddItemsOrderItemCommand.OrderLocked", "Não é possível mudar os dados do pedido!") });
+                }
+
                 var getOrderItemsDiscountInfo = await _addItemsOrderUoW.OrderItems.GetOrdemItemsDiscountInfo(order.Id);
                 if (getOrderItemsDiscountInfo.IsFailure)
                 {
                     throw new ResultException(getOrderItemsDiscountInfo.Errors!);
                 }
                 var orderItemsDiscountInfo = getOrderItemsDiscountInfo.GetValue();
-                
+
+                // Buscando todos os produtos passados
+                var productIds = request.OrderItems.Select(item => item.ProductId).ToList();
+                var duplicates = productIds
+                    .GroupBy(x => x)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+                if (duplicates.Count != 0)
+                {
+                    List<Error> errors = new List<Error>();
+                    foreach (var duplicate in duplicates)
+                    {
+                        errors.Add(new("AddItemsOrderItemCommand.Duplicate.OrderItem", $"Não pode ter items duplicados para o produto {duplicate}!"));
+                    }
+                    throw new ResultException(errors);
+                }
+                var getProducts = await _addItemsOrderUoW.Products.GetProductsByIds(productIds);
+                if (getProducts.IsFailure)
+                {
+                    throw new ResultException(getProducts.Errors!);
+                }
+                var products = getProducts.GetValue();
+                if (productIds.Count != products.Count)
+                {
+                    List<Error> errors = new List<Error>();
+                    foreach (var productId in productIds)
+                    {
+                        if (!products.Any(p => p.Id == productId))
+                        {
+                            errors.Add(new("AddItemsOrderItemCommand.NotFound", $"O produto {productId} não foi encontrado!"));
+                        }
+                    }
+                    throw new ResultException(errors);
+                }
+                var productsMap = products.ToDictionary(p => p.Id);
+
+                // Buscando todos os descontos para produtos passados
+                var productDiscountIds = request.OrderItems.Where(item => item.ProductDiscountId is not null).Select(item => item.ProductDiscountId!.Value).ToList();
+                var getProductDiscounts = await _addItemsOrderUoW.ProductDiscounts.GetProductDiscountsByIds(productDiscountIds);
+                if (getProductDiscounts.IsFailure)
+                {
+                    throw new ResultException(getProductDiscounts.Errors!);
+                }
+                var productDiscounts = getProductDiscounts.GetValue();
+                if (productDiscountIds.Count != productDiscounts.Count)
+                {
+                    List<Error> errors = new List<Error>();
+                    foreach (var productDiscountId in productDiscountIds)
+                    {
+                        if (!productDiscounts.Any(p => p.Id == productDiscountId))
+                        {
+                            errors.Add(new("AddItemsOrderItemCommand.NotFound", $"O desconto para o produto {productDiscountId} não foi encontrado!"));
+                        }
+                    }
+                    throw new ResultException(errors);
+                }
+                var productDiscountsMap = productDiscounts.ToDictionary(p => p.Id);
+
+                // Buscando todos os descontos passados
+                var discountIds = productDiscounts.Select(item => item.DiscountId).ToList();
+                var getDiscounts = await _addItemsOrderUoW.Discounts.GetDiscountsByIds(discountIds);
+                if (getDiscounts.IsFailure)
+                {
+                    throw new ResultException(getDiscounts.Errors!);
+                }
+                var discounts = getDiscounts.GetValue();
+                if (discountIds.Count != discounts.Count)
+                {
+                    List<Error> errors = new List<Error>();
+                    foreach (var discountId in discountIds)
+                    {
+                        if (!discounts.Any(p => p.Id == discountId))
+                        {
+                            errors.Add(new("AddItemsOrderItemCommand.NotFound", $"O desconto {discountId} não foi encontrado!"));
+                        }
+                    }
+                    throw new ResultException(errors);
+                }
+                var discountsMap = discounts.ToDictionary(d => d.Id);
+
                 OrderItemsResponse response = new OrderItemsResponse(new List<OrderItemResponse>());
                 foreach (var orderItemRequest in request.OrderItems)
                 {
@@ -57,35 +144,35 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                         throw new ResultException(new Error("AddItemsOrderItemCommand.NotRelated.OrderId", "Um dos itens é de um pedido diferente!"));
                     }
 
-                    var getProduct = await _addItemsOrderUoW.Products.Get(orderItemRequest.ProductId);
-                    if (getProduct.IsFailure)
+                    Product product = productsMap[orderItemRequest.ProductId];
+                    Discount? discount = null;
+                    if (orderItemRequest.ProductDiscountId is not null)
                     {
-                        throw new ResultException(getProduct.Errors!);
-                    }
-                    var product = getProduct.GetValue();
-
-                    var getDiscount = orderItemRequest.DiscountId is null ? null : await _addItemsOrderUoW.Discounts.Get(orderItemRequest.DiscountId.Value);
-                    if (getDiscount is not null)
-                    {
-                        if (getDiscount.IsFailure)
+                        var productDiscount = productDiscountsMap[orderItemRequest.ProductDiscountId.Value];
+                        if (productDiscount.ProductId != orderItemRequest.ProductId)
                         {
-                            throw new ResultException(getDiscount.Errors!);
+                            throw new ResultException(new Error("AddItemsOrderItemCommand.Conflict.ProductId", $"O desconto para produto {productDiscount.Id} é para o produto {productDiscount.ProductId} não para o produto {product.Id}!"));
                         }
 
-                        var validateResult = await ValidateProductDiscount(getDiscount.GetValue(), product, orderItemsDiscountInfo);
-                        if (validateResult.IsFailure)
+                        discount = discountsMap[productDiscount.DiscountId];
+                        var productValidation = await ProductDiscountValidation.Validate(_addItemsOrderUoW.DiscountBundleItems, discount, product, orderItemsDiscountInfo, "AddItemsOrderItemCommand", product.Id);
+                        if (productValidation.IsFailure)
                         {
-                            throw new ResultException(validateResult.Errors!);
+                            throw new ResultException(productValidation.Errors!);
                         }
                     }
 
                     OrderItemResponse itemResponse = new OrderItemResponse(0, 0, 0, 0, 0, null);
-
                     var getOrderItem = await _addItemsOrderUoW.OrderItems.GetByOrderIdAndProductId(order.Id, product.Id);
                     if (getOrderItem.IsSuccess)
                     {
                         var orderItem = getOrderItem.GetValue();
-                        orderItem.Update(orderItemRequest.Quantity, product.Price, orderItemRequest.DiscountId, orderItemRequest.Override);
+                        orderItem.Update(
+                            orderItemRequest.Quantity, 
+                            product.Price, 
+                            discount is null ? null : discount.Id, 
+                            orderItemRequest.Override
+                        );
                         if (orderItem.Validate() is { IsFailure: true } result)
                         {
                             throw new ResultException(result.Errors!);
@@ -96,7 +183,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                         {
                             throw new ResultException(updateResult.Errors!);
                         }
-
                         var orderItemUpdated = updateResult.GetValue();
 
                         itemResponse = new OrderItemResponse(
@@ -116,7 +202,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                             orderItemRequest.Quantity,
                             orderItemRequest.ProductId,
                             orderItemRequest.OrderId,
-                            orderItemRequest.DiscountId
+                            discount is null ? null : discount.Id
                         );
                         if (instance.IsFailure)
                         {
@@ -144,7 +230,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                         itemResponse.OrderId,
                         itemResponse.ProductId,
                         itemResponse.DiscountId,
-                        getDiscount is null ? null : getDiscount.GetValue().DiscountType
+                        discount is null ? null : discount.DiscountType
                     ));
                     response.OrderItems.Add(itemResponse);
                 }
@@ -165,86 +251,6 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                 await _addItemsOrderUoW.Rollback();
                 return Result<OrderItemsResponse>.Failure(new List<Error> { new("AddItemsOrderItemCommand.Unknown", ex.Message) });
             }
-        }
-
-        private async Task<Result<bool>> ValidateProductDiscount(Discount discount, Product product, List<OrderItemDiscountInfoDTO> orderItemsDiscountInfo)
-        {
-            List<Error> errors = new();
-
-            if (discount.DiscountScope != DiscountScope.Product)
-                errors.Add(new("AddItemsOrderItemCommand.InvalidDiscountScope", "Um dos itens tem um desconto que não é aplicável a produtos!"));
-
-            if (discount.DiscountType == DiscountType.FirstPurchase)
-                errors.Add(new("AddItemsOrderItemCommand.InvalidDiscountType", "Um dos itens tem um desconto que não é aplicável a pedidos!"));
-
-            if (discount.ValidFrom > DateTime.UtcNow)
-                errors.Add(new("AddItemsOrderItemCommand.DiscountNotValidYet", "Um dos itens tem um desconto que ainda não está válido!"));
-
-            if (discount.ValidTo < DateTime.UtcNow)
-                errors.Add(new("AddItemsOrderItemCommand.DiscountExpired", "Um dos itens tem um desconto que já expirou!"));
-
-            if (!discount.IsActive)
-                errors.Add(new("AddItemsOrderItemCommand.InactiveDiscount", "Um dos itens tem um desconto que não está ativo!"));
-
-            if (discount.DiscountType == DiscountType.Bundle)
-            {
-                var getProductIdsOfBundle = await _addItemsOrderUoW.DiscountBundleItems.GetProductIdsByDiscountId(discount.Id);
-                if (getProductIdsOfBundle.IsFailure)
-                {
-                    return Result<bool>.Failure(getProductIdsOfBundle.Errors!);
-                }
-
-                var productIdsOfBundle = getProductIdsOfBundle.GetValue();
-
-                var productsBundleInserted = orderItemsDiscountInfo.Where(tmp => productIdsOfBundle.Contains(tmp.ProductId));
-
-                foreach (var bundleItem in productsBundleInserted)
-                {
-                    if (bundleItem.DiscountId is null)
-                        continue;
-
-                    if (bundleItem.DiscountType != DiscountType.Bundle)
-                        errors.Add(new("AddItemsOrderItemCommand.ConflictDiscountType", $"Um produto do desconto de pacote {discount.Id} já está utilizando um desconto que não é de pacote!"));
-                    else if (bundleItem.DiscountId != discount.Id)
-                        errors.Add(new("AddItemsOrderItemCommand.ConflictDiscountBundle", $"Um produto do desconto de pacote {discount.Id} já está utilizando um desconto para outro desconto de pacote!"));
-                }
-            }
-            else
-            {
-                var getProductBundles = await _addItemsOrderUoW.DiscountBundleItems.GetByProductId(product.Id);
-                if (getProductBundles.IsFailure)
-                {
-                    return Result<bool>.Failure(getProductBundles.Errors!);
-                }
-
-                foreach (var bundle in getProductBundles.GetValue())
-                {
-                    var getProductsIdsOfBundle = await _addItemsOrderUoW.DiscountBundleItems.GetProductIdsByDiscountId(bundle.DiscountId);
-                    if (getProductsIdsOfBundle.IsFailure)
-                    {
-                        return Result<bool>.Failure(getProductsIdsOfBundle.Errors!);
-                    }
-
-                    var productsIdsOfBundle = getProductsIdsOfBundle.GetValue();
-
-                    var productsBundleInserted = orderItemsDiscountInfo.Where(tmp => productsIdsOfBundle.Contains(tmp.ProductId));
-
-                    foreach (var bundleItem in productsBundleInserted)
-                    {
-                        if (bundleItem.DiscountId is null)
-                            continue;
-
-                        if (bundleItem.DiscountType == DiscountType.Bundle)
-                            errors.Add(new("AddItemsOrderItemCommand.ConflictDiscountType", "Um dos produtos do pedido está utilizando o desconto de pacote que este um dos produtos inseridos faz parte mas este está usando outro desconto!"));
-                    }
-                }
-            }
-
-            if (errors.Count != 0)
-            {
-                return Result<bool>.Failure(errors);
-            }
-            return Result<bool>.Success(true);
         }
     }
 }

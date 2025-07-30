@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Data.BaseRepository;
-using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 
 namespace Simple.Ecommerce.App.Interfaces.Data
 {
@@ -10,7 +10,8 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseDeleteRepository<OrderItem>,
         IBaseGetRepository<OrderItem>,
         IBaseListRepository<OrderItem>,
-        IBaseUpdateRepository<OrderItem>
+        IBaseUpdateRepository<OrderItem>,
+        IBaseDetachRepository<OrderItem>
     {
         Task<Result<List<OrderItem>>> GetByOrderId(int orderId);
         Task<Result<OrderItem>> GetByOrderIdAndProductId(int orderId, int productId);

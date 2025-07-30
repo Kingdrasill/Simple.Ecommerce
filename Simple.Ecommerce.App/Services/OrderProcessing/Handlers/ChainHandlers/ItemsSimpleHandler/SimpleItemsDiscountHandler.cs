@@ -30,9 +30,16 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                     {
                         amountDiscountedPrice = discount.Value!.Value;
                     }
-                    var publishEvent = orderInProcess.ApplySimpleItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, amountDiscountedPrice);
-
-                    Console.WriteLine($"\t[SimpleItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.NewItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                    
+                    if (!(amountDiscountedPrice > item.CurrentPrice))
+                    {
+                        var publishEvent = orderInProcess.ApplySimpleItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, amountDiscountedPrice);
+                        Console.WriteLine($"\t[SimpleItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.NewItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t[SimpleItemDiscountsHandler] O desconto {discount.Name} não foi aplicado ao item {item.ProductName} do pedido por resultar em um preço negativo. Preço do item: {item.CurrentPrice:C}. Valor que seria descontado do preço: {amountDiscountedPrice:C}.");
+                    }
 
                     orderInProcess.RemoveAppliedDiscount(discount);
                     simpleDiscounts.RemoveAt(index);

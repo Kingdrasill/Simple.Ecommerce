@@ -2,10 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
+using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.Contracts.OrderContracts;
+using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderContracts.PaymentInformations;
+using Simple.Ecommerce.Contracts.OrderItemContracts;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -20,10 +23,12 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IListOrderQuery _listOrderQuery;
         private readonly ICancelOrderCommand _cancelOrderCommand;
         private readonly IConfirmOrderCommand _confirmOrderCommand;
+        private readonly IConfirmNewOrderCommand _confirmNewOrderCommand;
         private readonly IChangeDiscountOrderCommand _changeDiscountOrderCommand;
         private readonly IChangePaymentInformationOrderCommand _changePaymentMethodOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
         private readonly IRevertProcessedOrderCommand _revertProcessedOrderCommand;
+        private readonly IAddItemsOrderItemCommand _addItemsOrderItemCommand;
         private readonly IGetCompleteOrderQuery _getCompleteOrderQuery;
         private readonly IGetPaymentInformationOrderQuery _getPaymentMethodOrderQuery;
 
@@ -35,10 +40,12 @@ namespace Simple.Ecommerce.Api.Controllers
             IListOrderQuery listOrderQuery,
             ICancelOrderCommand cancelOrderCommand,
             IConfirmOrderCommand confirmOrderCommand,
+            IConfirmNewOrderCommand confirmNewOrderCommand,
             IChangeDiscountOrderCommand changeDiscountOrderCommand,
             IChangePaymentInformationOrderCommand changePaymentMethodOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
             IRevertProcessedOrderCommand revertProcessedOrderCommand,
+            IAddItemsOrderItemCommand addItemsOrderItemCommand,
             IGetCompleteOrderQuery getCompleteOrderQuery,
             IGetPaymentInformationOrderQuery getPaymentMethodOrderQuery
         )
@@ -50,10 +57,12 @@ namespace Simple.Ecommerce.Api.Controllers
             _listOrderQuery = listOrderQuery;
             _cancelOrderCommand = cancelOrderCommand;
             _confirmOrderCommand = confirmOrderCommand;
+            _confirmNewOrderCommand = confirmNewOrderCommand;
             _changeDiscountOrderCommand = changeDiscountOrderCommand;
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
             _revertProcessedOrderCommand = revertProcessedOrderCommand;
+            _addItemsOrderItemCommand = addItemsOrderItemCommand;
             _getCompleteOrderQuery = getCompleteOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
@@ -89,6 +98,14 @@ namespace Simple.Ecommerce.Api.Controllers
         public async Task<ActionResult<bool>> Cancel(int orderId)
         {
             var result = await _cancelOrderCommand.Execute(orderId);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
+        [HttpPut("Confirm")]
+        public async Task<ActionResult<bool>> Confirm(OrderCompleteRequest request)
+        {
+            var result = await _confirmNewOrderCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
         }

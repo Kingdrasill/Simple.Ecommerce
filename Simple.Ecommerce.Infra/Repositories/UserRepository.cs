@@ -12,6 +12,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<User> _createRepository;
         private readonly IGenericDeleteRepository<User> _deleteRepository;
+        private readonly IGenericDetachRepository<User> _detachRepository;
         private readonly IGenericGetRepository<User> _getRepository;
         private readonly IGenericListRepository<User> _listRepository;
         private readonly IGenericUpdateRepository<User> _updateRepository;
@@ -20,6 +21,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             TesteDbContext context,
             IGenericCreateRepository<User> createRepository,
             IGenericDeleteRepository<User> deleteRepository,
+            IGenericDetachRepository<User> detachRepository,
             IGenericGetRepository<User> getRepository,
             IGenericListRepository<User> listRepository,
             IGenericUpdateRepository<User> updateRepository)
@@ -27,6 +29,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context = context;
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
+            _detachRepository = detachRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
             _updateRepository = updateRepository;
@@ -59,6 +62,11 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context.Entry(user).Reference(u => u.Photo).IsModified = true;
             await _context.SaveChangesAsync();
             return Result<bool>.Success(true);
+        }
+
+        public void Detach(User entity)
+        {
+            _detachRepository.Detach(_context, entity);
         }
 
         public async Task<Result<User>> Get(int id, bool NoTracking = true)

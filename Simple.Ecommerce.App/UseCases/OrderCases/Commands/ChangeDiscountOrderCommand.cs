@@ -1,6 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
+using Simple.Ecommerce.App.Services.DiscountValidation.UseDiscountValidation;
 using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
@@ -51,22 +52,10 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 if (getDiscount.IsFailure)
                     return Result<bool>.Failure(getDiscount.Errors!);
 
-                List<Error> errors = new();
-
-                if (getDiscount.GetValue().DiscountScope != DiscountScope.Order)
-                    errors.Add(new("ChangeDiscountOrderCommand.InvalidDiscountScope", "O desconto não é aplicável a pedidos!"));
-                if (getDiscount.GetValue().DiscountType is DiscountType.Tiered or DiscountType.BuyOneGetOne or DiscountType.Bundle)
-                    errors.Add(new("ChangeDiscountOrderCommand.InvalidDiscountType", "O tipo de desconto aplicado não é aplicável a pedidos!"));
-                if (getDiscount.GetValue().ValidFrom > DateTime.UtcNow)
-                    errors.Add(new("ChangeDiscountOrderCommand.DiscountNotValidYet", "O desconto ainda não está válido!"));
-                if (getDiscount.GetValue().ValidTo < DateTime.UtcNow)
-                    errors.Add(new("ChangeDiscountOrderCommand.DiscountExpired", "O desconto já expirou!"));
-                if (!getDiscount.GetValue().IsActive)
-                    errors.Add(new("ChangeDiscountOrderCommand.InactiveDiscount", "O desconto não está ativo!"));
-
-                if (errors.Count != 0)
+                var simpleValidation = SimpleDiscountValidation.Validate(getDiscount.GetValue(), DiscountScope.Order, "ChangeDiscountOrderCommand", null);
+                if (simpleValidation.IsFailure)
                 {
-                    return Result<bool>.Failure(errors);
+                    return Result<bool>.Failure(simpleValidation.Errors!);
                 }
             }
 

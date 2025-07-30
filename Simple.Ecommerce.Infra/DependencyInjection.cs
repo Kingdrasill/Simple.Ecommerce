@@ -121,6 +121,7 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<IAddPhotoUserUnitOfWork, AddPhotoUserUnitOfWork>();
             services.AddScoped<IConfirmCredentialVerificationUnitOfWork, ConfirmCredentialVerificationUnitOfWork>();
             services.AddScoped<IConfirmedOrderUnitOfWork, ConfirmedOrderUnitOfWork>();
+            services.AddScoped<IConfirmedNewOrderUnitOfWork, ConfirmedNewOrderUnitOfWork>();
             services.AddScoped<ICreateBatchCouponUnitOfWork, CreateBatchCouponUnitOfWork>();
             services.AddScoped<ICreateUserUnitOfWork, CreateUserUnitOfWork>();
             services.AddScoped<IRemoveAllItemsOrderUnitOfWork, RemoveAllItemsOrderUnitOfWork>();
@@ -239,6 +240,7 @@ namespace Simple.Ecommerce.Infra
         {
             services.AddTransient(typeof(IGenericCreateRepository<>), typeof(GenericCreateRepository<>));
             services.AddTransient(typeof(IGenericDeleteRepository<>), typeof(GenericDeleteRepository<>));
+            services.AddTransient(typeof(IGenericDetachRepository<>), typeof(GenericDetachRepository<>));
             services.AddTransient(typeof(IGenericGetRepository<>), typeof(GenericGetRepository<>));
             services.AddTransient(typeof(IGenericListRepository<>), typeof(GenericListRepository<>));
             services.AddTransient(typeof(IGenericUpdateRepository<>), typeof(GenericUpdateRepository<>));

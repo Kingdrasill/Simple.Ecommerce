@@ -4,6 +4,7 @@ using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderItemQueries;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 
 namespace Simple.Ecommerce.Api.Controllers
 {

@@ -58,13 +58,15 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 // Verificando a trava do pedido
                 if (order.OrderLock is OrderLock.Unlock)
                 {
+                    await _revertedOrderUoW.Rollback();
                     Console.WriteLine($"[RevertOrderCommandHandler] O pedido {command.OrderId} não pode ser revertido no seu estado atual.");
-                    throw new ResultException(new Error("RevertOrderCommandHandler.Status", $"O pedido {command.OrderId} não pode ser revertido no seu estado atual."));
+                    Result<bool>.Failure(new List<Error> { new("RevertOrderCommandHandler.Status", $"O pedido {command.OrderId} não pode ser revertido no seu estado atual.") });
                 }
                 else if (order.OrderLock is not OrderLock.LockPrice)
                 {
-                    Console.WriteLine($"[RevertOrderCommandHandler] O pedido {command.OrderId} já foi pago não se pode reverter ele.");
-                    throw new ResultException(new Error("RevertOrderCommandHandler.OrderCompleted", $"O pedido {command.OrderId} já foi pago não se pode reverter ele."));
+                    await _revertedOrderUoW.Rollback();
+                    Console.WriteLine($"[RevertOrderCommandHandler] O pedido {command.OrderId} já foi pago e não se pode reverter ele.");
+                    Result<bool>.Failure(new List<Error> { new("RevertOrderCommandHandler.OrderCompleted", $"O pedido {command.OrderId} já foi pago e não se pode reverter ele.") });
                 }
 
                 // Atualizando o status do pedido

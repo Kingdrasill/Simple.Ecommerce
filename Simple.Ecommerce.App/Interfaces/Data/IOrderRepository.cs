@@ -11,7 +11,8 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseDeleteRepository<Order>,
         IBaseGetRepository<Order>,
         IBaseListRepository<Order>,
-        IBaseUpdateRepository<Order>
+        IBaseUpdateRepository<Order>,
+        IBaseDetachRepository<Order>
     {
         Task<Result<bool>> DeletePaymentMethod(int id);
         Task<Result<bool>> GetFirstPurchase(int id);

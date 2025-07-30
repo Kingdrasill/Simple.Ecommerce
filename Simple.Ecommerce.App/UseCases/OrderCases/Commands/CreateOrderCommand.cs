@@ -3,6 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.CardService;
 using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
+using Simple.Ecommerce.App.Services.DiscountValidation.UseDiscountValidation;
 using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.PaymentInformationContracts;
@@ -69,23 +70,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 {
                     return Result<OrderResponse>.Failure(getDiscount.Errors!);
                 }
+                var discount = getDiscount.GetValue();
 
-                List<Error> errors = new();
-                
-                if (getDiscount.GetValue().DiscountScope != DiscountScope.Order)
-                    errors.Add(new("CreateOrderCommand.InvalidDiscountScope", "O desconto não é aplicável a pedidos!"));
-                if (getDiscount.GetValue().DiscountType is (DiscountType.Tiered or DiscountType.BuyOneGetOne or DiscountType.Bundle))
-                    errors.Add(new("CreateOrderCommand.InvalidDiscountType", "O tipo de desconto aplicado não é aplicável a pedidos!"));
-                if (getDiscount.GetValue().ValidFrom > DateTime.UtcNow)
-                    errors.Add(new("CreateOrderCommand.DiscountNotValidYet", "O desconto ainda não está válido!"));
-                if (getDiscount.GetValue().ValidTo < DateTime.UtcNow)
-                    errors.Add(new("CreateOrderCommand.DiscountExpired", "O desconto já expirou!"));
-                if (!getDiscount.GetValue().IsActive)
-                    errors.Add(new("CreateOrderCommand.InactiveDiscount", "O desconto não está ativo!"));
-
-                if (errors.Count != 0)
+                var simpleValidation = SimpleDiscountValidation.Validate(discount, DiscountScope.Order, "CreateOrderCommand", null);
+                if (simpleValidation.IsFailure)
                 {
-                    return Result<OrderResponse>.Failure(errors);
+                    return Result<OrderResponse>.Failure(simpleValidation.Errors!);
                 }
             }
 

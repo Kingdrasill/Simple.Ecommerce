@@ -71,7 +71,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                                 decimal amountDiscountedPrice = 0;
                                 if (discount.DiscountValueType == DiscountValueType.Percentage)
                                     amountDiscountedPrice = information.OrderItem.CurrentPrice * discount.Value!.Value;
-                                else
+                                else if (discount.DiscountValueType == DiscountValueType.FixedAmount)
                                     amountDiscountedPrice = discount.Value!.Value;
                                 bundleDetails.Add(new BundleItemDetail(
                                     information.OrderItem.ProductId,

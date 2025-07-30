@@ -2,13 +2,14 @@
 
 namespace Simple.Ecommerce.App.Interfaces.Services.UnitOfWork
 {
-    public interface IAddItemsOrderUnitOfWork : IBaseUnitOfWork
+    public interface IConfirmedNewOrderUnitOfWork : IBaseUnitOfWork
     {
-        IOrderItemRepository OrderItems { get; }
         IOrderRepository Orders { get; }
+        IUserRepository Users { get; }
+        IDiscountRepository Discounts { get; }
+        IOrderItemRepository OrderItems { get; }
         IProductRepository Products { get; }
         IProductDiscountRepository ProductDiscounts { get; }
-        IDiscountRepository Discounts { get; }
         IDiscountBundleItemRepository DiscountBundleItems { get; }
     }
 }

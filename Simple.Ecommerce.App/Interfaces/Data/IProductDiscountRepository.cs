@@ -7,9 +7,11 @@ namespace Simple.Ecommerce.App.Interfaces.Data
     public interface IProductDiscountRepository :
         IBaseCreateRepository<ProductDiscount>,
         IBaseDeleteRepository<ProductDiscount>,
+        IBaseDetachRepository<ProductDiscount>,
         IBaseGetRepository<ProductDiscount>,
         IBaseListRepository<ProductDiscount>
     {
+        Task<Result<List<ProductDiscount>>> GetProductDiscountsByIds(List<int> ids);
         Task<Result<List<ProductDiscount>>> GetByProductId(int productId);
         Task<Result<List<ProductDiscount>>> GetByDiscountId(int discountId);
     }

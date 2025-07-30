@@ -2,7 +2,7 @@
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
-using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
@@ -57,11 +57,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 // Verificando a trava do pedido
                 if (order.OrderLock is not OrderLock.Unlock)
                 {
-                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} está bloqueado para processamento de pedido!");
-                    throw new ResultException(new Error("ProcessConfirmedOrderCommandHandler.AlreadyProcessed", $"O pedido {command.OrderId} está bloqueado para processamento de pedido!"));
+                    await _confirmedOrderUoW.Rollback();
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} está bloqueado para processamento!");
+                    return Result<bool>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Locked", $"O pedido {command.OrderId} está bloqueado para processamento!") });
                 }
 
-                // Atualizando o status do pedido
+                // Atualizando o status do pedido para "Confirmed"
                 order.UpdateStatus("Confirmed", OrderLock.Unlock, confirmation: true);
                 if (order.Validate() is { IsFailure: true } cResult)
                 {
@@ -99,7 +100,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 var orderInProcess = CreateOrderInProcess(order, orderDiscountDTO, orderItemsWithDiscount);
 
                 // Enviando o evento de início do processamento do pedido
-                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Processando o pedido {command.OrderId} com {orderItemsWithDiscount.Count} itens.");
+                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Processando o pedido {command.OrderId} com {orderItemsWithDiscount.Count} itens diferentes.");
                 await _orderDispatcher.Dispatch(new OrderProcessingStartedEvent(
                     order.Id,
                     order.UserId,
@@ -120,14 +121,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     )).ToList()
                 ));
 
-                // Processando o pedido com a cadeia de responsabilidade
+                // Processando o pedido pela cadeia de resposabilidade de confirmação
                 var processingResult = await _confirmChain.Process(orderInProcess);
                 if (processingResult.IsFailure)
                 {
                     throw new ResultException(processingResult.Errors!);
                 }
 
-                // Criando novos itens do pedido para itens de graça e partes de pacote 
+                // Criando novos itens do pedido para itens com tipos de descontos que necessitam de diferenciação entre o item com e sem o desconto
                 var createResult = await CreateNewOrderItems(order.Id, orderInProcess);
                 if (createResult.IsFailure)
                 {
@@ -150,7 +151,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     await _orderDispatcher.Dispatch(uncommittedEvents);
                 }
 
-                // Atualizando o status do pedido para Processado
+                // Atualizando o status do pedido para "Processed"
                 order.UpdateStatus("Processed", OrderLock.LockPrice, newTotalPrice: orderInProcess.CurrentTotalPrice);
                 if (order.Validate() is { IsFailure: true } pResult)
                 {
@@ -221,7 +222,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
         {
             var unAppliedDiscounts = new List<OrderDiscountInProcess>();
             var orderItemsInProcess = new List<OrderItemInProcess>();
-            var originalItemsById = orderItemsWithDiscount.ToDictionary(item => item.Id);
             
             if (orderDiscountDTO is not null)
             {
@@ -379,7 +379,6 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 
             if (updatedItemsErros.Count > 0)
                 return Result<bool>.Failure(updatedItemsErros);
-
             return Result<bool>.Success(true);
         }
     }

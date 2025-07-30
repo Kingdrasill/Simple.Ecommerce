@@ -3,6 +3,7 @@
     public interface IBaseUnitOfWork
     {
         Task BeginTransaction();
+        Task SaveChanges();
         Task Commit();
         Task Rollback();
     }

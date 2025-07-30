@@ -1,6 +1,6 @@
 ﻿using Simple.Ecommerce.Domain.Enums.Discount;
 
-namespace Simple.Ecommerce.Contracts.OrderItemContracts
+namespace Simple.Ecommerce.Contracts.OrderItemContracts.Discounts
 {
     public record OrderItemDiscountDTO
     (

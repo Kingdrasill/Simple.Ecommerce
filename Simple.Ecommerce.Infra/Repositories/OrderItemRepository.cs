@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
-using Simple.Ecommerce.Contracts.OrderItemContracts;
+using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Errors.BaseError;
@@ -13,6 +13,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<OrderItem> _createRepository;
         private readonly IGenericDeleteRepository<OrderItem> _deleteRepository;
+        private readonly IGenericDetachRepository<OrderItem> _detachRepository;
         private readonly IGenericGetRepository<OrderItem> _getRepository;
         private readonly IGenericListRepository<OrderItem> _listRepository;
         private readonly IGenericUpdateRepository<OrderItem> _updateRepository;
@@ -21,6 +22,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             TesteDbContext context, 
             IGenericCreateRepository<OrderItem> createRepository,
             IGenericDeleteRepository<OrderItem> deleteRepository,
+            IGenericDetachRepository<OrderItem> detachRepository,
             IGenericGetRepository<OrderItem> getRepository,
             IGenericListRepository<OrderItem> listRepository,
             IGenericUpdateRepository<OrderItem> updateRepository
@@ -29,6 +31,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context = context;
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
+            _detachRepository = detachRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
             _updateRepository = updateRepository;
@@ -42,6 +45,11 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
             return await _deleteRepository.Delete(_context, id, skipSave);
+        }
+
+        public void Detach(OrderItem entity)
+        {
+            _detachRepository.Detach(_context, entity);
         }
 
         public async Task<Result<OrderItem>> Get(int id, bool NoTracking = true)

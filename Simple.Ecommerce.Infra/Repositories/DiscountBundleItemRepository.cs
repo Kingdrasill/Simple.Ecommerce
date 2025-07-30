@@ -2,6 +2,7 @@
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
@@ -54,6 +55,16 @@ namespace Simple.Ecommerce.Infra.Repositories
                 .ToListAsync();
 
             return Result<List<DiscountBundleItem>>.Success(discountBundleItems);
+        }
+
+        public async Task<Result<DiscountBundleItem>> GetByDiscountIdProductId(int discountId, int productId)
+        {
+            var dbi = await _context.DiscountBundleItems.FirstOrDefaultAsync(dbi => dbi.DiscountId == discountId && dbi.ProductId == productId && !dbi.Deleted);
+            if (dbi is null)
+            {
+                return Result<DiscountBundleItem>.Failure(new List<Error> { new("DiscountBundleItemRepository.NotFound", "O item do desconto de pacote não foi encontrado!") });
+            }
+            return Result<DiscountBundleItem>.Success(dbi);
         }
 
         public async Task<Result<List<DiscountBundleItem>>> GetByProductId(int productId)

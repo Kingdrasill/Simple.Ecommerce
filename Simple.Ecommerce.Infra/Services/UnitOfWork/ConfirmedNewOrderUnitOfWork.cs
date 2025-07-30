@@ -3,30 +3,33 @@ using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 
 namespace Simple.Ecommerce.Infra.Services.UnitOfWork
 {
-    public class AddItemsOrderUnitOfWork : BaseUnitOfWork, IAddItemsOrderUnitOfWork
+    public class ConfirmedNewOrderUnitOfWork : BaseUnitOfWork, IConfirmedNewOrderUnitOfWork
     {
-        public IOrderItemRepository OrderItems { get; }
         public IOrderRepository Orders { get; }
+        public IUserRepository Users { get; }
+        public IDiscountRepository Discounts { get; }
+        public IOrderItemRepository OrderItems { get; }
         public IProductRepository Products { get; }
         public IProductDiscountRepository ProductDiscounts { get; }
-        public IDiscountRepository Discounts { get; }
         public IDiscountBundleItemRepository DiscountBundleItems { get; }
-
-        public AddItemsOrderUnitOfWork(
-            TesteDbContext context, 
-            IOrderItemRepository orderItems, 
-            IOrderRepository orders, 
-            IProductRepository products, 
+        
+        public ConfirmedNewOrderUnitOfWork(
+            TesteDbContext context,
+            IOrderRepository orders,
+            IUserRepository users,
+            IDiscountRepository discounts,
+            IOrderItemRepository orderItems,
+            IProductRepository products,
             IProductDiscountRepository productDiscounts,
-            IDiscountRepository discounts, 
             IDiscountBundleItemRepository discountBundleItems
         ) : base(context)
         {
-            OrderItems = orderItems;
             Orders = orders;
+            Users = users;
+            Discounts = discounts;
+            OrderItems = orderItems;
             Products = products;
             ProductDiscounts = productDiscounts;
-            Discounts = discounts;
             DiscountBundleItems = discountBundleItems;
         }
     }

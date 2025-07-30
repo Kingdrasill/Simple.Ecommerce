@@ -28,28 +28,27 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.O
                             {
                                 amountDiscounted = orderDiscount.Value!.Value;
                             }
-                            publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, amountDiscounted);
-
-                            Console.WriteLine($"\t[OrderDiscountHandler] Desconto de primeira compra aplicado ao pedido. Valor descontado do pedido: {amountDiscounted}. Novo total do pedido: {orderInProcess.CurrentTotalPrice}");
                             break;
                         case DiscountType.Percentage:
                             amountDiscounted = orderInProcess.CurrentTotalPrice * orderDiscount.Value!.Value;
-                            publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, amountDiscounted);
-
-                            Console.WriteLine($"\t[OrderDiscountHandler] Desconto de porcentagem aplicado ao pedido. Valor descontado do pedido: {amountDiscounted}. Novo total do pedido: {orderInProcess.CurrentTotalPrice}");
                             break;
                         case DiscountType.FixedAmount:
                             amountDiscounted = orderDiscount.Value!.Value;
-                            publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, amountDiscounted);
-
-                            Console.WriteLine($"\t[OrderDiscountHandler] Desconto de preço fixo aplicado ao pedido. Valor descontado do pedido: {amountDiscounted}. Novo total do pedido: {orderInProcess.CurrentTotalPrice}");
                             break;
                         case DiscountType.FreeShipping:
-                            publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, 0);
-
-                            Console.WriteLine($"\t[OrderDiscountHandler] Desconto de frete grátis. Valor descontado do pedido: {orderInProcess.ShippingFee}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}");
+                            amountDiscounted = 0;
                             break;
                     }
+                    if (!(amountDiscounted > orderInProcess.CurrentTotalPrice))
+                    {
+                        publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, amountDiscounted);
+                        Console.WriteLine($"\t[OrderDiscountHandler] Desconto {publishEvent.DiscountName} aplicado ao pedido. Valor descontado do pedido: {publishEvent.AmountDiscounted:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"\t[OrderDiscountHandler] Desconto {publishEvent.DiscountName} não foi aplicado ao pedido por resultar em preço negativo. Valor atual do pedido: {orderInProcess.CurrentTotalPrice:C}. Valor que seria descontado: {publishEvent.AmountDiscounted:C}.");
+                    }
+
                     orderInProcess.RemoveAppliedDiscount(orderDiscount);
                 }
             }

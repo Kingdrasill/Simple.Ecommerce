@@ -1,4 +1,4 @@
-﻿namespace Simple.Ecommerce.Contracts.OrderItemContracts
+﻿namespace Simple.Ecommerce.Contracts.OrderItemContracts.Discounts
 {
     public record OrderItemWithDiscountDTO
     (

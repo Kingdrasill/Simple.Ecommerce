@@ -3,6 +3,7 @@ using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
+using Simple.Ecommerce.Domain.Enums.OrderLock;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -31,6 +32,18 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             await _removeAllItemsOrderUoW.BeginTransaction();
             try
             {
+                var getOrder = await _removeAllItemsOrderUoW.Orders.Get(orderId);
+                if (getOrder.IsFailure)
+                {
+                    throw new ResultException(getOrder.Errors!);
+                }
+                var order = getOrder.GetValue();
+
+                if (order.OrderLock is not OrderLock.Unlock)
+                {
+                    return Result<bool>.Failure(new List<Error> { new("RemoveAllItemsOrderItemCommand.OrderLocked", "Não é possível mudar os dados do pedido!") });
+                }
+
                 var getOrderItems = await _removeAllItemsOrderUoW.OrderItems.GetByOrderId(orderId);
                 if (getOrderItems.IsFailure)
                 {

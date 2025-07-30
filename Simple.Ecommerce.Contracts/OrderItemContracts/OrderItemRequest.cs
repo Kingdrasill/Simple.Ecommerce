@@ -5,7 +5,7 @@
         int Quantity,
         int ProductId,
         int OrderId,
-        int? DiscountId = null,
+        int? ProductDiscountId = null,
         bool Override = false
     );
 }

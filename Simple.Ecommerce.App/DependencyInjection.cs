@@ -173,6 +173,7 @@ namespace Simple.Ecommerce.App
 
             // Process Confirmed Order Command Handler
             services.AddScoped<ProcessConfirmedOrderCommandHandler>();
+            services.AddScoped<ProcessConfirmedNewOrderCommandHandler>();
             services.AddScoped<RevertOrderCommandHandler>();
         }
 
@@ -380,6 +381,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IChangeDiscountOrderCommand, ChangeDiscountOrderCommand>();
             services.AddScoped<IChangePaymentInformationOrderCommand, ChangePaymentInformationOrderCommand>();
             services.AddScoped<IConfirmOrderCommand, ConfirmOrderCommand>();
+            services.AddScoped<IConfirmNewOrderCommand, ConfirmNewOrderCommand>();
             services.AddScoped<IRemovePaymentMethodOrderCommand, RemovePaymentMethodOrderCommand>();
             services.AddScoped<IRevertProcessedOrderCommand, RevertProcessedOrderCommand>();
             services.AddScoped<IGetCompleteOrderQuery, GetCompleteOrderQuery>();

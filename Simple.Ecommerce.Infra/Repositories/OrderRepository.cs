@@ -13,7 +13,6 @@ using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
-using System.Reflection.Metadata;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {
@@ -22,6 +21,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<Order> _createRepository;
         private readonly IGenericDeleteRepository<Order> _deleteRepository;
+        private readonly IGenericDetachRepository<Order> _detachRepository;
         private readonly IGenericGetRepository<Order> _getRepository;
         private readonly IGenericListRepository<Order> _listRepository;
         private readonly IGenericUpdateRepository<Order> _updateRepository;
@@ -30,6 +30,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             TesteDbContext context, 
             IGenericCreateRepository<Order> createRepository, 
             IGenericDeleteRepository<Order> deleteRepository, 
+            IGenericDetachRepository<Order> detachRepository,
             IGenericGetRepository<Order> getRepository, 
             IGenericListRepository<Order> listRepository, 
             IGenericUpdateRepository<Order> updateRepository
@@ -38,6 +39,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context = context;
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
+            _detachRepository = detachRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
             _updateRepository = updateRepository;
@@ -45,7 +47,7 @@ namespace Simple.Ecommerce.Infra.Repositories
 
         public async Task<Result<Order>> Create(Order entity, bool skipSave = false)
         {
-            return await _createRepository.Create(_context, entity);
+            return await _createRepository.Create(_context, entity, skipSave);
         }
 
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
@@ -71,6 +73,11 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context.Entry(order).Reference(o => o.PaymentInformation).IsModified = true;
             await _context.SaveChangesAsync();
             return Result<bool>.Success(true);
+        }
+
+        public void Detach(Order entity)
+        {
+            _detachRepository.Detach(_context, entity);
         }
 
         public async Task<Result<Order>> Get(int id, bool NoTracking = true)

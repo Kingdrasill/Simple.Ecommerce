@@ -21,6 +21,12 @@ namespace Simple.Ecommerce.Infra.Services.UnitOfWork
                 _transaction = await _context.Database.BeginTransactionAsync();
         }
 
+        public virtual async Task SaveChanges()
+        {
+            if (_transaction != null)
+                await _context.SaveChangesAsync();
+        }
+
         public virtual async Task Commit()
         {
             if (_transaction != null)
