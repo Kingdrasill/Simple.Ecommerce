@@ -5,6 +5,7 @@
         int Quantity,
         int ProductId,
         int OrderId,
+        string? CouponCode = null,
         int? ProductDiscountId = null,
         bool Override = false
     );

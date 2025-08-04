@@ -6,6 +6,8 @@ using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemSimpleEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemTieredEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderRevertEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ShippingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.TaxEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
@@ -19,7 +21,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<ShippingFeeAppliedEvent>,
         IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>,
-        IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>,
+        IOrderProcessingEventHandler<BOGODiscountAppliedEvent>,
         IOrderProcessingEventHandler<BundleDiscountAppliedEvent>,
         IOrderProcessingEventHandler<OrderDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TaxAppliedEvent>,
@@ -29,7 +31,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<TaxRevertedEvent>,
         IOrderProcessingEventHandler<OrderDiscountRevertedEvent>,
         IOrderProcessingEventHandler<BundleDiscountRevertEvent>,
-        IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<BOGODiscountRevertEvent>,
         IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>,
         IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>,
         IOrderProcessingEventHandler<ShippingFeeRevertedEvent>,
@@ -82,7 +84,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         public async Task Handle(ShippingFeeAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(SimpleItemDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(TieredItemDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
-        public async Task Handle(BOGOItemDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BOGODiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(BundleDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(OrderDiscountAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(TaxAppliedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
@@ -117,7 +119,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         public async Task Handle(TaxRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(OrderDiscountRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(BundleDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
-        public async Task Handle(BOGOItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
+        public async Task Handle(BOGODiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(TieredItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(SimpleItemDiscountRevertEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);
         public async Task Handle(ShippingFeeRevertedEvent @event) => await UpdateTotalAmount(@event.AggregateId, @event.CurrentTotal);

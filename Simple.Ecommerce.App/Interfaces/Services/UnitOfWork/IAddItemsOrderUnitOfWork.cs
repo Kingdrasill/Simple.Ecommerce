@@ -10,5 +10,6 @@ namespace Simple.Ecommerce.App.Interfaces.Services.UnitOfWork
         IProductDiscountRepository ProductDiscounts { get; }
         IDiscountRepository Discounts { get; }
         IDiscountBundleItemRepository DiscountBundleItems { get; }
+        ICouponRepository Coupons { get; }
     }
 }

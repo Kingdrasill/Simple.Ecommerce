@@ -1,6 +1,6 @@
 ﻿namespace Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent
 {
-    public class OrderStatusChangedEvent : OrderProcessingEvent
+    public class OrderStatusChangedEvent : BaseOrderProcessingEvent
     {
         public string NewStatus { get; private set; }
 

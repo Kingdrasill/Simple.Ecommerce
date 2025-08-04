@@ -19,6 +19,7 @@ namespace Simple.Ecommerce.Infra.Maooing
             builder.Property(o => o.OrderDate);
             builder.Property(o => o.Confirmation).IsRequired();
             builder.Property(o => o.Status).HasMaxLength(20).IsRequired();
+            builder.Property(o => o.CouponId);
             builder.Property(o => o.DiscountId);
             builder.Property(o => o.OrderLock).IsRequired();
 

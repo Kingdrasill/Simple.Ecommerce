@@ -28,6 +28,7 @@ using Simple.Ecommerce.App.Services.FileImage;
 using Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility;
 using Simple.Ecommerce.App.Services.OrderProcessing.Dispatcher;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers;
+using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.CouponsValidationHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.DiscountsValidationHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.ItemsBOGOHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.ItemsBundleHandler;
@@ -72,6 +73,8 @@ using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemSimpleEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemTieredEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderRevertEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ShippingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.StockEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.TaxEvent;
@@ -185,7 +188,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeAppliedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>, OrderDetailProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>, OrderDetailProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountAppliedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountAppliedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountAppliedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TaxAppliedEvent>, OrderDetailProjector>();
@@ -195,7 +198,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<TaxRevertedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountRevertedEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountRevertEvent>, OrderDetailProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>, OrderDetailProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountRevertEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>, OrderDetailProjector>();
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeRevertedEvent>, OrderDetailProjector>();
@@ -210,7 +213,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeAppliedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>, OrderEventStreamProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>, OrderEventStreamProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountAppliedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountAppliedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountAppliedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TaxAppliedEvent>, OrderEventStreamProjector>();
@@ -220,7 +223,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<TaxRevertedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountRevertedEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountRevertEvent>, OrderEventStreamProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>, OrderEventStreamProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountRevertEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>, OrderEventStreamProjector>();
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeRevertedEvent>, OrderEventStreamProjector>();
@@ -235,7 +238,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeAppliedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>, OrderSummaryProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>, OrderSummaryProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountAppliedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountAppliedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountAppliedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TaxAppliedEvent>, OrderSummaryProjector>();
@@ -245,7 +248,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<TaxRevertedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountRevertedEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountRevertEvent>, OrderSummaryProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>, OrderSummaryProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountRevertEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>, OrderSummaryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeRevertedEvent>, OrderSummaryProjector>();
@@ -266,7 +269,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeAppliedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>, UserOrderHistoryProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>, UserOrderHistoryProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountAppliedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountAppliedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountAppliedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TaxAppliedEvent>, UserOrderHistoryProjector>();
@@ -276,7 +279,7 @@ namespace Simple.Ecommerce.App
             services.AddScoped<IOrderProcessingEventHandler<TaxRevertedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<OrderDiscountRevertedEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<BundleDiscountRevertEvent>, UserOrderHistoryProjector>();
-            services.AddScoped<IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>, UserOrderHistoryProjector>();
+            services.AddScoped<IOrderProcessingEventHandler<BOGODiscountRevertEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>, UserOrderHistoryProjector>();
             services.AddScoped<IOrderProcessingEventHandler<ShippingFeeRevertedEvent>, UserOrderHistoryProjector>();
@@ -286,6 +289,7 @@ namespace Simple.Ecommerce.App
         private static void AddCoRHandlers(this IServiceCollection services, IConfiguration configuration)
         {
             // Confirmação
+            services.AddScoped<CouponsValidationHandler>();
             services.AddScoped<StockValidationHandler>();
             services.AddScoped<ShippingHandler>();
             services.AddScoped<DiscountsValidationHandler>();
@@ -333,6 +337,7 @@ namespace Simple.Ecommerce.App
         private static void AddDiscountBatch(this IServiceCollection services, IConfiguration configuration)
         {
             // Discount 
+            services.AddScoped<IToggleActivationDiscountCommand, ToggleActivationDiscountCommand>();
             services.AddScoped<IGetDiscountDTOQuery, GetDiscountDTOQuery>();
             services.AddScoped<IListDiscountDTOQuery, ListDiscountDTOQuery>();
             // CRUD
@@ -344,7 +349,6 @@ namespace Simple.Ecommerce.App
 
             // Coupon Batch
             services.AddScoped<ICreateBatchCouponsDiscountCommand, CreateBatchCouponsDiscountCommand>();
-            services.AddScoped<IUseCouponDiscountCommand, UseCouponDiscountCommand>();
             // CRUD
             services.AddScoped<IDeleteCouponDiscountCommand, DeleteCouponDiscountCommand>();
             services.AddScoped<IUpdateCouponDiscountCommand, UpdateCouponDiscountCommand>();

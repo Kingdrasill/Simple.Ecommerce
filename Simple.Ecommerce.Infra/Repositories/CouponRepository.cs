@@ -12,6 +12,7 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<Coupon> _createRepository;
         private readonly IGenericDeleteRepository<Coupon> _deleteRepository;
+        private readonly IGenericDetachRepository<Coupon> _detachRepository;
         private readonly IGenericGetRepository<Coupon> _getRepository;
         private readonly IGenericListRepository<Coupon> _listRepository;
         private readonly IGenericUpdateRepository<Coupon> _updateRepository;
@@ -20,6 +21,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             TesteDbContext context,
             IGenericCreateRepository<Coupon> createRepository,
             IGenericDeleteRepository<Coupon> deleteRepository,
+            IGenericDetachRepository<Coupon> detachRepository,
             IGenericGetRepository<Coupon> getRepository,
             IGenericListRepository<Coupon> listRepository,
             IGenericUpdateRepository<Coupon> updateRepository
@@ -28,6 +30,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _context = context;
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
+            _detachRepository = detachRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
             _updateRepository = updateRepository;
@@ -41,6 +44,11 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<bool>> Delete(int id, bool skipSave = false)
         {
             return await _deleteRepository.Delete(_context, id);
+        }
+
+        public void Detach(Coupon entity)
+        {
+            _detachRepository.Detach(_context, entity);
         }
 
         public async Task<Result<Coupon>> Get(int id, bool NoTracking = true)
@@ -58,18 +66,32 @@ namespace Simple.Ecommerce.Infra.Repositories
             return Result<Coupon>.Success(coupon);
         }
 
-        public async Task<Result<List<Coupon>>> GetByDiscountId(int discountId)
+        public async Task<Result<List<Coupon>>> List()
+        {
+            return await _listRepository.List(_context);
+        }
+
+        public async Task<Result<List<Coupon>>> ListByCodes(List<string> codes)
+        {
+            return Result<List<Coupon>>.Success(await _context.Coupons
+                .Where(c => codes.Contains(c.Code) && !c.Deleted)
+                .ToListAsync());
+        }
+
+        public async Task<Result<List<Coupon>>> ListByDiscountId(int discountId)
         {
             var coupons = await _context.Coupons
-                                            .Where(c => c.DiscountId == discountId && !c.Deleted)
-                                            .ToListAsync();
+                .Where(c => c.DiscountId == discountId && !c.Deleted)
+                .ToListAsync();
 
             return Result<List<Coupon>>.Success(coupons);
         }
 
-        public async Task<Result<List<Coupon>>> List()
+        public async Task<Result<List<Coupon>>> ListByIds(List<int> ids)
         {
-            return await _listRepository.List(_context);
+            return Result<List<Coupon>>.Success(await _context.Coupons
+                .Where(c => ids.Contains(c.Id) && !c.Deleted)
+                .ToListAsync());
         }
 
         public async Task<Result<Coupon>> Update(Coupon entity, bool skipSave = false)

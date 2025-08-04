@@ -1,11 +1,10 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
-using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
+using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Errors.BaseError;
-using Simple.Ecommerce.Domain.Exceptions.ResultException;
-using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.StockEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
@@ -14,13 +13,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
     public class RevertStockValidationHandler : IOrderRevertingHandler
     {
         public string EventType => nameof(OrderProcessingStartedEvent);
-        private readonly IProductRepository _productRepository;
+        private readonly IRevertOrderUnitOfWork _revertOrderUoW;
 
         public RevertStockValidationHandler(
-            IProductRepository productRepository
+            IRevertOrderUnitOfWork revertOrderUoW
         ) : base()
         {
-            _productRepository = productRepository;
+            _revertOrderUoW = revertOrderUoW;
         }
 
         public async Task<Result<bool>> Revert(OrderInProcess order, BsonDocument eventData)
@@ -31,7 +30,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
                 .ToList();
             foreach (var item in items)
             {
-                var getProduct = await _productRepository.Get(item.ProductId);
+                var getProduct = await _revertOrderUoW.Products.Get(item.ProductId);
                 if (getProduct.IsFailure)
                 {
                     Console.WriteLine($"\t[RevertStockValidationHandler] O produto {item.ProductName} não foi encontrado.");
@@ -57,7 +56,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
                     return Result<bool>.Failure(result.Errors!);
                 }
 
-                var updateProduct = await _productRepository.Update(product, true);
+                var updateProduct = await _revertOrderUoW.Products.Update(product, true);
                 if (updateProduct.IsFailure)
                 {
                     Console.WriteLine($"\t[RevertStockValidationHandler] Falha ao atualizar a quantidade do estoque do produto {item.ProductName}.");

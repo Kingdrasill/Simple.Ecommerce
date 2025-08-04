@@ -11,6 +11,7 @@ using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
 
@@ -18,21 +19,21 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
     public class ProcessConfirmedOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedOrderCommand, Result<bool>>
     {
-        private readonly IConfirmedOrderUnitOfWork _confirmedOrderUoW;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
         private readonly IOrderProcessingChain _confirmChain;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ProcessConfirmedOrderCommandHandler(
-            IConfirmedOrderUnitOfWork confirmedOrderUoW,
+            IConfirmOrderUnitOfWork confirmOrderUoW,
             IOrderProcessingDispatcher orderDispatcher,
             IOrderProcessingChain confirmChain,
             UseCache useCache,
             ICacheHandler cacheHandler
         )
         {
-            _confirmedOrderUoW = confirmedOrderUoW;
+            _confirmOrderUoW = confirmOrderUoW;
             _orderDispatcher = orderDispatcher;
             _confirmChain = confirmChain;
             _useCache = useCache;
@@ -42,11 +43,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
         public async Task<Result<bool>> Handle(ProcessConfirmedOrderCommand command)
         {
             Console.WriteLine($"\n[ProcessConfirmedOrderCommandHandler] Començando o processamento do pedido {command.OrderId}.");
-            await _confirmedOrderUoW.BeginTransaction();
+            await _confirmOrderUoW.BeginTransaction();
             try
             {
                 // Pegando dados do pedido
-                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
+                var getOrder = await _confirmOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do pedido {command.OrderId}.");
@@ -57,9 +58,17 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 // Verificando a trava do pedido
                 if (order.OrderLock is not OrderLock.Unlock)
                 {
-                    await _confirmedOrderUoW.Rollback();
+                    await _confirmOrderUoW.Rollback();
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] O pedido {command.OrderId} está bloqueado para processamento!");
                     return Result<bool>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Locked", $"O pedido {command.OrderId} está bloqueado para processamento!") });
+                }
+
+                // Pegando dados do usuário que fez o pedido
+                var getUser = await _confirmOrderUoW.Users.Get(order.UserId);
+                if (getUser.IsFailure)
+                {
+                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do usuário {order.UserId}.");
+                    throw new ResultException(getUser.Errors!);
                 }
 
                 // Atualizando o status do pedido para "Confirmed"
@@ -69,16 +78,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     throw new ResultException(cResult.Errors!);
                 }
 
-                // Pegando dados do usuário que fez o pedido
-                var getUser = await _confirmedOrderUoW.Users.Get(order.UserId);
-                if (getUser.IsFailure)
-                {
-                    Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do usuário {order.UserId}.");
-                    throw new ResultException(getUser.Errors!);
-                }
-
                 // Pegando os dados do desconto do pedido se existir
-                var getOrderDiscountDTO = await _confirmedOrderUoW.Orders.GetDiscountDTOById(command.OrderId);
+                var getOrderDiscountDTO = await _confirmOrderUoW.Orders.GetDiscountDTO(command.OrderId);
                 if (getOrderDiscountDTO.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os dados do desconto do pedido {command.OrderId}.");
@@ -87,20 +88,20 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 var orderDiscountDTO = getOrderDiscountDTO.GetValue();
 
                 // Pegando os itens do pedido com os dados de seu desconto se existir
-                var getOrderItemsWithDiscountDTO = await _confirmedOrderUoW.OrderItems.GetOrderItemsWithDiscountDTO(command.OrderId);
-                if (getOrderItemsWithDiscountDTO.IsFailure)
+                var getOrderItemWithDiscountDTOs = await _confirmOrderUoW.OrderItems.ListByOrderIdOrderItemWithDiscountDTO(command.OrderId);
+                if (getOrderItemWithDiscountDTOs.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao pegar os itens do pedido {command.OrderId}.");
-                    throw new ResultException(getOrderItemsWithDiscountDTO.Errors!);
+                    throw new ResultException(getOrderItemWithDiscountDTOs.Errors!);
                 }
-                var orderItemsWithDiscount = getOrderItemsWithDiscountDTO.GetValue();
+                var orderItemWithDiscounts = getOrderItemWithDiscountDTOs.GetValue();
 
                 // Criando o pedido em processamento
-                var originalItemsById = orderItemsWithDiscount.ToDictionary(item => item.Id);
-                var orderInProcess = CreateOrderInProcess(order, orderDiscountDTO, orderItemsWithDiscount);
+                var originalItemsById = orderItemWithDiscounts.ToDictionary(item => item.Id);
+                var orderInProcess = CreateOrderInProcess(order, orderDiscountDTO, orderItemWithDiscounts);
 
                 // Enviando o evento de início do processamento do pedido
-                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Processando o pedido {command.OrderId} com {orderItemsWithDiscount.Count} itens diferentes.");
+                Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Processando o pedido {command.OrderId} com {orderItemWithDiscounts.Count} itens diferentes.");
                 await _orderDispatcher.Dispatch(new OrderProcessingStartedEvent(
                     order.Id,
                     order.UserId,
@@ -171,7 +172,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     throw new ResultException(ppResult.Errors!);
                 }
 
-                var updateOrderResult = await _confirmedOrderUoW.Orders.Update(order, true);
+                var updateOrderResult = await _confirmOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
                 {
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar o status pedido {command.OrderId}.");
@@ -179,7 +180,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Salvando as alterações no pedido e nos itens do pedido
-                await _confirmedOrderUoW.Commit();
+                await _confirmOrderUoW.Commit();
                 if (_useCache.Use)
                 {
                     _cacheHandler.SetItemStale<Order>();
@@ -190,53 +191,61 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             }
             catch (ResultException rex)
             {
-                await _confirmedOrderUoW.Rollback();
+                await _confirmOrderUoW.Rollback();
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar o pedido {command.OrderId}.");
-                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
+                var getOrder = await _confirmOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
-                    await _confirmedOrderUoW.Orders.Update(order);
+                    await _confirmOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
                 return Result<bool>.Failure(rex.Errors);
             }
             catch (Exception ex)
             {
-                await _confirmedOrderUoW.Rollback();
+                await _confirmOrderUoW.Rollback();
                 Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao processar o pedido {command.OrderId}.");
-                var getOrder = await _confirmedOrderUoW.Orders.Get(command.OrderId);
+                var getOrder = await _confirmOrderUoW.Orders.Get(command.OrderId);
                 if (getOrder.IsSuccess)
                 {
                     var order = getOrder.GetValue();
                     order.UpdateStatus("Failed Confirmed", order.OrderLock, false, 0);
-                    await _confirmedOrderUoW.Orders.Update(order);
+                    await _confirmOrderUoW.Orders.Update(order);
                     await _orderDispatcher.Dispatch(new OrderStatusChangedEvent(order.Id, order.Status));
                 }
                 return Result<bool>.Failure(new List<Error> { new("ProcessConfirmedOrderCommandHandler.Unknown", ex.Message) });
             }
         }
 
-        private OrderInProcess CreateOrderInProcess(Order order, OrderDiscountDTO? orderDiscountDTO, List<OrderItemWithDiscountDTO> orderItemsWithDiscount)
+        private OrderInProcess CreateOrderInProcess(Order order, OrderDiscountDTO orderDiscountDTO, List<OrderItemWithDiscountDTO> orderItemsWithDiscount)
         {
-            var unAppliedDiscounts = new List<OrderDiscountInProcess>();
+            var unAppliedDiscounts = new List<DiscountInProcess>();
             var orderItemsInProcess = new List<OrderItemInProcess>();
             
-            if (orderDiscountDTO is not null)
+            if (orderDiscountDTO.Discount is not null)
             {
-                unAppliedDiscounts.Add(new OrderDiscountInProcess(
-                    orderDiscountDTO.DiscountId,
+                unAppliedDiscounts.Add(new DiscountInProcess(
+                    orderDiscountDTO.Discount.Id,
                     order.Id,
-                    orderDiscountDTO.DiscountName,
-                    orderDiscountDTO.DiscountType,
-                    orderDiscountDTO.DiscountScope,
-                    orderDiscountDTO.DiscountValueType,
-                    orderDiscountDTO.Value,
-                    orderDiscountDTO.ValidFrom,
-                    orderDiscountDTO.ValidTo,
-                    orderDiscountDTO.IsActive
-                ));
+                    orderDiscountDTO.Discount.Name,
+                    orderDiscountDTO.Discount.DiscountType,
+                    orderDiscountDTO.Discount.DiscountScope,
+                    orderDiscountDTO.Discount.DiscountValueType,
+                    orderDiscountDTO.Discount.Value,
+                    orderDiscountDTO.Discount.ValidFrom,
+                    orderDiscountDTO.Discount.ValidTo,
+                    orderDiscountDTO.Discount.IsActive,
+                    orderDiscountDTO.Discount.Coupon is null 
+                        ? null 
+                        : new CouponInProcess(
+                            orderDiscountDTO.Discount.Coupon.Id,
+                            orderDiscountDTO.Discount.Coupon.DiscountId,
+                            orderDiscountDTO.Discount.Coupon.Code,
+                            orderDiscountDTO.Discount.Coupon.ExpirationAt,
+                            orderDiscountDTO.Discount.Coupon.IsUsed
+                        )));
             }
 
             foreach (var item in orderItemsWithDiscount)
@@ -246,26 +255,34 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     item.ProductId,
                     item.ProductName,
                     item.Quantity,
-                    item.UnitPrice
+                    item.Price
                 ));
                 if (item.Discount is not null)
                 {
-                    unAppliedDiscounts.Add(new OrderDiscountInProcess(
-                        item.Discount.DiscountId,
+                    unAppliedDiscounts.Add(new DiscountInProcess(
+                        item.Discount.Id,
                         item.Id,
-                        item.Discount.DiscountName,
+                        item.Discount.Name,
                         item.Discount.DiscountType,
                         item.Discount.DiscountScope,
                         item.Discount.DiscountValueType,
                         item.Discount.Value,
                         item.Discount.ValidFrom,
                         item.Discount.ValidTo,
-                        item.Discount.IsActive
-                    ));
+                        item.Discount.IsActive,
+                        item.Discount.Coupon is null 
+                            ? null 
+                            : new CouponInProcess(
+                                item.Discount.Coupon.Id,
+                                item.Discount.Coupon.DiscountId,
+                                item.Discount.Coupon.Code,
+                                item.Discount.Coupon.ExpirationAt,
+                                item.Discount.Coupon.IsUsed
+                            )));
                 }
             }
 
-            var originalTotalPrice = orderItemsWithDiscount.Sum(item => item.UnitPrice * item.Quantity);
+            var originalTotalPrice = orderItemsWithDiscount.Sum(item => item.Price * item.Quantity);
 
             return new OrderInProcess(
                 order.Id,
@@ -296,6 +313,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         freeItem.Quantity,
                         freeItem.ProductId,
                         id,
+                        freeItem.AppliedDiscount.CouponId,
                         freeItem.AppliedDiscount.DiscountId
                     );
                     if (instance.IsFailure)
@@ -318,6 +336,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                             item.Quantity,
                             item.ProductId,
                             id,
+                            item.AppliedDiscount.CouponId,
                             item.AppliedDiscount.DiscountId
                         );
                         if (instance.IsFailure)
@@ -332,7 +351,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             var newItemsErros = new List<Error>();
             foreach (var newItem in newOrderItems)
             {
-                var createItemResult = await _confirmedOrderUoW.OrderItems.Create(newItem, true);
+                var createItemResult = await _confirmOrderUoW.OrderItems.Create(newItem, true);
                 if (createItemResult.IsFailure)
                 {
                     newItemsErros.AddRange(createItemResult.Errors!);
@@ -362,6 +381,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     processedItem.Quantity,
                     originalItem.ProductId,
                     id,
+                    processedItem.AppliedDiscount is null ? null : processedItem.AppliedDiscount.CouponId,
                     processedItem.AppliedDiscount is null ? null : processedItem.AppliedDiscount.DiscountId
                 );
                 if (updatedItem.IsFailure)
@@ -369,7 +389,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     throw new ResultException(updatedItem.Errors!);
                 }
 
-                var updateResult = await _confirmedOrderUoW.OrderItems.Update(updatedItem.GetValue(), true);
+                var updateResult = await _confirmOrderUoW.OrderItems.Update(updatedItem.GetValue(), true);
                 if (updateResult.IsFailure)
                 {
                     updatedItemsErros.AddRange(updateResult.Errors!);

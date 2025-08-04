@@ -46,7 +46,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<DiscountDTO>> Execute(int id)
+        public async Task<Result<DiscountCompleteDTO>> Execute(int id)
         {
             var getDiscount = await GetAsync<Discount>(
                 () => _cacheHandler.GetFromCache<Discount, Discount>(id, cache => 
@@ -68,7 +68,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             );
             if (getDiscount.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(getDiscount.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(getDiscount.Errors!);
             }
 
             var discount = getDiscount.GetValue();
@@ -98,7 +98,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 );
                 if (tiersResponse.IsFailure)
                 {
-                    return Result<DiscountDTO>.Failure(tiersResponse.Errors!);
+                    return Result<DiscountCompleteDTO>.Failure(tiersResponse.Errors!);
                 }
                 tiers = tiersResponse.GetValue();
             }
@@ -123,7 +123,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 );
                 if (bundleItemsResponse.IsFailure)
                 {
-                    return Result<DiscountDTO>.Failure(bundleItemsResponse.Errors!);
+                    return Result<DiscountCompleteDTO>.Failure(bundleItemsResponse.Errors!);
                 }
                 bundleItems = bundleItemsResponse.GetValue();
             }
@@ -140,7 +140,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     )),
                 () => _repositoryHandler.ListFromRepository<Coupon, CouponResponse>(
                     discount.Id,
-                    async (filterId) => await _couponRepository.GetByDiscountId(filterId),
+                    async (filterId) => await _couponRepository.ListByDiscountId(filterId),
                     coupon => new CouponResponse(
                         coupon.Id,
                         coupon.Code,
@@ -153,10 +153,10 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             );
             if (couponsResponse.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(couponsResponse.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(couponsResponse.Errors!);
             }
 
-            var response = new DiscountDTO(
+            var response = new DiscountCompleteDTO(
                 discount.Id, 
                 discount.Name,
                 discount.DiscountType,
@@ -171,7 +171,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 couponsResponse.GetValue()
             );
 
-            return Result<DiscountDTO>.Success(response);
+            return Result<DiscountCompleteDTO>.Success(response);
         }
 
         private async Task<Result<TResponse>> GetAsync<TResponse>(

@@ -1,4 +1,6 @@
-﻿using Simple.Ecommerce.Domain.Enums.Discount;
+﻿using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
+using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
@@ -6,7 +8,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.O
 {
     public class OrderDiscountHandler : BaseOrderProcessingHandler
     {
-        public OrderDiscountHandler() : base() { }
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
+
+        public OrderDiscountHandler(
+            IConfirmOrderUnitOfWork confirmOrderUoW
+        ) : base() 
+        {
+            _confirmOrderUoW = confirmOrderUoW;
+        }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
         {
@@ -41,8 +50,29 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.O
                     }
                     if (!(amountDiscounted > orderInProcess.CurrentTotalPrice))
                     {
-                        publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, amountDiscounted);
+                        int? couponId = orderDiscount.Coupon is null ? null : orderDiscount.Coupon.Id;
+                        string? couponCode = orderDiscount.Coupon is null ? null : orderDiscount.Coupon.Code;
+                        publishEvent = orderInProcess.ApplyOrderDiscount(orderDiscount.Id, orderDiscount.Name, orderDiscount.DiscountType, couponId, couponCode, amountDiscounted);
                         Console.WriteLine($"\t[OrderDiscountHandler] Desconto {publishEvent.DiscountName} aplicado ao pedido. Valor descontado do pedido: {publishEvent.AmountDiscounted:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                        if (orderDiscount.Coupon is not null)
+                        {
+                            var getCoupon = await _confirmOrderUoW.Coupons.Get(orderDiscount.Coupon.Id);
+                            if (getCoupon.IsFailure)
+                            {
+                                throw new ResultException(getCoupon.Errors!);
+                            }
+                            var coupon = getCoupon.GetValue();
+                            coupon.SetUsed(true);
+                            if (coupon.Validate() is { IsFailure: true } result)
+                            {
+                                throw new ResultException(result.Errors!);
+                            }
+                            var updateResult = await _confirmOrderUoW.Coupons.Update(coupon);
+                            if (updateResult.IsFailure)
+                            {
+                                throw new ResultException(updateResult.Errors!);
+                            }
+                        }
                     }
                     else
                     {

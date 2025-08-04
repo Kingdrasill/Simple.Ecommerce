@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
@@ -8,13 +8,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 {
     public class TieredItemsDiscountHandler : BaseOrderProcessingHandler
     {
-        private readonly IDiscountTierRepository _tierRepository;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
 
         public TieredItemsDiscountHandler(
-            IDiscountTierRepository tierRepository
+            IConfirmOrderUnitOfWork confirmOrderUoW
         ) : base()
         {
-            _tierRepository = tierRepository;
+            _confirmOrderUoW = confirmOrderUoW;
         }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
@@ -32,7 +32,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                     var item = orderInProcess.Items.First(i => i.Id == discount.OwnerId);
                     decimal amountDiscountedPrice = 0;
 
-                    var getItemTiers = await _tierRepository.GetByDiscountId(discount.Id);
+                    var getItemTiers = await _confirmOrderUoW.DiscountTiers.GetByDiscountId(discount.Id);
                     if (getItemTiers.IsFailure)
                     {
                         throw new ResultException(new Error("TieredItemDiscountsHandler.NotFound", $"Os tiers para o desconto {discount.Name} do item {item.ProductName} não foram encontrados!"));
@@ -54,8 +54,29 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                         {
                             amountDiscountedPrice = discount.Value!.Value;
                         }
-                        var publishEvent = orderInProcess.ApplyTieredItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, tierToApply.Name, amountDiscountedPrice);
-                        Console.WriteLine($"\t[TieredItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.NewItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                        int? couponId = discount.Coupon is null ? null : discount.Coupon.Id;
+                        string? couponCode = discount.Coupon is null ? null : discount.Coupon.Code;
+                        var publishEvent = orderInProcess.ApplyTieredItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, tierToApply.Id, tierToApply.Name, couponId, couponCode, amountDiscountedPrice);
+                        Console.WriteLine($"\t[TieredItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.ItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                        if (discount.Coupon is not null)
+                        {
+                            var getCoupon = await _confirmOrderUoW.Coupons.Get(discount.Coupon.Id);
+                            if (getCoupon.IsFailure)
+                            {
+                                throw new ResultException(getCoupon.Errors!);
+                            }
+                            var coupon = getCoupon.GetValue();
+                            coupon.SetUsed(true);
+                            if (coupon.Validate() is { IsFailure: true } result)
+                            {
+                                throw new ResultException(result.Errors!);
+                            }
+                            var updateResult = await _confirmOrderUoW.Coupons.Update(coupon);
+                            if (updateResult.IsFailure)
+                            {
+                                throw new ResultException(updateResult.Errors!);
+                            }
+                        }
                     }
                     else
                     {

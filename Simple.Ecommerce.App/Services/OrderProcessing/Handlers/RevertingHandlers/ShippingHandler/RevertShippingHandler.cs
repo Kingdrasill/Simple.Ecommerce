@@ -26,7 +26,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.RevertingHandle
                 }
 
                 order.RevertShippingFee(shippingFee);
-                Console.WriteLine($"\t[RevertTaxHandler] O valor da entrega foi removido do pedido {order.Id}. Valor Revertido: {shippingFee:C}. Novo Total {order.CurrentTotalPrice:C}");
+                Console.WriteLine($"\t[RevertShippingHandler] O valor da entrega foi removido do pedido {order.Id}. Valor Revertido: {shippingFee:C}. Novo Total {order.CurrentTotalPrice:C}");
             }
 
             return Result<bool>.Success(true);

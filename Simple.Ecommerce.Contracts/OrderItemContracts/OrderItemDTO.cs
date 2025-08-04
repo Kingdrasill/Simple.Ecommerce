@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.Contracts.DiscountContracts;
+﻿using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 
 namespace Simple.Ecommerce.Contracts.OrderItemContracts
 {

@@ -2,11 +2,12 @@
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;
+using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Infra.Interfaces.Generic;
 
 namespace Simple.Ecommerce.Infra.Repositories
 {
-    internal class ProductDiscountRepository : IProductDiscountRepository
+    public class ProductDiscountRepository : IProductDiscountRepository
     {
         private readonly TesteDbContext _context;
         private readonly IGenericCreateRepository<ProductDiscount> _createRepository;
@@ -55,8 +56,8 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<List<ProductDiscount>>> GetByDiscountId(int discountId)
         {
             var discountProducts = await _context.ProductDiscounts
-                                                    .Where(pd => pd.DiscountId == discountId && !pd.Deleted)
-                                                    .ToListAsync();
+                .Where(pd => pd.DiscountId == discountId && !pd.Deleted)
+                .ToListAsync();
 
             return Result<List<ProductDiscount>>.Success(discountProducts);
         }
@@ -64,10 +65,39 @@ namespace Simple.Ecommerce.Infra.Repositories
         public async Task<Result<List<ProductDiscount>>> GetByProductId(int productId)
         {
             var productDiscounts = await _context.ProductDiscounts
-                                                    .Where(pd => pd.ProductId == productId && !pd.Deleted)
-                                                    .ToListAsync();
+                .Where(pd => pd.ProductId == productId && !pd.Deleted)
+                .ToListAsync();
 
             return Result<List<ProductDiscount>>.Success(productDiscounts);
+        }
+
+        public async Task<Result<ProductDiscount>> GetByProductIdDiscountId(int productId, int discountId)
+        {
+            var productDiscount = await _context.ProductDiscounts
+                .FirstOrDefaultAsync(pd => pd.ProductId == productId && pd.DiscountId == discountId && !pd.Deleted);
+
+            if (productDiscount is null)
+            {
+                return Result<ProductDiscount>.Failure(new List<Error> { new("ProductDiscount.NotFound", "O desconto para o produto não foi encontrado!") });
+            }
+            
+            return Result<ProductDiscount>.Success(productDiscount);
+        }
+
+        public async Task<Result<List<ProductDiscount>>> GetByProductIdsDiscountIds(List<(int productId, int discountId)> productsDiscountsIds)
+        {
+            var productIds = productsDiscountsIds.Select(x => x.productId).ToList();
+            var discountIds = productsDiscountsIds.Select(x => x.discountId).ToList();
+
+            var result = await _context.ProductDiscounts
+                .Where(pd => productIds.Contains(pd.ProductId) && discountIds.Contains(pd.DiscountId) && !pd.Deleted)
+                .ToListAsync();
+
+            var filteredResult = result
+                .Where(pd => productsDiscountsIds.Contains((pd.ProductId, pd.DiscountId)))
+                .ToList();
+
+            return Result<List<ProductDiscount>>.Success(filteredResult);
         }
 
         public async Task<Result<List<ProductDiscount>>> GetProductDiscountsByIds(List<int> ids)

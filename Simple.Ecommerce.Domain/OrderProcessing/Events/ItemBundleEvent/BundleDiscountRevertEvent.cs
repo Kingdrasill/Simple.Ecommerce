@@ -2,26 +2,16 @@
 
 namespace Simple.Ecommerce.Domain.OrderProcessing.Events.ItemBundleEvent
 {
-    public class BundleDiscountRevertEvent : OrderProcessingEvent
+    public class BundleDiscountRevertEvent : BundleDiscountEvent
     {
-        public int DiscountId { get; private set; }
-        public string DiscountName { get; private set; }
-        public DiscountType DiscountType { get; private set; }
-        public Guid BundleId { get; private set; }
-        public List<BundleItemRevertEntry> BundleItems { get; private set; }
+        public List<BundleItemRevertEntry> RevertedBundleItems { get; private set; }
         public decimal AmountRevertedTotal { get; private set; }
-        public decimal CurrentTotal { get; private set; }
 
-        public BundleDiscountRevertEvent(int orderId, int discountId, string discountName, DiscountType discountType, Guid bundleId, List<BundleItemRevertEntry> bundleItems, decimal amountRevertedTotal, decimal currentTotal)
-            : base(orderId)
+        public BundleDiscountRevertEvent(int orderId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, Guid bundleId, decimal currentTotal, List<BundleItemRevertEntry> revertedBundleItems, decimal amountRevertedTotal)
+            : base(orderId, discountId, discountName, discountType, couponId, couponCode, bundleId, currentTotal)
         {
-            DiscountId = discountId;
-            DiscountName = discountName;
-            DiscountType = discountType;
-            BundleId = bundleId;
-            BundleItems = bundleItems;
+            RevertedBundleItems = revertedBundleItems;
             AmountRevertedTotal = amountRevertedTotal;
-            CurrentTotal = currentTotal;
         }
     }
 }

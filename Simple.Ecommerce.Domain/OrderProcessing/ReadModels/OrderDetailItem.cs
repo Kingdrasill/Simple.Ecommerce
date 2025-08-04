@@ -19,9 +19,11 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
         [BsonElement("amountDiscountedPrice")]
         public decimal AmountDiscountedPrice { get; set; }
         [BsonElement("appliedDiscount")]
-        public (int DiscountId, string DiscountName)? AppliedDiscount { get; set; }
+        public DiscountReadDetail? AppliedDiscount { get; set; }
         [BsonElement("isTieredItem")]
         public bool IsTieredItem { get; set; }
+        [BsonElement("tierId")]
+        public int? TierId { get; set; }
         [BsonElement("TierName")]
         public string? TierName { get; set; }
         [BsonElement("isFreeItem")]

@@ -27,7 +27,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
         public List<OrderItemInProcess> Items { get; private set; }
         public List<AppliedDiscountItem> FreeItems { get; private set; }
         public List<AppliedBundle> Bundles { get; private set; }
-        public List<OrderDiscountInProcess> UnAppliedDiscounts { get; private set; }
+        public List<DiscountInProcess> UnAppliedDiscounts { get; private set; }
         public AppliedDiscountDetail? AppliedDiscount { get; private set; }
         public decimal TotalDiscount { get; private set; }
         public decimal ShippingFee { get; private set; }
@@ -37,7 +37,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
 
         private readonly List<IOrderProcessingEvent> _events = new List<IOrderProcessingEvent>();
 
-        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, OrderLock orderLock, decimal originalTotalPrice, List<OrderItemInProcess> items, List<OrderDiscountInProcess> unAppliedDiscounts, string initialStatus)
+        public OrderInProcess(int id, int userId, OrderType orderType, Address address, PaymentInformation? paymentInformation, OrderLock orderLock, decimal originalTotalPrice, List<OrderItemInProcess> items, List<DiscountInProcess> unAppliedDiscounts, string initialStatus)
         {
             Id = id;
             UserId = userId;
@@ -81,7 +81,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             shippingFeeApplied = true;
         }
 
-        public OrderDiscountAppliedEvent ApplyOrderDiscount(int discountId, string discountName, DiscountType discountType, decimal amountDiscounted)
+        public OrderDiscountAppliedEvent ApplyOrderDiscount(int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountDiscounted)
         {
             if (AppliedDiscount is not null)
             {
@@ -105,24 +105,24 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TotalDiscount += amountDiscountedTotal;
             CurrentTotalPrice -= amountDiscountedTotal;
 
-            AppliedDiscount = new AppliedDiscountDetail(discountId, discountName, discountType);
+            AppliedDiscount = new AppliedDiscountDetail(discountId, discountName, discountType, couponId, couponCode);
 
-            var publishEvent = new OrderDiscountAppliedEvent(Id, discountId, discountName, discountType, amountDiscountedTotal, CurrentTotalPrice);
+            var publishEvent = new OrderDiscountAppliedEvent(Id, discountId, discountName, discountType, couponId, couponCode, CurrentTotalPrice, amountDiscountedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public OrderDiscountRevertedEvent RevertOrderDiscount(int discountId, string discountName, DiscountType discountType, decimal amountReverted)
+        public OrderDiscountRevertedEvent RevertOrderDiscount(int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountReverted)
         {
             TotalDiscount -= amountReverted;
             CurrentTotalPrice += amountReverted;
             AppliedDiscount = null;
-            var publishEvent = new OrderDiscountRevertedEvent(Id, discountId, discountName, discountType, amountReverted, CurrentTotalPrice);
+            var publishEvent = new OrderDiscountRevertedEvent(Id, discountId, discountName, discountType, couponId, couponCode, CurrentTotalPrice, amountReverted);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public SimpleItemDiscountAppliedEvent ApplySimpleItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, decimal amountDiscountedPrice)
+        public SimpleItemDiscountAppliedEvent ApplySimpleItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountDiscountedPrice)
         {
             var item = Items.First(i => i.ProductId == productId);
             if (item.AppliedDiscount is not null)
@@ -130,32 +130,19 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
             }
 
-            if (discountType == DiscountType.Tiered)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de níveis!", nameof(discountType));
-            }
-            else if (discountType == DiscountType.BuyOneGetOne)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de compre 1 leve 1!", nameof(discountType));
-            }
-            else if (discountType == DiscountType.Bundle)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemDiscount não trata de descontos de pacote!", nameof(discountType));
-            }
-
-            decimal itemTotal = item.GetTotal();
-            item.ApplyDiscount(discountId, discountName, discountType, amountDiscountedPrice);
-            decimal amountDiscountedTotal = itemTotal - item.GetTotal();
+            decimal itemOriginalTotal = item.GetTotal();
+            item.ApplyDiscount(discountId, discountName, discountType, couponId, couponCode, amountDiscountedPrice);
+            decimal amountDiscountedTotal = itemOriginalTotal - item.GetTotal();
 
             TotalDiscount += amountDiscountedTotal;
             CurrentTotalPrice -= amountDiscountedTotal;
 
-            var publishEvent = new SimpleItemDiscountAppliedEvent(Id, item.Id, discountId, discountName, discountType, amountDiscountedPrice, item.CurrentPrice, amountDiscountedTotal, CurrentTotalPrice);
+            var publishEvent = new SimpleItemDiscountAppliedEvent(Id, item.Id, discountId, discountName, discountType, couponId, couponCode, item.CurrentPrice, CurrentTotalPrice, amountDiscountedPrice, amountDiscountedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public SimpleItemDiscountRevertEvent RevertSimpleItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, decimal amountRevertedPrice, decimal amountRevertedTotal)
+        public SimpleItemDiscountRevertEvent RevertSimpleItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountRevertedPrice, decimal amountRevertedTotal)
         {
             var item = Items.First(i => i.Id == orderItemId);
             item.RevertDiscount(amountRevertedPrice);
@@ -163,12 +150,12 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TotalDiscount -= amountRevertedTotal;
             CurrentTotalPrice += amountRevertedTotal;
 
-            var publishEvent = new SimpleItemDiscountRevertEvent(Id, orderItemId, discountId, discountName, discountType, amountRevertedPrice, item.CurrentPrice, amountRevertedTotal, CurrentTotalPrice);
+            var publishEvent = new SimpleItemDiscountRevertEvent(Id, orderItemId, discountId, discountName, discountType, couponId, couponCode, item.CurrentPrice, CurrentTotalPrice, amountRevertedPrice, amountRevertedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public TieredItemDiscountAppliedEvent ApplyTieredItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, string tierName, decimal amountDiscountedPrice)
+        public TieredItemDiscountAppliedEvent ApplyTieredItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, int tierId, string tierName, int? couponId, string? couponCode, decimal amountDiscountedPrice)
         {
             var item = Items.First(i => i.ProductId == productId);
             if (item.AppliedDiscount is not null)
@@ -176,24 +163,19 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
                 throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
             }
 
-            if (discountType != DiscountType.Tiered)
-            {
-                throw new ArgumentException($"O metódo ApplyTieredItemDiscount só trata de descontos de níveis!", nameof(discountType));
-            }
-
-            decimal itemTotal = item.GetTotal();
-            item.ApplyDiscount(discountId, discountName, discountType, amountDiscountedPrice);
-            decimal amountDiscountedTotal = itemTotal - item.GetTotal();
+            decimal itemOriginalTotal = item.GetTotal();
+            item.ApplyDiscount(discountId, discountName, discountType, couponId, couponCode, amountDiscountedPrice);
+            decimal amountDiscountedTotal = itemOriginalTotal - item.GetTotal();
 
             TotalDiscount += amountDiscountedTotal;
             CurrentTotalPrice -= amountDiscountedTotal;
 
-            var publishEvent = new TieredItemDiscountAppliedEvent(Id, item.Id, discountId, discountName, discountType, tierName, amountDiscountedPrice, item.CurrentPrice, amountDiscountedTotal, CurrentTotalPrice);
+            var publishEvent = new TieredItemDiscountAppliedEvent(Id, item.Id, discountId, discountName, discountType, tierId, tierName, couponId, couponCode, item.CurrentPrice, CurrentTotalPrice, amountDiscountedPrice, amountDiscountedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public TieredItemDiscountRevertEvent RevertTieredItemDiscount(int orderItemId, int discountId, string discountname, DiscountType discountType, string tierName, decimal amountRevertedPrice, decimal amountRevertedTotal)
+        public TieredItemDiscountRevertEvent RevertTieredItemDiscount(int orderItemId, int discountId, string discountname, DiscountType discountType, int tierId, string tierName, int? couponId, string? couponCode, decimal amountRevertedPrice, decimal amountRevertedTotal)
         {
             var item = Items.First(i => i.Id == orderItemId);
             item.RevertDiscount(amountRevertedPrice);
@@ -201,41 +183,49 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TotalDiscount -= amountRevertedTotal;
             CurrentTotalPrice += amountRevertedTotal;
 
-            var publishEvent = new TieredItemDiscountRevertEvent(Id, orderItemId, discountId, discountname, discountType, tierName, amountRevertedPrice, item.CurrentPrice, amountRevertedTotal, CurrentTotalPrice);
+            var publishEvent = new TieredItemDiscountRevertEvent(Id, orderItemId, discountId, discountname, discountType, tierId, tierName, couponId, couponCode, item.CurrentPrice, CurrentTotalPrice, amountRevertedPrice, amountRevertedTotal);
             AddEvent(publishEvent); 
             return publishEvent;
         }
 
-        public BOGOItemDiscountAppliedEvent ApplyBOGOItemDiscount(int productId, int discountId, string discountName, DiscountType discountType)
+        public BOGODiscountAppliedEvent ApplyBOGOItemDiscount(int productId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode)
         {
             var item = Items.First(i => i.ProductId == productId);
             if (item.AppliedDiscount is not null)
             {
                 throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
-            }
-
-            if (discountType != DiscountType.BuyOneGetOne)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemBuyOneGetOneDiscount só trata de descontos de compre 1 leve 1!", nameof(discountType));
             }
 
             decimal amountDiscounted = item.UnitPrice;
             var freedItem = item.RemoveNItems(1);
             
-            var freeItem = new AppliedDiscountItem(freedItem.Id, freedItem.ProductId, freedItem.ProductName, 1, 0, amountDiscounted, new AppliedDiscountDetail(discountId, discountName, discountType));            
+            var freeItem = new AppliedDiscountItem(
+                freedItem.Id, 
+                freedItem.ProductId, 
+                freedItem.ProductName, 
+                1, 
+                0, 
+                amountDiscounted, 
+                new AppliedDiscountDetail(
+                    discountId, 
+                    discountName, 
+                    discountType, 
+                    couponId,
+                    couponCode
+                ));            
             FreeItems.Add(freeItem);
             TotalDiscount += amountDiscounted;
             CurrentTotalPrice -= amountDiscounted;
 
-            var publishEvent = new BOGOItemDiscountAppliedEvent(Id, freedItem.Id, freedItem.ProductId, freedItem.ProductName, discountId, discountName, discountType, amountDiscounted, CurrentTotalPrice);
+            var publishEvent = new BOGODiscountAppliedEvent(Id, freedItem.Id, freedItem.ProductId, freedItem.ProductName, discountId, discountName, discountType, couponId, couponCode, CurrentTotalPrice, amountDiscounted);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public BOGOItemDiscountRevertEvent RevertBOGOItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, decimal amountReverted)
+        public BOGODiscountRevertEvent RevertBOGOItemDiscount(int orderItemId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountReverted)
         {
             var item = Items.First(item => item.Id == orderItemId);
-            var freeItem = FreeItems.First(item => item.OriginalOrderItemId == orderItemId);
+            var freeItem = FreeItems.First(item => item.OrderItemId == orderItemId);
 
             item.AddNItems(1);
             FreeItems.Remove(freeItem);
@@ -243,80 +233,80 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TotalDiscount -= amountReverted;
             CurrentTotalPrice += amountReverted;
 
-            var publishEvent = new BOGOItemDiscountRevertEvent(Id, orderItemId, item.ProductId, item.ProductName, discountId, discountName, discountType, amountReverted, CurrentTotalPrice);
+            var publishEvent = new BOGODiscountRevertEvent(Id, orderItemId, item.ProductId, item.ProductName, discountId, discountName, discountType, couponId, couponCode, CurrentTotalPrice, amountReverted);
             AddEvent(publishEvent); 
             return publishEvent;
         }
 
-        public BundleDiscountAppliedEvent ApplyBundleItemDiscount(List<BundleItemDetail> bundleItems, int discountId, string discountName, DiscountType discountType)
+        public BundleDiscountAppliedEvent ApplyBundleItemDiscount(List<BundleItemDetail> bundleItemsDetail, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode)
         {
-            if (discountType != DiscountType.Bundle)
-            {
-                throw new ArgumentException($"O metódo ApplyOrderItemBundleDiscount só trata de descontos de pacote!", nameof(discountType));
-            }
-
             var bundle = new List<AppliedDiscountItem>();
             var amountDiscountedTotal = 0m;
-            foreach (var bundleItem in  bundleItems)
+            foreach (var bundleItemDetail in bundleItemsDetail)
             {
-                var item = Items.First(i => i.ProductId == bundleItem.ProductId);
+                var item = Items.First(i => i.ProductId == bundleItemDetail.ProductId);
                 if (item.AppliedDiscount is not null)
                 {
                     throw new InvalidOperationException($"O item {item.ProductName} pedido não pode ter mais de um desconto aplicado a ele!");
                 }
 
-                var bundledItem = item.RemoveNItems(bundleItem.Quantity);
-                var bundledItemTotal = bundledItem.GetTotal();
-                bundledItem.ApplyDiscount(discountId, discountName, discountType, bundleItem.AmountDiscountedPrice);
-                var discountTotal = bundledItemTotal - bundledItem.GetTotal();
+                var bundledItems = item.RemoveNItems(bundleItemDetail.Quantity);
+                var bundledItemsOriginalTotal = bundledItems.GetTotal();
+                bundledItems.ApplyDiscount(discountId, discountName, discountType, couponId, couponCode, bundleItemDetail.AmountDiscountedPrice);
+                var discountTotal = bundledItemsOriginalTotal - bundledItems.GetTotal();
                 amountDiscountedTotal += discountTotal;
 
                 bundle.Add(new AppliedDiscountItem(
-                    bundledItem.Id,
-                    bundledItem.ProductId,
-                    bundledItem.ProductName,
-                    bundledItem.Quantity,
-                    bundledItem.CurrentPrice,
-                    bundleItem.AmountDiscountedPrice,
-                    new AppliedDiscountDetail(discountId, discountName, discountType)
-                ));
+                    bundledItems.Id,
+                    bundledItems.ProductId,
+                    bundledItems.ProductName,
+                    bundledItems.Quantity,
+                    bundledItems.CurrentPrice,
+                    bundleItemDetail.AmountDiscountedPrice,
+                    new AppliedDiscountDetail(
+                        discountId, 
+                        discountName, 
+                        discountType, 
+                        couponId,
+                        couponCode
+                    )));
             }
-            var appliedBundle = new AppliedBundle(discountId, discountName, discountType, bundle);
+            var appliedBundle = new AppliedBundle(discountId, discountName, discountType, couponId, couponCode, bundle);
             Bundles.Add(appliedBundle);
             TotalDiscount += amountDiscountedTotal;
             CurrentTotalPrice -= amountDiscountedTotal;
 
-            var bundleItemEntries = bundle.Select(b => new BundleItemEntry(
-                b.OriginalOrderItemId,
+            var bundleItemEntries = bundle.Select(b => new BundleItemAppliedEntry(
+                b.OrderItemId,
                 b.ProductId,
                 b.ProductName,
                 b.Quantity,
                 b.AmountDiscountedPrice,
                 b.CurrentPrice
             )).ToList();
-            var publishEvent = new BundleDiscountAppliedEvent(Id, discountId, discountName, discountType, appliedBundle.Id, bundleItemEntries, amountDiscountedTotal, CurrentTotalPrice);
+            var publishEvent = new BundleDiscountAppliedEvent(Id, discountId, discountName, discountType, couponId, couponCode, appliedBundle.Id, CurrentTotalPrice, bundleItemEntries, amountDiscountedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
 
-        public BundleDiscountRevertEvent RevertBundleItemDiscount(Guid bundleId, List<BundleItemRevertDetail> bundleItems, int discountId, string discountName, DiscountType discountType, decimal amountRevertedTotal)
+        public BundleDiscountRevertEvent RevertBundleItemDiscount(Guid bundleId, List<RevertBundleItemDetail> bundleItemsDetails, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal amountRevertedTotal)
         {
             var bundle = Bundles.First(b => b.Id == bundleId);
             List<BundleItemRevertEntry> bundleItemRevertEntries = new(); 
-            foreach (var bundleItem in bundleItems)
+            foreach (var bundleItemDetail in bundleItemsDetails)
             {
-                var item = Items.First(i => i.Id == bundleItem.OriginalOrderItemId);
-                var bItem = bundle.Items.First(b => b.OriginalOrderItemId == bundleItem.OriginalOrderItemId);
+                var item = Items.First(i => i.Id == bundleItemDetail.OrderItemId);
+                var bItem = bundle.Items.First(b => b.OrderItemId == bundleItemDetail.OrderItemId);
 
                 item.AddNItems(bItem.Quantity);
                 bundle.Items.Remove(bItem);
 
                 bundleItemRevertEntries.Add(new BundleItemRevertEntry(
-                    bundleItem.OriginalOrderItemId,
-                    bundleItem.ProductId,
+                    bundleItemDetail.OrderItemId,
+                    bundleItemDetail.ProductId,
                     item.ProductName,
-                    bundleItem.Quantity,
-                    bundleItem.AmountRevertedPrice,
+                    bundleItemDetail.Quantity,
+                    bundleItemDetail.AmountRevertedPrice,
                     item.CurrentPrice
                 ));
             }
@@ -324,7 +314,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             TotalDiscount -= amountRevertedTotal;
             CurrentTotalPrice += amountRevertedTotal;
 
-            var publishEvent = new BundleDiscountRevertEvent(Id, discountId, discountName, discountType, bundleId, bundleItemRevertEntries, amountRevertedTotal, CurrentTotalPrice);
+            var publishEvent = new BundleDiscountRevertEvent(Id, discountId, discountName, discountType, couponId, couponCode, bundleId, CurrentTotalPrice, bundleItemRevertEntries, amountRevertedTotal);
             AddEvent(publishEvent);
             return publishEvent;
         }
@@ -359,12 +349,12 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             AddEvent(new TaxRevertedEvent(Id, tax, CurrentTotalPrice));
         }
 
-        public void AddUnappliedDiscount(OrderDiscountInProcess orderDiscountInProcess)
+        public void AddUnappliedDiscount(DiscountInProcess orderDiscountInProcess)
         {
             UnAppliedDiscounts.Add(orderDiscountInProcess);
         }
 
-        public void RemoveAppliedDiscount(OrderDiscountInProcess orderDiscountInProcess)
+        public void RemoveAppliedDiscount(DiscountInProcess orderDiscountInProcess)
         {
             UnAppliedDiscounts.Remove(orderDiscountInProcess);
         }

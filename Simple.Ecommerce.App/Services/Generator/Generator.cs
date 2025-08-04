@@ -12,12 +12,12 @@ namespace Simple.Ecommerce.App.Services.Generator
             return GenerateDigits(length);
         }
 
-        public static string GenerateCouponCode(int length = 8)
+        public static string GenerateCouponCode(int length = 12)
         {
             return GenerateRandomString(chars, length);
         }
 
-        public static string GenerateCouponCodeWithPrefix(string prefix, int length = 8)
+        public static string GenerateCouponCodeWithPrefix(string prefix, int length = 12)
         {
             var code = GenerateRandomString(chars, length);
             return $"{prefix}-{code}";

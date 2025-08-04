@@ -1,5 +1,4 @@
 ﻿using Simple.Ecommerce.Contracts.AddressContracts;
-using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain.Enums.OrderType;

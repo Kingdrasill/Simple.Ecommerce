@@ -1,11 +1,20 @@
-﻿using Simple.Ecommerce.Domain.Enums.Discount;
+﻿using Simple.Ecommerce.App.Interfaces.Data;
+using Simple.Ecommerce.Domain.Enums.Discount;
+using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.ItemsSimpleHandler
 {
     public class SimpleItemsDiscountHandler : BaseOrderProcessingHandler
     {
-        public SimpleItemsDiscountHandler() : base() { }
+        private readonly ICouponRepository _couponRepository;
+
+        public SimpleItemsDiscountHandler(
+            ICouponRepository couponRepository
+        ) : base() 
+        {
+            _couponRepository = couponRepository;
+        }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
         {
@@ -33,8 +42,29 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                     
                     if (!(amountDiscountedPrice > item.CurrentPrice))
                     {
-                        var publishEvent = orderInProcess.ApplySimpleItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, amountDiscountedPrice);
-                        Console.WriteLine($"\t[SimpleItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.NewItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                        int? couponId = discount.Coupon is null ? null : discount.Coupon.Id;
+                        string? couponCode = discount.Coupon is null ? null : discount.Coupon.Code;
+                        var publishEvent = orderInProcess.ApplySimpleItemDiscount(item.ProductId, discount.Id, discount.Name, discount.DiscountType, couponId, couponCode, amountDiscountedPrice);
+                        Console.WriteLine($"\t[SimpleItemDiscountsHandler] O desconto {discount.Name} foi aplicado ao item {item.ProductName} do pedido. Novo preço do item: {publishEvent.ItemPrice:C}. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {orderInProcess.CurrentTotalPrice:C}.");
+                        if (discount.Coupon is not null)
+                        {
+                            var getCoupon = await _couponRepository.Get(discount.Coupon.Id);
+                            if (getCoupon.IsFailure)
+                            {
+                                throw new ResultException(getCoupon.Errors!);
+                            }
+                            var coupon = getCoupon.GetValue();
+                            coupon.SetUsed(true);
+                            if (coupon.Validate() is { IsFailure: true } result)
+                            {
+                                throw new ResultException(result.Errors!);
+                            }
+                            var updateResult = await _couponRepository.Update(coupon);
+                            if (updateResult.IsFailure)
+                            {
+                                throw new ResultException(updateResult.Errors!);
+                            }
+                        }
                     }
                     else
                     {

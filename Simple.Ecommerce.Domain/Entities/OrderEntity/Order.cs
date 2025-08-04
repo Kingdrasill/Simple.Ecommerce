@@ -1,4 +1,5 @@
-﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
+﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
+using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Entities.UserEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
@@ -22,9 +23,11 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
         public DateTime? OrderDate { get; private set; }
         public bool Confirmation { get; private set; }
         public string Status { get; private set; }
+        public int? CouponId { get; private set; }
+        public Coupon? Coupon { get; private set; } = null;
         public int? DiscountId { get; private set; }
         public Discount? Discount { get; private set; } = null;
-        public PaymentInformation? PaymentInformation { get; private set; } = null;
+        public PaymentInformation? PaymentInformation { get; private set; }
         public OrderLock OrderLock { get; private set; }
         [IgnoreDataMember, NotMapped]
         public ICollection<OrderItem> OrderItems { get; private set; }
@@ -34,7 +37,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderItems = new HashSet<OrderItem>();
         }
 
-        private Order(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation = null)
+        private Order(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? couponId, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation)
         {
             Id = id;
             UserId = userId;
@@ -44,6 +47,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderDate = orderDate;
             Confirmation = confirmation;
             Status = status;
+            CouponId = couponId;
             DiscountId = discountId;
             PaymentInformation = paymentInformation;
             OrderLock = orderLock;
@@ -51,9 +55,9 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
             OrderItems = new HashSet<OrderItem>();
         }
 
-        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation = null)
+        public Result<Order> Create(int id, int userId, OrderType orderType, Address address, decimal? totalPrice, DateTime? orderDate, bool confirmation, string status, int? couponId, int? discountId, OrderLock orderLock, PaymentInformation? paymentInformation)
         {
-            return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, discountId, orderLock, paymentInformation));
+            return new OrderValidator().Validate(new Order(id, userId, orderType, address, totalPrice, orderDate, confirmation, status, couponId, discountId, orderLock, paymentInformation));
         }
 
         public Result<Order> Validate()
@@ -63,7 +67,12 @@ namespace Simple.Ecommerce.Domain.Entities.OrderEntity
 
         public void UpdateAddress(Address address) => Address = address;
         public void UpdatePaymentInformation(PaymentInformation? paymentInformation) => PaymentInformation = paymentInformation;
-        public void UpdateDiscountId(int? discountId) => DiscountId = discountId;
+
+        public void UpdateDiscount(int? couponId, int? discountId)
+        {
+            CouponId = couponId;
+            DiscountId = discountId;
+        }
         
         public void UpdateStatus(string status, OrderLock orderLock, bool? confirmation = null, decimal? newTotalPrice = null)
         {

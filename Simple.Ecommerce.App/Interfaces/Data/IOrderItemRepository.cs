@@ -15,8 +15,7 @@ namespace Simple.Ecommerce.App.Interfaces.Data
     {
         Task<Result<List<OrderItem>>> GetByOrderId(int orderId);
         Task<Result<OrderItem>> GetByOrderIdAndProductId(int orderId, int productId);
-        Task<Result<List<OrderItemDiscountInfoDTO>>> GetOrdemItemsDiscountInfo(int orderId);
-        Task<Result<List<OrderItemDiscountDTO>>> GetOrderItemsDiscountDTO(int orderId);
-        Task<Result<List<OrderItemWithDiscountDTO>>> GetOrderItemsWithDiscountDTO(int orderId);
+        Task<Result<List<OrderItemInfoDTO>>> ListByOrderIdOrderItemInfoDTO(int orderId);
+        Task<Result<List<OrderItemWithDiscountDTO>>> ListByOrderIdOrderItemWithDiscountDTO(int orderId);
     }
 }

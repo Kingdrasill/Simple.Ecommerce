@@ -184,7 +184,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("Discount/{productId}")]
         [Authorize]
-        public async Task<ActionResult<List<DiscountDTO>>> GetDiscounts(int productId)
+        public async Task<ActionResult<List<DiscountCompleteDTO>>> GetDiscounts(int productId)
         {
             var result = await _getDiscountsProductQuery.Execute(productId);
 

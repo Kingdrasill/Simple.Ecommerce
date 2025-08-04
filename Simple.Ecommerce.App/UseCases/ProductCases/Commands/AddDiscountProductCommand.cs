@@ -1,7 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Commands.ProductCommands;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
-using Simple.Ecommerce.App.Services.DiscountValidation.ApplyDiscountValidation;
+using Simple.Ecommerce.App.Services.DiscountValidation.AddDiscountValidation;
 using Simple.Ecommerce.Contracts.ProductDiscountContracts;
 using Simple.Ecommerce.Domain;
 using Simple.Ecommerce.Domain.Entities.ProductDiscountEntity;

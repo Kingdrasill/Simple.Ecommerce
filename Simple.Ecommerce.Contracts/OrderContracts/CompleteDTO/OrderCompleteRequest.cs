@@ -11,6 +11,7 @@ namespace Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO
         AddressRequest Address,
         List<OrderItemCompleteRequest> OrderItems,
         PaymentInformationRequest? PaymentInformation = null,
+        string? CouponCode = null,
         int? DiscountId = null,
         int Id = 0
     );

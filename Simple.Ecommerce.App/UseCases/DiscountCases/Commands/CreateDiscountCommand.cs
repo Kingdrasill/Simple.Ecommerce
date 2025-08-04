@@ -26,12 +26,12 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<DiscountDTO>> Execute(DiscountRequest request)
+        public async Task<Result<DiscountCompleteDTO>> Execute(DiscountRequest request)
         {
             var getDiscount = await _repository.Get(request.Id);
             if (getDiscount.IsSuccess)
             {
-                return Result<DiscountDTO>.Failure(new List<Error> { new("CreateDiscountCommand.AlreadyExists", "O desconto já existe!") });
+                return Result<DiscountCompleteDTO>.Failure(new List<Error> { new("CreateDiscountCommand.AlreadyExists", "O desconto já existe!") });
             }
 
             var instace = new Discount().Create(
@@ -47,20 +47,20 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             );
             if (instace.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(instace.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(instace.Errors!);
             }
 
             var createResult = await _repository.Create(instace.GetValue());
             if (createResult.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(createResult.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(createResult.Errors!);
             }
             var discount = createResult.GetValue();
 
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<Discount>();
 
-            var response = new DiscountDTO(
+            var response = new DiscountCompleteDTO(
                 discount.Id, 
                 discount.Name,
                 discount.DiscountType,
@@ -75,7 +75,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
                 null
             );
 
-            return Result<DiscountDTO>.Success(response);
+            return Result<DiscountCompleteDTO>.Success(response);
         }
     }
 }

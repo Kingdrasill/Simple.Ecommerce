@@ -6,6 +6,8 @@ using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemSimpleEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ItemTieredEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderRevertEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.ShippingEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.TaxEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
@@ -19,7 +21,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<ShippingFeeAppliedEvent>,
         IOrderProcessingEventHandler<SimpleItemDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TieredItemDiscountAppliedEvent>,
-        IOrderProcessingEventHandler<BOGOItemDiscountAppliedEvent>,
+        IOrderProcessingEventHandler<BOGODiscountAppliedEvent>,
         IOrderProcessingEventHandler<BundleDiscountAppliedEvent>,
         IOrderProcessingEventHandler<OrderDiscountAppliedEvent>,
         IOrderProcessingEventHandler<TaxAppliedEvent>,
@@ -29,7 +31,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
         IOrderProcessingEventHandler<TaxRevertedEvent>,
         IOrderProcessingEventHandler<OrderDiscountRevertedEvent>,
         IOrderProcessingEventHandler<BundleDiscountRevertEvent>,
-        IOrderProcessingEventHandler<BOGOItemDiscountRevertEvent>,
+        IOrderProcessingEventHandler<BOGODiscountRevertEvent>,
         IOrderProcessingEventHandler<TieredItemDiscountRevertEvent>,
         IOrderProcessingEventHandler<SimpleItemDiscountRevertEvent>,
         IOrderProcessingEventHandler<ShippingFeeRevertedEvent>,
@@ -112,9 +114,15 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == @event.OrderItemId);
                 if (itemToUpdate != null)
                 {
-                    itemToUpdate.CurrentPrice = @event.NewItemPrice;
+                    itemToUpdate.CurrentPrice = @event.ItemPrice;
                     itemToUpdate.AmountDiscountedPrice = @event.AmountDiscountedPrice;
-                    itemToUpdate.AppliedDiscount = (@event.DiscountId, @event.DiscountName);
+                    itemToUpdate.AppliedDiscount = new DiscountReadDetail 
+                    {
+                        DiscountId = @event.DiscountId,
+                        DiscountName = @event.DiscountName,
+                        CouponId = @event.CouponId,
+                        CouponCode = @event.CouponCode
+                    };
                 }
                 readModel.AmountDiscounted += @event.AmountDiscountedTotal;
                 readModel.CurrentTotal = @event.CurrentTotal;
@@ -131,9 +139,15 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
                 var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == @event.OrderItemId);
                 if (itemToUpdate != null)
                 {
-                    itemToUpdate.CurrentPrice = @event.NewItemPrice;
+                    itemToUpdate.CurrentPrice = @event.ItemPrice;
                     itemToUpdate.AmountDiscountedPrice = @event.AmountDiscountedPrice;
-                    itemToUpdate.AppliedDiscount = (@event.DiscountId, @event.DiscountName);
+                    itemToUpdate.AppliedDiscount = new DiscountReadDetail
+                    {
+                        DiscountId = @event.DiscountId,
+                        DiscountName = @event.DiscountName,
+                        CouponId = @event.CouponId,
+                        CouponCode = @event.CouponCode
+                    };
                     itemToUpdate.IsTieredItem = true;
                     itemToUpdate.TierName = @event.TierName;
                 }
@@ -144,26 +158,32 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             }
         }
 
-        public async Task Handle(BOGOItemDiscountAppliedEvent @event)
+        public async Task Handle(BOGODiscountAppliedEvent @event)
         {
             var readModel = await _orderDetailReadModelRepository.GetById(@event.AggregateId);
             if (readModel != null)
             {
-                var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == @event.OriginalOrderItemId);
+                var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == @event.OrderItemId);
                 if (itemToUpdate != null)
                 {
                     itemToUpdate.Quantity -= 1;
                 }
                 readModel.Items.Add(new OrderDetailItem
                 {
-                    OrderItemId = @event.OriginalOrderItemId,
+                    OrderItemId = @event.OrderItemId,
                     ProductId = @event.ProductId,
                     ProductName = @event.ProductName,
                     Quantity = 1,
                     UnitPrice = 0,
                     CurrentPrice = 0,
                     AmountDiscountedPrice = @event.AmountDiscounted,
-                    AppliedDiscount = (@event.DiscountId, @event.DiscountName),
+                    AppliedDiscount = new DiscountReadDetail
+                    {
+                        DiscountId = @event.DiscountId,
+                        DiscountName = @event.DiscountName,
+                        CouponId = @event.CouponId,
+                        CouponCode = @event.CouponCode
+                    },
                     IsTieredItem = false,
                     TierName = null,
                     IsFreeItem = true,
@@ -183,21 +203,27 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             {
                 foreach (var bundleItem in @event.BundleItems)
                 {
-                    var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == bundleItem.OriginalOrderItemId);
+                    var itemToUpdate = readModel.Items.FirstOrDefault(i => i.OrderItemId == bundleItem.OrderItemId);
                     if (itemToUpdate != null)
                     {
                         itemToUpdate.Quantity -= bundleItem.Quantity;
                     }
                     readModel.Items.Add(new OrderDetailItem
                     {
-                        OrderItemId = bundleItem.OriginalOrderItemId,
+                        OrderItemId = bundleItem.OrderItemId,
                         ProductId = bundleItem.ProductId,
                         ProductName = bundleItem.ProductName,
                         Quantity = bundleItem.Quantity,
                         UnitPrice = 0,
-                        CurrentPrice = bundleItem.NewItemPrice,
+                        CurrentPrice = bundleItem.ItemPrice,
                         AmountDiscountedPrice = bundleItem.AmountDiscountedPrice,
-                        AppliedDiscount = (@event.DiscountId, @event.DiscountName),
+                        AppliedDiscount = new DiscountReadDetail 
+                        { 
+                            DiscountId = @event.DiscountId,
+                            DiscountName = @event.DiscountName,
+                            CouponId = @event.CouponId,
+                            CouponCode = @event.CouponCode
+                        },
                         IsTieredItem = false,
                         TierName = null,
                         IsFreeItem = false,
@@ -219,7 +245,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             {
                 readModel.AmountDiscounted += @event.AmountDiscounted;
                 readModel.CurrentTotal = @event.CurrentTotal;
-                readModel.AppliedDiscount = (@event.DiscountId, @event.DiscountName);
+                readModel.AppliedDiscount = new DiscountReadDetail
+                {
+                    DiscountId = @event.DiscountId,
+                    DiscountName = @event.DiscountName,
+                    CouponId = @event.CouponId,
+                    CouponCode = @event.CouponCode
+                };
                 readModel.AppliedDiscounts.Add(@event.DiscountName);
                 await _orderDetailReadModelRepository.Upsert(readModel);
             }
@@ -294,9 +326,9 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             var readModel = await _orderDetailReadModelRepository.GetById(@event.AggregateId);
             if (readModel != null)
             {
-                foreach (var bundleItem in @event.BundleItems)
+                foreach (var bundleItem in @event.RevertedBundleItems)
                 {
-                    var sameItems = readModel.Items.Where(i => i.OrderItemId == bundleItem.OriginalOrderItemId).ToList();
+                    var sameItems = readModel.Items.Where(i => i.OrderItemId == bundleItem.OrderItemId).ToList();
                     var oItem = sameItems.First(i => !i.IsBundleItem);
                     var bItem = sameItems.First(i => i.IsBundleItem);
                     oItem.Quantity += bItem.Quantity;
@@ -309,12 +341,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Projectors
             }
         }
 
-        public async Task Handle(BOGOItemDiscountRevertEvent @event)
+        public async Task Handle(BOGODiscountRevertEvent @event)
         {
             var readModel = await _orderDetailReadModelRepository.GetById(@event.AggregateId);
             if (readModel != null)
             {
-                var sameItems = readModel.Items.Where(i => i.OrderItemId == @event.OriginalOrderItemId).ToList();
+                var sameItems = readModel.Items.Where(i => i.OrderItemId == @event.OrderItemId).ToList();
                 var oItem = sameItems.First(i => !i.IsFreeItem);
                 var fItem = sameItems.First(i => i.IsFreeItem);
                 oItem.Quantity += 1;

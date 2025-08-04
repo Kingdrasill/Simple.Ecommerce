@@ -13,6 +13,7 @@ namespace Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO
         DateTime? ValidFrom,
         DateTime? ValidTo,
         bool IsActive,
+        CouponItemDTO? Coupon,
         List<BundleItemDTO> BundleItems
     );
 }

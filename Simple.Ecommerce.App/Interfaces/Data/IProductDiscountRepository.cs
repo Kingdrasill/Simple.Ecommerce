@@ -14,5 +14,7 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         Task<Result<List<ProductDiscount>>> GetProductDiscountsByIds(List<int> ids);
         Task<Result<List<ProductDiscount>>> GetByProductId(int productId);
         Task<Result<List<ProductDiscount>>> GetByDiscountId(int discountId);
+        Task<Result<ProductDiscount>> GetByProductIdDiscountId(int productId, int discountId);
+        Task<Result<List<ProductDiscount>>> GetByProductIdsDiscountIds(List<(int productId, int discountId)> productsDiscountsIds);
     }
 }

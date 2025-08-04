@@ -195,7 +195,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
                         )),
                     () => _repositoryHandler.ListFromRepository<Coupon, CouponResponse>(
                         discount.Id,
-                        async (filterId) => await _couponRepository.GetByDiscountId(filterId),
+                        async (filterId) => await _couponRepository.ListByDiscountId(filterId),
                         coupon => new CouponResponse(
                             coupon.Id,
                             coupon.Code,
@@ -213,7 +213,7 @@ namespace Simple.Ecommerce.App.UseCases.ProductCases.Queries
 
                 response.Add(new ProductDiscountDTO(
                     productDiscount.Id,
-                    new DiscountDTO(
+                    new DiscountCompleteDTO(
                         discount.Id,
                         discount.Name,
                         discount.DiscountType,

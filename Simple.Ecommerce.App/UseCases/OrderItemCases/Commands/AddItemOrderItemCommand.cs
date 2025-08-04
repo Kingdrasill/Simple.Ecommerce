@@ -2,8 +2,10 @@
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Services.DiscountValidation.UseDiscountValidation;
+using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.Enums.OrderLock;
@@ -20,6 +22,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
         private readonly IProductDiscountRepository _productDiscountRepository;
         private readonly IDiscountRepository _discountRepository;
         private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
+        private readonly ICouponRepository _couponRepository;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
@@ -31,6 +34,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             IProductDiscountRepository productDiscountRepository,
             IDiscountRepository discountRepository,
             IDiscountBundleItemRepository discountBundleItemRepository,
+            ICouponRepository couponRepository,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
@@ -41,6 +45,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             _productDiscountRepository = productDiscountRepository;
             _discountRepository = discountRepository;
             _discountBundleItemRepository = discountBundleItemRepository;
+            _couponRepository = couponRepository;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -66,8 +71,32 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
             }
             var product = getProduct.GetValue();
 
+            var couponCode = request.CouponCode;
+            var productDiscountId = request.ProductDiscountId;
+            Coupon? coupon = null;
             Discount? discount = null;
-            var getProductDiscount = request.ProductDiscountId is null ? null : await _productDiscountRepository.Get(request.ProductDiscountId.Value);
+
+            var getCoupon = couponCode is null ? null : await _couponRepository.GetByCode(couponCode);
+            var getProductDiscount = productDiscountId is null ? null : await _productDiscountRepository.Get(productDiscountId.Value);
+            if (getCoupon is not null)
+            {
+                if (getCoupon.IsFailure)
+                {
+                    return  Result<OrderItemResponse>.Failure(getCoupon.Errors!);
+                }
+                coupon = getCoupon.GetValue();
+
+                if (coupon.IsUsed)
+                {
+                    return Result<OrderItemResponse>.Failure(new List<Error> { new("AddItemOrderItemCommand.AlreadyUsed", $"O cupom {coupon.Code} já foi usado!") });
+                }
+
+                getProductDiscount = await _productDiscountRepository.GetByProductIdDiscountId(product.Id, coupon.DiscountId);
+                if (getProductDiscount.IsFailure)
+                {
+                    return Result<OrderItemResponse>.Failure(new List<Error> { new("AddItemOrderItemCommand.NoRelation", $"O desconto do cupom {coupon.Code} não é para o produto {product.Id}!") });
+                }
+            }
             if (getProductDiscount is not null)
             {
                 if (getProductDiscount.IsFailure)
@@ -87,13 +116,13 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                 }
                 discount = getDiscount.GetValue();
 
-                var getOrderItemsDiscountInfo = await _repository.GetOrdemItemsDiscountInfo(order.Id);
+                var getOrderItemsDiscountInfo = await _repository.ListByOrderIdOrderItemInfoDTO(order.Id);
                 if (getOrderItemsDiscountInfo.IsFailure)
                 {
                     return Result<OrderItemResponse>.Failure(getOrderItemsDiscountInfo.Errors!);
                 }
 
-                var productValidation = await ProductDiscountValidation.Validate(_discountBundleItemRepository, discount, product, getOrderItemsDiscountInfo.GetValue(), "AddItemOrderItemCommand", product.Id);
+                var productValidation = await ProductDiscountValidation.Validate(_discountBundleItemRepository, coupon, discount, product, getOrderItemsDiscountInfo.GetValue(), "AddItemOrderItemCommand", product.Id);
                 if (productValidation.IsFailure)
                 {
                     return Result<OrderItemResponse>.Failure(productValidation.Errors!);
@@ -108,7 +137,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                 orderItem.Update(
                     request.Quantity, 
                     getProduct.GetValue().Price, 
-                    discount is null ? null : discount.Id, 
+                    coupon?.Id,
+                    discount?.Id, 
                     request.Override
                 );
                 if (orderItem.Validate() is { IsFailure: true } result)
@@ -140,7 +170,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderItemCases.Commands
                     request.Quantity,
                     request.ProductId,
                     request.OrderId,
-                    discount is null ? null : discount.Id
+                    coupon?.Id,
+                    discount?.Id
                 );
                 if (instance.IsFailure)
                 {

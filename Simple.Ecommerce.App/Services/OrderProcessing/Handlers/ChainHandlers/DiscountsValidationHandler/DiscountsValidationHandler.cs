@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
@@ -6,13 +6,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.D
 {
     public class DiscountsValidationHandler : BaseOrderProcessingHandler
     {
-        private readonly IOrderRepository _orderRepository;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
 
         public DiscountsValidationHandler(
-            IOrderRepository orderRepository
+            IConfirmOrderUnitOfWork confirmOrderUoW
         ) : base() 
         {
-            _orderRepository = orderRepository;
+            _confirmOrderUoW = confirmOrderUoW;
         }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
@@ -51,7 +51,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.D
                             }
                             if (unAppliedDiscount.DiscountType == DiscountType.FirstPurchase)
                             {
-                                var getFirstPurchase = await _orderRepository.GetFirstPurchase(orderInProcess.UserId);
+                                var getFirstPurchase = await _confirmOrderUoW.Orders.GetFirstPurchase(orderInProcess.UserId);
                                 if (getFirstPurchase.IsSuccess)
                                 {
                                     throw new ArgumentException($"O desconto {unAppliedDiscount.Name} não pode ser aplicado por está não ser sua primeira compra!", nameof(unAppliedDiscount.DiscountType));

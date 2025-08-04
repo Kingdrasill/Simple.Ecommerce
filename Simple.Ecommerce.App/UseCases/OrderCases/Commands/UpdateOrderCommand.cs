@@ -8,6 +8,8 @@ using Simple.Ecommerce.Contracts.AddressContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
+using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.CardFlag;
 using Simple.Ecommerce.Domain.Enums.Discount;
@@ -25,6 +27,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
         private readonly IOrderRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly IDiscountRepository _discountRepository;
+        private readonly ICouponRepository _couponRepository;
         private readonly ICardService _cardService;
         private readonly ICryptographyService _cryptographyService;
         private readonly UseCache _useCache;
@@ -34,6 +37,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             IOrderRepository repository,
             IUserRepository userRepository,
             IDiscountRepository discountRepository,
+            ICouponRepository couponRepository,
             ICardService cardService,
             ICryptographyService cryptographyService,
             UseCache useCache,
@@ -43,6 +47,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             _repository = repository;
             _userRepository = userRepository;
             _discountRepository = discountRepository;
+            _couponRepository = couponRepository;
             _cardService = cardService;
             _cryptographyService = cryptographyService;
             _cacheHandler = cacheHandler;
@@ -69,30 +74,43 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 return Result<OrderResponse>.Failure(getUser.Errors!);
             }
 
-            var getDiscount = request.DiscountId is null ? null : await _discountRepository.Get(request.DiscountId.Value);
+            var couponCode = request.CouponCode;
+            var discountId = request.DiscountId;
+            Coupon? coupon = null;
+            Discount? discount = null;
+
+            var getCoupon = couponCode is null ? null : await _couponRepository.GetByCode(couponCode);
+            var getDiscount = discountId is null ? null : await _discountRepository.Get(discountId.Value);
+            if (getCoupon is not null)
+            {
+                if (getCoupon.IsFailure)
+                {
+                    return Result<OrderResponse>.Failure(getCoupon.Errors!);
+                }
+                coupon = getCoupon.GetValue();
+
+                if (coupon.IsUsed)
+                {
+                    return Result<OrderResponse>.Failure(new List<Error> { new("UpdateOrderCommand.AlreadyUsed", $"O cupom {coupon.Code} já foi usado!") });
+                }
+
+                getDiscount = await _discountRepository.Get(coupon.DiscountId);
+            }
             if (getDiscount is not null)
             {
                 if (getDiscount.IsFailure)
                 {
                     return Result<OrderResponse>.Failure(getDiscount.Errors!);
                 }
+                discount = getDiscount.GetValue();
 
-                var simpleValidation = SimpleDiscountValidation.Validate(getDiscount.GetValue(), DiscountScope.Order, "UpdateOrderCommand", null);
+                var simpleValidation = SimpleDiscountValidation.Validate(discount, DiscountScope.Order, "UpdateOrderCommand", null);
                 if (simpleValidation.IsFailure)
                 {
                     return Result<OrderResponse>.Failure(simpleValidation.Errors!);
                 }
             }
 
-            var address = new Address(
-                request.Address.Number,
-                request.Address.Street,
-                request.Address.Neighbourhood,
-                request.Address.City,
-                request.Address.Country,
-                request.Address.Complement,
-                request.Address.CEP
-            );
             PaymentInformation? paymentInformation = null;
             if (request.PaymentInformation is not null)
             {
@@ -147,12 +165,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.Id,
                 request.UserId,
                 request.OrderType,
-                address,
+                 new Address(
+                    request.Address.Number,
+                    request.Address.Street,
+                    request.Address.Neighbourhood,
+                    request.Address.City,
+                    request.Address.Country,
+                    request.Address.Complement,
+                    request.Address.CEP
+                ),
                 request.TotalPrice,
                 request.OrderDate,
                 order.Confirmation,
                 "Altered",
-                request.DiscountId,
+                coupon?.Id,
+                discount?.Id,
                 order.OrderLock,
                 paymentInformation
             );

@@ -17,6 +17,7 @@ namespace Simple.Ecommerce.Infra.Mapping
             builder.Property(oi => oi.Quantity).IsRequired();
             builder.Property(oi => oi.ProductId).IsRequired();
             builder.Property(oi => oi.OrderId).IsRequired();
+            builder.Property(oi => oi.CouponId);
             builder.Property(oi => oi.DiscountId);
 
             builder.Property(oi => oi.Deleted).IsRequired();

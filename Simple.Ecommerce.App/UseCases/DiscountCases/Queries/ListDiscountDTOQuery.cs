@@ -46,7 +46,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<List<DiscountDTO>>> Execute()
+        public async Task<Result<List<DiscountCompleteDTO>>> Execute()
         {
             var listDiscount = await GetAsync<List<Discount>>(
                 () => _cacheHandler.ListFromCache<Discount, Discount>(
@@ -67,10 +67,10 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
             );
             if (listDiscount.IsFailure)
             {
-                return Result<List<DiscountDTO>>.Failure(listDiscount.Errors!);
+                return Result<List<DiscountCompleteDTO>>.Failure(listDiscount.Errors!);
             }
 
-            List<DiscountDTO> response = new();
+            List<DiscountCompleteDTO> response = new();
             foreach (var discount in listDiscount.GetValue())
             {
                 List<DiscountBundleItemResponse>? bundleItems = null;
@@ -99,7 +99,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     );
                     if (tiersResponse.IsFailure)
                     {
-                        return Result<List<DiscountDTO>>.Failure(tiersResponse.Errors!);
+                        return Result<List<DiscountCompleteDTO>>.Failure(tiersResponse.Errors!);
                     }
                     tiers = tiersResponse.GetValue();
                 }
@@ -124,7 +124,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                     );
                     if (bundleItemsResponse.IsFailure)
                     {
-                        return Result<List<DiscountDTO>>.Failure(bundleItemsResponse.Errors!);
+                        return Result<List<DiscountCompleteDTO>>.Failure(bundleItemsResponse.Errors!);
                     }
                     bundleItems = bundleItemsResponse.GetValue();
                 }
@@ -141,7 +141,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                         )),
                     () => _repositoryHandler.ListFromRepository<Coupon, CouponResponse>(
                         discount.Id,
-                        async (filterId) => await _couponRepository.GetByDiscountId(filterId),
+                        async (filterId) => await _couponRepository.ListByDiscountId(filterId),
                         coupon => new CouponResponse(
                             coupon.Id,
                             coupon.Code,
@@ -154,10 +154,10 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 );
                 if (couponsResponse.IsFailure)
                 {
-                    return Result<List<DiscountDTO>>.Failure(couponsResponse.Errors!);
+                    return Result<List<DiscountCompleteDTO>>.Failure(couponsResponse.Errors!);
                 }
 
-                response.Add(new DiscountDTO(
+                response.Add(new DiscountCompleteDTO(
                     discount.Id,
                     discount.Name,
                     discount.DiscountType,
@@ -173,7 +173,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Queries
                 ));
             }
 
-            return Result<List<DiscountDTO>>.Success(response);
+            return Result<List<DiscountCompleteDTO>>.Success(response);
         }
 
         private async Task<Result<TResponse>> GetAsync<TResponse>(

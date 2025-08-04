@@ -15,8 +15,8 @@ namespace Simple.Ecommerce.App.Interfaces.Data
         IBaseDetachRepository<Order>
     {
         Task<Result<bool>> DeletePaymentMethod(int id);
-        Task<Result<bool>> GetFirstPurchase(int id);
-        Task<Result<OrderDiscountDTO?>> GetDiscountDTOById(int id);
         Task<Result<OrderCompleteDTO>> GetCompleteOrder(int id);
+        Task<Result<OrderDiscountDTO>> GetDiscountDTO(int id);
+        Task<Result<bool>> GetFirstPurchase(int id);
     }
 }

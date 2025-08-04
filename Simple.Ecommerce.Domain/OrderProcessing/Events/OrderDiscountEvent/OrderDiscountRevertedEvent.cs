@@ -2,22 +2,14 @@
 
 namespace Simple.Ecommerce.Domain.OrderProcessing.Events.OrderDiscountEvent
 {
-    public class OrderDiscountRevertedEvent : OrderProcessingEvent
+    public class OrderDiscountRevertedEvent : OrderDiscountEvent
     {
-        public int DiscountId { get; private set; }
-        public string DiscountName { get; private set; }
-        public DiscountType DiscountType { get; private set; }
         public decimal AmountReverted { get; private set; }
-        public decimal CurrentTotal { get; private set; }
 
-        public OrderDiscountRevertedEvent(int orderId, int discountId, string discountName, DiscountType discountType, decimal amountReverted, decimal currentTotal)
-                : base(orderId)
+        public OrderDiscountRevertedEvent(int orderId, int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal currentTotal, decimal amountReverted)
+            : base(orderId, discountId, discountName, discountType, couponId, couponCode, currentTotal)
         {
-            DiscountId = discountId;
-            DiscountName = discountName;
-            DiscountType = discountType;
             AmountReverted = amountReverted;
-            CurrentTotal = currentTotal;
         }
     }
 }

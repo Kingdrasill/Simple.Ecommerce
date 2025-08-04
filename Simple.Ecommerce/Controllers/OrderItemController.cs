@@ -43,6 +43,17 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<OrderItemsResponse>> Post([FromBody] OrderItemsRequest request)
         {
+            foreach (var item in request.OrderItems)
+            {
+                string message = "";
+                if (item.CouponCode is not null && item.ProductDiscountId is not null)
+                {
+                    message += $"Não se pode passar um código para coupon ({item.CouponCode}) e um desconto para produto ({item.ProductDiscountId}) ao mesmo tempo para o produto {item.ProductId}!\n";
+                }
+                if (!message.Equals(""))
+                    return BadRequest(message);
+            }
+
             var result = await _addItemsOrderItemCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -61,6 +72,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<OrderItemResponse>> AddItem([FromBody] OrderItemRequest request)
         {
+            if (request.CouponCode is not null && request.ProductDiscountId is not null)
+            {
+                return BadRequest($"OrderItemController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto para produto ({request.ProductDiscountId}) ao mesmo tempo para um item de pedido!\n");
+            }
+
             var result = await _addItemOrderItemCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -70,6 +86,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<bool>> ChangeDiscount([FromBody] OrderItemDiscountRequest request)
         {
+            if (request.CouponCode is not null && request.ProductDiscountId is not null)
+            {
+                return BadRequest($"OrderItemController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto para produto ({request.ProductDiscountId}) ao mesmo tempo para um item de pedido!\n");
+            }
+
             var result = await _changeDiscountOrderItemCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -79,6 +100,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<OrderItemResponse>> RemoveItem([FromBody] OrderItemRequest request)
         {
+            if (request.CouponCode is not null && request.ProductDiscountId is not null)
+            {
+                return BadRequest($"OrderItemController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto para produto ({request.ProductDiscountId}) ao mesmo tempo para um item de pedido!\n");
+            }
+
             var result = await _removeItemOrderItemCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);

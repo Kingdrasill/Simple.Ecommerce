@@ -280,6 +280,9 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Property<bool>("Confirmation")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int?>("CouponId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("Deleted")
                         .HasColumnType("tinyint(1)");
 
@@ -308,6 +311,8 @@ namespace Simple.Ecommerce.Infra.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CouponId");
+
                     b.HasIndex("DiscountId");
 
                     b.HasIndex("UserId");
@@ -319,6 +324,9 @@ namespace Simple.Ecommerce.Infra.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CouponId")
                         .HasColumnType("int");
 
                     b.Property<bool>("Deleted")
@@ -340,6 +348,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CouponId");
 
                     b.HasIndex("DiscountId");
 
@@ -622,6 +632,11 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderEntity.Order", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.CouponEntity.Coupon", "Coupon")
+                        .WithMany("Orders")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
                         .WithMany("Orders")
                         .HasForeignKey("DiscountId")
@@ -729,6 +744,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                     b.Navigation("Address")
                         .IsRequired();
 
+                    b.Navigation("Coupon");
+
                     b.Navigation("Discount");
 
                     b.Navigation("PaymentInformation");
@@ -738,6 +755,11 @@ namespace Simple.Ecommerce.Infra.Migrations
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.OrderItemEntity.OrderItem", b =>
                 {
+                    b.HasOne("Simple.Ecommerce.Domain.Entities.CouponEntity.Coupon", "Coupon")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", "Discount")
                         .WithMany("OrderItems")
                         .HasForeignKey("DiscountId")
@@ -754,6 +776,8 @@ namespace Simple.Ecommerce.Infra.Migrations
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Coupon");
 
                     b.Navigation("Discount");
 
@@ -1001,6 +1025,13 @@ namespace Simple.Ecommerce.Infra.Migrations
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.CategoryEntity.Category", b =>
                 {
                     b.Navigation("ProductCategories");
+                });
+
+            modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.CouponEntity.Coupon", b =>
+                {
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Simple.Ecommerce.Domain.Entities.DiscountEntity.Discount", b =>

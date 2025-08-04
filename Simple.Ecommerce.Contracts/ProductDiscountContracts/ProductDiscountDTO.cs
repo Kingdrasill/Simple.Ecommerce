@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.Contracts.ProductDiscountContracts
     public record ProductDiscountDTO
     (
         int ProductDiscountId,
-        DiscountDTO discount
+        DiscountCompleteDTO discount
     );
 }

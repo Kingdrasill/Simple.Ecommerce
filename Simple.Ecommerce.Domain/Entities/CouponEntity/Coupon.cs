@@ -1,6 +1,10 @@
 ﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
+using Simple.Ecommerce.Domain.Entities.OrderEntity;
+using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
 using Simple.Ecommerce.Domain.Validation.Validators;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.Serialization;
 
 namespace Simple.Ecommerce.Domain.Entities.CouponEntity
 {
@@ -13,8 +17,16 @@ namespace Simple.Ecommerce.Domain.Entities.CouponEntity
         public DateTime? UsedAt { get; private set; }
         public int DiscountId { get; private set; }
         public Discount Discount { get; private set; } = null!;
+        [IgnoreDataMember, NotMapped]
+        public ICollection<Order> Orders { get; private set; }
+        [IgnoreDataMember, NotMapped]
+        public ICollection<OrderItem> OrderItems { get; private set; }
 
-        public Coupon() { }
+        public Coupon()
+        {
+            Orders = new HashSet<Order>();
+            OrderItems = new HashSet<OrderItem>();
+        }
 
         private Coupon(int id, string code, DateTime expirationAt, int discountId, bool isUsed = false, DateTime? usedAt = null, DateTime? createdAt = null)
         {
@@ -25,6 +37,9 @@ namespace Simple.Ecommerce.Domain.Entities.CouponEntity
             ExpirationAt = expirationAt;
             UsedAt = usedAt;
             DiscountId = discountId;
+
+            Orders = new HashSet<Order>();
+            OrderItems = new HashSet<OrderItem>();
         }
 
         public Result<Coupon> Create(int id, string code, DateTime expirationAt, int discountId, bool isUsed = false, DateTime? usedAt = null, DateTime? createdAt = null)
@@ -37,10 +52,13 @@ namespace Simple.Ecommerce.Domain.Entities.CouponEntity
             return new CouponValidator().Validate(this);
         }
 
-        public void SetAsUsed()
+        public void SetUsed(bool isUsed)
         {
-            IsUsed = true;
-            UsedAt = DateTime.UtcNow;
+            IsUsed = isUsed;
+            if (IsUsed)
+                UsedAt = DateTime.UtcNow;
+            else
+                UsedAt = null;
         }
 
         public override void MarkAsDeleted(bool raiseEvent = true)

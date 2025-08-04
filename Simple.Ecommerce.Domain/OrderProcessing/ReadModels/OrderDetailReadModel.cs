@@ -39,7 +39,7 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.ReadModels
         [BsonElement("items")]
         public List<OrderDetailItem> Items { get; set; }
         [BsonElement("appliedDiscount")]
-        public (int DiscountId, string DiscountName)? AppliedDiscount { get; set; }
+        public DiscountReadDetail? AppliedDiscount { get; set; }
         [BsonElement("appliedDiscounts")]
         public List<string> AppliedDiscounts { get; set; }
 

@@ -4,6 +4,7 @@
     (
         int OrderId,
         int ProductId,
+        string? CouponCode = null,
         int? ProductDiscountId = null
     );
 }

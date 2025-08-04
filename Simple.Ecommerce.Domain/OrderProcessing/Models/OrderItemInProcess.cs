@@ -37,11 +37,11 @@ namespace Simple.Ecommerce.Domain.OrderProcessing.Models
             AppliedDiscount = appliedDiscount;
         }
 
-        public void ApplyDiscount(int discountId, string discountName, DiscountType discountType, decimal discountAmount)
+        public void ApplyDiscount(int discountId, string discountName, DiscountType discountType, int? couponId, string? couponCode, decimal discountAmount)
         {
             DiscountAmount = discountAmount;
             CurrentPrice -= discountAmount;
-            AppliedDiscount = new AppliedDiscountDetail(discountId, discountName, discountType);
+            AppliedDiscount = new AppliedDiscountDetail(discountId, discountName, discountType, couponId, couponCode);
         }
 
         public void RevertDiscount(decimal amountReverted)

@@ -11,6 +11,7 @@ namespace Simple.Ecommerce.Infra.Services.UnitOfWork
         public IProductDiscountRepository ProductDiscounts { get; }
         public IDiscountRepository Discounts { get; }
         public IDiscountBundleItemRepository DiscountBundleItems { get; }
+        public ICouponRepository Coupons { get; }
 
         public AddItemsOrderUnitOfWork(
             TesteDbContext context, 
@@ -19,7 +20,8 @@ namespace Simple.Ecommerce.Infra.Services.UnitOfWork
             IProductRepository products, 
             IProductDiscountRepository productDiscounts,
             IDiscountRepository discounts, 
-            IDiscountBundleItemRepository discountBundleItems
+            IDiscountBundleItemRepository discountBundleItems,
+            ICouponRepository coupons
         ) : base(context)
         {
             OrderItems = orderItems;
@@ -28,6 +30,7 @@ namespace Simple.Ecommerce.Infra.Services.UnitOfWork
             ProductDiscounts = productDiscounts;
             Discounts = discounts;
             DiscountBundleItems = discountBundleItems;
+            Coupons = coupons;
         }
     }
 }

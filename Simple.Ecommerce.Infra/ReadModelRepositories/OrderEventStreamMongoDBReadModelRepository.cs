@@ -1,7 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
 using Simple.Ecommerce.App.Interfaces.ReadData;
-using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
 using Simple.Ecommerce.Infra.ReadModelRepositories.BaseReadModelRepository;
 

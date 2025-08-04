@@ -25,12 +25,12 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             _cacheHandler = cacheHandler;
         }
 
-        public async Task<Result<DiscountDTO>> Execute(DiscountRequest request)
+        public async Task<Result<DiscountCompleteDTO>> Execute(DiscountRequest request)
         {
             var getDiscount = await _repository.Get(request.Id);
             if (getDiscount.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(getDiscount.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(getDiscount.Errors!);
             }
 
             var instance = new Discount().Create(
@@ -46,20 +46,20 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
             );
             if (instance.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(instance.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(instance.Errors!);
             }
 
             var updateResult = await _repository.Update(instance.GetValue());
             if (updateResult.IsFailure)
             {
-                return Result<DiscountDTO>.Failure(updateResult.Errors!);
+                return Result<DiscountCompleteDTO>.Failure(updateResult.Errors!);
             }
             var discount = updateResult.GetValue();
 
             if (_useCache.Use)
                 _cacheHandler.SetItemStale<Discount>();
 
-            var response = new DiscountDTO(
+            var response = new DiscountCompleteDTO(
                 discount.Id,
                 discount.Name,
                 discount.DiscountType,
@@ -74,7 +74,7 @@ namespace Simple.Ecommerce.App.UseCases.DiscountCases.Commands
                 null
             );
 
-            return Result<DiscountDTO>.Success(response);
+            return Result<DiscountCompleteDTO>.Success(response);
         }
     }
 }

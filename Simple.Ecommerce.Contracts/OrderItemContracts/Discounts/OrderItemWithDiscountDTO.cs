@@ -1,4 +1,6 @@
-﻿namespace Simple.Ecommerce.Contracts.OrderItemContracts.Discounts
+﻿using Simple.Ecommerce.Contracts.DiscountContracts;
+
+namespace Simple.Ecommerce.Contracts.OrderItemContracts.Discounts
 {
     public record OrderItemWithDiscountDTO
     (
@@ -6,7 +8,7 @@
         int ProductId,
         string ProductName,
         int Quantity,
-        decimal UnitPrice,
-        OrderItemDiscountDTO? Discount
+        decimal Price,
+        DiscountDTO? Discount
     );
 }

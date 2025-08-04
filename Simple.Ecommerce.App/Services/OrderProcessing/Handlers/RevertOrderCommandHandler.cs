@@ -11,6 +11,7 @@ using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderRevertEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 using Simple.Ecommerce.Domain.OrderProcessing.ReadModels;
 using Simple.Ecommerce.Domain.Settings.UseCacheSettings;
@@ -19,14 +20,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
     public class RevertOrderCommandHandler : IOrderProcessingCommandHandler<RevertOrderCommand, Result<bool>>
     {
-        private readonly IRevertedOrderUnitOfWork _revertedOrderUoW;
+        private readonly IRevertOrderUnitOfWork _revertedOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
         private readonly OrderRevertProcessor _orderReverter;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public RevertOrderCommandHandler(
-            IRevertedOrderUnitOfWork revertedOrderUoW,
+            IRevertOrderUnitOfWork revertedOrderUoW,
             IOrderProcessingDispatcher orderDispatcher, 
             OrderRevertProcessor orderReverter,
             UseCache useCache, 
@@ -110,7 +111,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     orderInProcess.ShippingFee,
                     orderInProcess.TaxAmount,
                     order.Status,
-                    orderInProcess.Items.Select(item => new OrderRevertItemEntry(
+                    orderInProcess.Items.Select(item => new OrderItemRevertEntry(
                         item.Id,
                         item.ProductId,
                         item.ProductName,
@@ -119,10 +120,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         item.DiscountAmount,
                         item.AppliedDiscount is null 
                             ? null
-                            : (item.AppliedDiscount.DiscountId, item.AppliedDiscount.DiscountName)
-                    )).ToList(),
-                    orderInProcess.FreeItems.Select(item => new OrderRevertItemEntry(
-                        item.OriginalOrderItemId,
+                            : new RevertDiscount(
+                                item.AppliedDiscount.DiscountId,
+                                item.AppliedDiscount.DiscountName,
+                                item.AppliedDiscount.CouponId,
+                                item.AppliedDiscount.CouponCode
+                            ))).ToList(),
+                    orderInProcess.FreeItems.Select(item => new OrderItemRevertEntry(
+                        item.OrderItemId,
                         item.ProductId,
                         item.ProductName,
                         item.Quantity,
@@ -130,15 +135,21 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         item.AmountDiscountedPrice,
                         item.AppliedDiscount is null
                             ? null
-                            : (item.AppliedDiscount.DiscountId, item.AppliedDiscount.DiscountName)
-                    )).ToList(),
-                    orderInProcess.Bundles.Select(bundle => new OrderRevertBundle(
+                            : new RevertDiscount(
+                                item.AppliedDiscount.DiscountId,
+                                item.AppliedDiscount.DiscountName,
+                                item.AppliedDiscount.CouponId,
+                                item.AppliedDiscount.CouponCode
+                            ))).ToList(),
+                    orderInProcess.Bundles.Select(bundle => new RevertBundleOrder(
                         bundle.DiscountId,
                         bundle.DiscountName,
+                        bundle.CouponId,
+                        bundle.CouponCode,
                         bundle.Id,
                         bundle.Items.Sum(item => item.Quantity * item.AmountDiscountedPrice),
-                        bundle.Items.Select(item => new OrderRevertBundleItemEntry(
-                            item.OriginalOrderItemId,
+                        bundle.Items.Select(item => new RevertBundleItemOrderEntry(
+                            item.OrderItemId,
                             item.ProductId,
                             item.ProductName,
                             item.Quantity,
@@ -148,8 +159,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     )).ToList(),
                     orderInProcess.AppliedDiscount is null
                         ? null
-                        : (orderInProcess.AppliedDiscount.DiscountId, orderInProcess.AppliedDiscount.DiscountName)
-                ));
+                        : new RevertDiscount(
+                            orderInProcess.AppliedDiscount.DiscountId, 
+                            orderInProcess.AppliedDiscount.DiscountName, 
+                            orderInProcess.AppliedDiscount.CouponId, 
+                            orderInProcess.AppliedDiscount.CouponCode
+                        )));
 
                 var revertingResult = await _orderReverter.Revert(orderInProcess, events);
                 if (revertingResult.IsFailure)
@@ -253,16 +268,15 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             var freeItems = new List<AppliedDiscountItem>();
             var bundles = new List<AppliedBundle>();
             var items = new List<OrderItemInProcess>();
-
             var detailItems = orderDetail.Items;
+
             var discountIds = detailItems
-                .Where(di => di.AppliedDiscount.HasValue)
-                .Select(di => di.AppliedDiscount!.Value.DiscountId)
+                .Where(di => di.AppliedDiscount is not null)
+                .Select(di => di.AppliedDiscount!.DiscountId)
                 .Distinct()
                 .ToList();
             if (orderDetail.AppliedDiscount is not null)
-                discountIds.Add(orderDetail.AppliedDiscount.Value.DiscountId);
-
+                discountIds.Add(orderDetail.AppliedDiscount.DiscountId);
             var getDiscounts = await _revertedOrderUoW.Discounts.GetByDiscountIds(discountIds);
             if (getDiscounts.IsFailure)
             {
@@ -281,11 +295,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     item.CurrentPrice,
                     item.AmountDiscountedPrice,
                     new AppliedDiscountDetail(
-                        item.AppliedDiscount!.Value.DiscountId,
-                        item.AppliedDiscount!.Value.DiscountName,
-                        discountsMap[item.AppliedDiscount!.Value.DiscountId].DiscountType
-                    )
-                ));
+                        item.AppliedDiscount!.DiscountId,
+                        item.AppliedDiscount!.DiscountName,
+                        discountsMap[item.AppliedDiscount!.DiscountId].DiscountType,
+                        item.AppliedDiscount!.CouponId is null ? null : item.AppliedDiscount.CouponId,
+                        item.AppliedDiscount!.CouponCode is null ? null: item.AppliedDiscount.CouponCode
+                    )));
             }
 
             var isBundleItems = detailItems.Where(di => di.IsBundleItem).ToList();
@@ -297,9 +312,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 {
                     bundles.Add(new AppliedBundle(
                         item.BundleId!.Value,
-                        item.AppliedDiscount!.Value.DiscountId,
-                        item.AppliedDiscount!.Value.DiscountName,
-                        discountsMap[item.AppliedDiscount!.Value.DiscountId].DiscountType,
+                        item.AppliedDiscount!.DiscountId,
+                        item.AppliedDiscount!.DiscountName,
+                        discountsMap[item.AppliedDiscount!.DiscountId].DiscountType,
+                        item.AppliedDiscount!.CouponId is null ? null : item.AppliedDiscount.CouponId,
+                        item.AppliedDiscount!.CouponCode is null ? null : item.AppliedDiscount.CouponCode,
                         new List<AppliedDiscountItem>
                         {
                             new AppliedDiscountItem(
@@ -310,12 +327,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                                 item.CurrentPrice,
                                 item.AmountDiscountedPrice,
                                 new AppliedDiscountDetail(
-                                    item.AppliedDiscount!.Value.DiscountId,
-                                    item.AppliedDiscount!.Value.DiscountName,
-                                    discountsMap[item.AppliedDiscount!.Value.DiscountId].DiscountType
+                                    item.AppliedDiscount!.DiscountId,
+                                    item.AppliedDiscount!.DiscountName,
+                                    discountsMap[item.AppliedDiscount!.DiscountId].DiscountType,
+                                    item.AppliedDiscount!.CouponId is null ? null : item.AppliedDiscount.CouponId,
+                                    item.AppliedDiscount!.CouponCode is null ? null: item.AppliedDiscount.CouponCode
                                 ))
-                        }
-                    ));
+                        }));
                 }
                 else
                 {
@@ -327,9 +345,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         item.CurrentPrice,
                         item.AmountDiscountedPrice,
                         new AppliedDiscountDetail(
-                            item.AppliedDiscount!.Value.DiscountId,
-                            item.AppliedDiscount!.Value.DiscountName,
-                            discountsMap[item.AppliedDiscount!.Value.DiscountId].DiscountType
+                            item.AppliedDiscount!.DiscountId,
+                            item.AppliedDiscount!.DiscountName,
+                            discountsMap[item.AppliedDiscount!.DiscountId].DiscountType,
+                            item.AppliedDiscount!.CouponId is null ? null : item.AppliedDiscount.CouponId,
+                            item.AppliedDiscount!.CouponCode is null ? null : item.AppliedDiscount.CouponCode
                         )));
                 }
             }
@@ -340,12 +360,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             foreach (var item in otherItems)
             {
                 AppliedDiscountDetail? appliedDiscount = null;
-                if (item.AppliedDiscount.HasValue)
+                if (item.AppliedDiscount is not null)
                 {
                     appliedDiscount = new AppliedDiscountDetail(
-                        item.AppliedDiscount!.Value.DiscountId,
-                        item.AppliedDiscount!.Value.DiscountName,
-                        discountsMap[item.AppliedDiscount!.Value.DiscountId].DiscountType
+                        item.AppliedDiscount!.DiscountId,
+                        item.AppliedDiscount!.DiscountName,
+                        discountsMap[item.AppliedDiscount!.DiscountId].DiscountType,
+                        item.AppliedDiscount!.CouponId is null ? null : item.AppliedDiscount.CouponId,
+                        item.AppliedDiscount!.CouponCode is null ? null : item.AppliedDiscount.CouponCode
                     );
                 }
                 items.Add(new OrderItemInProcess(
@@ -374,9 +396,11 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 orderDetail.AppliedDiscount is null 
                     ? null
                     : new AppliedDiscountDetail(
-                        orderDetail.AppliedDiscount.Value.DiscountId,
-                        orderDetail.AppliedDiscount.Value.DiscountName,
-                        discountsMap[orderDetail.AppliedDiscount.Value.DiscountId].DiscountType
+                        orderDetail.AppliedDiscount.DiscountId,
+                        orderDetail.AppliedDiscount.DiscountName,
+                        discountsMap[orderDetail.AppliedDiscount.DiscountId].DiscountType,
+                        orderDetail.AppliedDiscount.CouponId is null ? null : orderDetail.AppliedDiscount.CouponId,
+                        orderDetail.AppliedDiscount.CouponCode is null ? null : orderDetail.AppliedDiscount.CouponCode
                     ),
                 orderDetail.AmountDiscounted,
                 orderDetail.ShippingFee,
@@ -430,9 +454,15 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     continue;
                 }
                 var product = getProduct.GetValue();
-                
                 var discount = orderInProcess.UnAppliedDiscounts.FirstOrDefault(uad => uad.OwnerId == processedItem.Id && uad.DiscountScope == DiscountScope.Product);
-                orderItem.Update(processedItem.Quantity, product.Price, discount is null ? null : discount.Id, true);
+                
+                orderItem.Update(
+                    processedItem.Quantity, 
+                    product.Price, 
+                    discount is null ? null : discount.Coupon is null ? null : discount.Coupon.Id,
+                    discount is null ? null : discount.Id,
+                    true
+                );
                 if (orderItem.Validate() is { IsFailure: true } result)
                 {
                     updateErrors.AddRange(result.Errors!);

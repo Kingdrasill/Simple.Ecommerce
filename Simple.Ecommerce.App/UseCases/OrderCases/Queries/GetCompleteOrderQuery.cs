@@ -3,12 +3,12 @@ using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.App.Interfaces.Services.Cache;
 using Simple.Ecommerce.App.Services.Cache;
 using Simple.Ecommerce.Contracts.AddressContracts;
-using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
 using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountTierEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
@@ -75,6 +75,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                         await _cacheHandler.SendToCache<Discount>();
                     if (failed.Equals(nameof(DiscountTier)))
                         await _cacheHandler.SendToCache<DiscountTier>();
+                    if (failed.Equals(nameof(Coupon)))
+                        await _cacheHandler.SendToCache<Coupon>();
                 }
             }
 
@@ -114,6 +116,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
 
             var productIds = orderItems.Select(oi => oi.ProductId).Distinct().ToList();
             var discountIds = orderItems.Where(oi => oi.DiscountId.HasValue).Select(oi => oi.DiscountId).Distinct().ToList();
+            var couponsMap = orderItems.Where(oi => oi.CouponId.HasValue).Select(oi => new DiscountCoupon(oi.DiscountId!.Value, oi.CouponId!.Value)).ToDictionary(oi => oi.DiscountId);
 
             var productsResponse = GetProductsFromCache(productIds);
             if (productsResponse.IsFailure)
@@ -123,7 +126,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
             }
             var productsMap = productsResponse.GetValue().ToDictionary(p => p.Id);
 
-            var discountsResponse = GetOrderItemDiscountsFromCache(discountIds);
+            var discountsResponse = GetOrderItemsDiscountItemDTOFromCache(discountIds, couponsMap, out failed);
             if (discountsResponse.IsFailure)
             {
                 failed = nameof(Discount);
@@ -161,26 +164,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
             DiscountItemDTO? orderAppliedDiscount = null;
             if (order.DiscountId is not null)
             {
-                var orderDiscountResponse = GetOrderDiscountFromCache(order.DiscountId.Value);
-                if (orderDiscountResponse.IsFailure)
+                var orderDiscountItemDTOResponse = GetOrderDiscountItemDTOFromCache(order.DiscountId.Value, order.CouponId, out failed);
+                if (orderDiscountItemDTOResponse.IsFailure)
                 {
-                    failed = nameof(Discount);
                     return Result<OrderCompleteDTO>.Failure(new());
                 }
-                var orderDiscount = orderDiscountResponse.GetValue();
-
-                orderAppliedDiscount = new DiscountItemDTO(
-                    orderDiscount.Id,
-                    orderDiscount.Name,
-                    orderDiscount.DiscountType,
-                    orderDiscount.DiscountScope,
-                    orderDiscount.DiscountValueType,
-                    orderDiscount.Value,
-                    orderDiscount.ValidFrom,
-                    orderDiscount.ValidTo,
-                    orderDiscount.IsActive,
-                    null
-                );
+                orderAppliedDiscount = orderDiscountItemDTOResponse.GetValue();
             }
 
             var items = new List<OrderItemDTO>();
@@ -190,7 +179,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
             {
                 var productName = productsMap.TryGetValue(item.ProductId, out var prod) ? prod.Name : "Unknown Product";
                 DiscountItemDTO? discountItemDTO = null;
-                Discount discount = null!;
+                DiscountItemDTO discount = null!;
 
                 if (item.DiscountId.HasValue && discountsMap.TryGetValue(item.DiscountId.Value, out discount))
                 {
@@ -215,7 +204,8 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                             discount.ValidFrom,
                             discount.ValidTo,
                             discount.IsActive,
-                            tiers is null ? null : tiers.ToList()
+                            tiers is null ? null : tiers.ToList(),
+                            discount.Coupon
                         );
                         items.Add(new OrderItemDTO(
                             item.Id,
@@ -254,6 +244,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                                 discount.ValidFrom,
                                 discount.ValidTo,
                                 discount.IsActive,
+                                discount.Coupon,
                                 new List<BundleItemDTO> {
                                     new BundleItemDTO(
                                         item.Id,
@@ -353,6 +344,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     cache.GetNullableDateTime("OrderDate"),
                     Convert.ToBoolean(cache["Confirmation"]),
                     Convert.ToString(cache["Status"])!,
+                    cache.GetNullableInt("CouponId"),
                     cache.GetNullableInt("DiscountId"),
                     (OrderLock)Convert.ToInt32(cache["OrderLock"]),
                     paymentInfo
@@ -381,6 +373,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     Convert.ToInt32(cache["Quantity"]),
                     Convert.ToInt32(cache["ProductId"]),
                     Convert.ToInt32(cache["OrderId"]),
+                    cache.GetNullableInt("CouponId"),
                     cache.GetNullableInt("DiscountId")
                 ).GetValue());
         }
@@ -397,9 +390,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                 ).GetValue());
         }
 
-        private Result<List<Discount>> GetOrderItemDiscountsFromCache(List<int?> discountIds)
+        private Result<List<DiscountItemDTO>> GetOrderItemsDiscountItemDTOFromCache(List<int?> discountIds, Dictionary<int, DiscountCoupon> couponsMap, out string failed)
         {
-            return _cacheHandler.ListFromCacheByPropertyIn<Discount, Discount>(nameof(Discount.Id), discountIds.Cast<object>(),
+            var discountsResponse = _cacheHandler.ListFromCacheByPropertyIn<Discount, Discount>(nameof(Discount.Id), discountIds.Cast<object>(),
                 cache => new Discount().Create(
                     Convert.ToInt32(cache["Id"]),
                     Convert.ToString(cache["Name"])!,
@@ -411,6 +404,48 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     cache.GetNullableDateTime("ValidTo"),
                     Convert.ToBoolean(cache["IsActive"])
                 ).GetValue());
+            if (discountsResponse.IsFailure)
+            {
+                failed = nameof(Discount);
+                return Result<List<DiscountItemDTO>>.Failure(new());
+            }
+
+            List<DiscountItemDTO> response = new();
+            foreach (var discount in discountsResponse.GetValue())
+            {
+                CouponItemDTO? coupon = null;
+                if (couponsMap.TryGetValue(discount.Id, out var discountCoupon))
+                {
+                    var couponResponse = _cacheHandler.GetFromCacheByProperty<Coupon, CouponItemDTO>(nameof(Coupon.Id), discountCoupon.CouponId,
+                        cache => new CouponItemDTO(
+                            Convert.ToInt32(cache["Id"]),
+                            Convert.ToInt32(cache["DiscountId"]),
+                            Convert.ToString(cache["Code"])!
+                        ));
+                    if (couponResponse.IsFailure)
+                    {
+                        failed = nameof(Coupon);
+                        return Result<List<DiscountItemDTO>>.Failure(new());
+                    }
+                    coupon = couponResponse.GetValue();
+                }
+                response.Add(new DiscountItemDTO(
+                    discount.Id,
+                    discount.Name,
+                    discount.DiscountType,
+                    discount.DiscountScope,
+                    discount.DiscountValueType,
+                    discount.Value,
+                    discount.ValidFrom,
+                    discount.ValidTo,
+                    discount.IsActive,
+                    null,
+                    coupon
+                ));
+            }
+
+            failed = "";
+            return Result<List<DiscountItemDTO>>.Success(response);
         }
 
         private Result<List<DiscountTier>> GetTiersFromCache(int discountId)
@@ -425,9 +460,9 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                 ).GetValue());
         }
 
-        private Result<Discount> GetOrderDiscountFromCache(int discountId)
+        private Result<DiscountItemDTO> GetOrderDiscountItemDTOFromCache(int discountId, int? couponId, out string failed)
         {
-            return _cacheHandler.GetFromCacheByProperty<Discount, Discount>(nameof(Discount.Id), discountId,
+            var discountResponse = _cacheHandler.GetFromCacheByProperty<Discount, Discount>(nameof(Discount.Id), discountId,
                 cache => new Discount().Create(
                     Convert.ToInt32(cache["Id"]),
                     Convert.ToString(cache["Name"])!,
@@ -439,6 +474,54 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Queries
                     cache.GetNullableDateTime("ValidTo"),
                     Convert.ToBoolean(cache["IsActive"])
                 ).GetValue());
+            if (discountResponse.IsFailure)
+            {
+                failed = nameof(Discount);
+                return Result<DiscountItemDTO>.Failure(discountResponse.Errors!);
+            }
+            var discount = discountResponse.GetValue();
+            CouponItemDTO? coupon = null;
+            if (couponId is not null)
+            {
+                var couponResponse = _cacheHandler.GetFromCacheByProperty<Coupon, CouponItemDTO>(nameof(Coupon.Id), couponId,
+                    cache => new CouponItemDTO(
+                        Convert.ToInt32(cache["Id"]),
+                        Convert.ToInt32(cache["DiscountId"]),
+                        Convert.ToString(cache["Code"])!
+                    ));
+                if (couponResponse.IsFailure)
+                {
+                    failed = nameof(Coupon);
+                    return Result<DiscountItemDTO>.Failure(couponResponse.Errors!);
+                }
+                coupon = couponResponse.GetValue();
+            }
+
+            failed = "";
+            return Result<DiscountItemDTO>.Success(new DiscountItemDTO(
+                discount.Id,
+                discount.Name,
+                discount.DiscountType,
+                discount.DiscountScope,
+                discount.DiscountValueType,
+                discount.Value,
+                discount.ValidFrom,
+                discount.ValidTo,
+                discount.IsActive,
+                null,
+                coupon
+            ));
+        }
+
+        private class DiscountCoupon
+        {
+            public int DiscountId { get; }
+            public int CouponId { get; }
+            public DiscountCoupon(int dId, int cId)
+            {
+                DiscountId = dId;
+                CouponId = cId;
+            }
         }
     }
 }

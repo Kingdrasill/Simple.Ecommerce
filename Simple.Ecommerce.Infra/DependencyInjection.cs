@@ -120,12 +120,11 @@ namespace Simple.Ecommerce.Infra
             services.AddScoped<IAddPhotoProductUnitOfWork, AddPhotoProductUnitOfWork>();
             services.AddScoped<IAddPhotoUserUnitOfWork, AddPhotoUserUnitOfWork>();
             services.AddScoped<IConfirmCredentialVerificationUnitOfWork, ConfirmCredentialVerificationUnitOfWork>();
-            services.AddScoped<IConfirmedOrderUnitOfWork, ConfirmedOrderUnitOfWork>();
-            services.AddScoped<IConfirmedNewOrderUnitOfWork, ConfirmedNewOrderUnitOfWork>();
+            services.AddScoped<IConfirmOrderUnitOfWork, ConfirmOrderUnitOfWork>();
             services.AddScoped<ICreateBatchCouponUnitOfWork, CreateBatchCouponUnitOfWork>();
             services.AddScoped<ICreateUserUnitOfWork, CreateUserUnitOfWork>();
             services.AddScoped<IRemoveAllItemsOrderUnitOfWork, RemoveAllItemsOrderUnitOfWork>();
-            services.AddScoped<IRevertedOrderUnitOfWork, RevertedOrderUnitOfWork>();
+            services.AddScoped<IRevertOrderUnitOfWork, RevertOrderUnitOfWork>();
         }
 
         private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)

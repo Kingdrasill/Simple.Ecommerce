@@ -14,78 +14,78 @@ namespace Simple.Ecommerce.Api.Controllers
     [Route("api/[controller]")]
     public class DiscountController : ControllerBase
     {
-        private readonly ICreateDiscountCommand _createDiscountCommand;
-        private readonly ICreateBatchCouponsDiscountCommand _createBatchCouponsDiscountCommand;
-        private readonly ICreateBundleItemDiscountCommand _createDiscountBundleItemDiscountCommand;
-        private readonly ICreateTierDiscountCommand _createDiscountTierDiscountCommand;
-        private readonly IDeleteDiscountCommand _deleteDiscountCommand;
-        private readonly IDeleteCouponDiscountCommand _deleteCouponDiscountCommand;
-        private readonly IDeleteBundleItemDiscountCommand _deleteDiscountBundleItemDiscountCommand;
-        private readonly IDeleteTierDiscountCommand _deleteDiscountTierDiscountCommand;
-        private readonly IUpdateDiscountCommand _updateDiscountCommand;
-        private readonly IUpdateCouponDiscountCommand _updateCouponDiscountCommand;
-        private readonly IUpdateBundleItemDiscountCommand _updateDiscountBundleItemDiscountCommand;
-        private readonly IUpdateTierDiscountCommand _updateDicountTierDiscountCommand;
-        private readonly IUseCouponDiscountCommand _useCouponDiscountCommand;
-        private readonly IGetDiscountQuery _getDiscountQuery;
+        private readonly IToggleActivationDiscountCommand _toggleActivationDiscountCommand;
         private readonly IGetDiscountDTOQuery _getDiscountDTOQuery;
-        private readonly IGetCouponDiscountQuery _getCouponDiscountQuery;
-        private readonly IGetBundleItemDiscountQuery _getDiscountBundleItemDiscountQuery;
-        private readonly IGetTierDiscountQuery _getDiscountTierDiscountQuery;
-        private readonly IListDiscountQuery _listDiscountQuery;
         private readonly IListDiscountDTOQuery _listDiscountDTOQuery;
+        private readonly ICreateDiscountCommand _createDiscountCommand;
+        private readonly IDeleteDiscountCommand _deleteDiscountCommand;
+        private readonly IUpdateDiscountCommand _updateDiscountCommand;
+        private readonly IGetDiscountQuery _getDiscountQuery;
+        private readonly IListDiscountQuery _listDiscountQuery;
+        private readonly ICreateBatchCouponsDiscountCommand _createBatchCouponsDiscountCommand;
+        private readonly IDeleteCouponDiscountCommand _deleteCouponDiscountCommand;
+        private readonly IUpdateCouponDiscountCommand _updateCouponDiscountCommand;
+        private readonly IGetCouponDiscountQuery _getCouponDiscountQuery;
         private readonly IListCouponDiscountQuery _listCouponDiscountQuery;
+        private readonly ICreateBundleItemDiscountCommand _createDiscountBundleItemDiscountCommand;
+        private readonly IDeleteBundleItemDiscountCommand _deleteDiscountBundleItemDiscountCommand;
+        private readonly IUpdateBundleItemDiscountCommand _updateDiscountBundleItemDiscountCommand;
         private readonly IListBundleItemDiscountQuery _listDiscountBundleItemDiscountQuery;
+        private readonly IGetBundleItemDiscountQuery _getDiscountBundleItemDiscountQuery;
+        private readonly ICreateTierDiscountCommand _createDiscountTierDiscountCommand;
+        private readonly IDeleteTierDiscountCommand _deleteDiscountTierDiscountCommand;
+        private readonly IUpdateTierDiscountCommand _updateDicountTierDiscountCommand;
+        private readonly IGetTierDiscountQuery _getDiscountTierDiscountQuery;
         private readonly IListTierDiscountQuery _listDiscountTierDiscountQuery;
 
         public DiscountController(
-            ICreateDiscountCommand createDiscountCommand,
-            ICreateBatchCouponsDiscountCommand createBatchCouponsDiscountCommand,
-            ICreateBundleItemDiscountCommand createDiscountBundleItemDiscountCommand, 
-            ICreateTierDiscountCommand createDiscountTierDiscountCommand,
-            IDeleteDiscountCommand deleteDiscountCommand,
-            IDeleteCouponDiscountCommand deleteCouponDiscountCommand,
-            IDeleteBundleItemDiscountCommand deleteDiscountBundleItemDiscountCommand, 
-            IDeleteTierDiscountCommand deleteDiscountTierDiscountCommand,
-            IUpdateDiscountCommand updateDiscountCommand,
-            IUpdateCouponDiscountCommand updateCouponDiscountCommand,
-            IUpdateBundleItemDiscountCommand updateDiscountBundleItemDiscountCommand, 
-            IUpdateTierDiscountCommand updateDicountTierDiscountCommand,
-            IUseCouponDiscountCommand useCouponDiscountCommand,
-            IGetDiscountQuery getDiscountQuery,
+            IToggleActivationDiscountCommand toggleActivationDiscountCommand,
             IGetDiscountDTOQuery getDiscountDTOQuery,
-            IGetCouponDiscountQuery getCouponDiscountQuery,
-            IGetBundleItemDiscountQuery getDiscountBundleItemDiscountQuery, 
-            IGetTierDiscountQuery getDiscountTierDiscountQuery,
-            IListDiscountQuery listDiscountQuery,
             IListDiscountDTOQuery listDiscountDTOQuery,
+            ICreateDiscountCommand createDiscountCommand,
+            IDeleteDiscountCommand deleteDiscountCommand,
+            IUpdateDiscountCommand updateDiscountCommand,
+            IGetDiscountQuery getDiscountQuery,
+            IListDiscountQuery listDiscountQuery,
+            ICreateBatchCouponsDiscountCommand createBatchCouponsDiscountCommand,
+            IDeleteCouponDiscountCommand deleteCouponDiscountCommand,
+            IUpdateCouponDiscountCommand updateCouponDiscountCommand,
+            IGetCouponDiscountQuery getCouponDiscountQuery,
             IListCouponDiscountQuery listCouponDiscountQuery,
-            IListBundleItemDiscountQuery listDiscountBundleItemDiscountQuery, 
+            ICreateBundleItemDiscountCommand createDiscountBundleItemDiscountCommand,
+            IDeleteBundleItemDiscountCommand deleteDiscountBundleItemDiscountCommand,
+            IUpdateBundleItemDiscountCommand updateDiscountBundleItemDiscountCommand,
+            IGetBundleItemDiscountQuery getDiscountBundleItemDiscountQuery,
+            IListBundleItemDiscountQuery listDiscountBundleItemDiscountQuery,
+            ICreateTierDiscountCommand createDiscountTierDiscountCommand,
+            IDeleteTierDiscountCommand deleteDiscountTierDiscountCommand,
+            IUpdateTierDiscountCommand updateDicountTierDiscountCommand,
+            IGetTierDiscountQuery getDiscountTierDiscountQuery,
             IListTierDiscountQuery listDiscountTierDiscountQuery
         )
         {
-            _createDiscountCommand = createDiscountCommand;
-            _createBatchCouponsDiscountCommand = createBatchCouponsDiscountCommand;
-            _createDiscountBundleItemDiscountCommand = createDiscountBundleItemDiscountCommand;
-            _createDiscountTierDiscountCommand = createDiscountTierDiscountCommand;
-            _deleteDiscountCommand = deleteDiscountCommand;
-            _deleteCouponDiscountCommand = deleteCouponDiscountCommand;
-            _deleteDiscountBundleItemDiscountCommand = deleteDiscountBundleItemDiscountCommand;
-            _deleteDiscountTierDiscountCommand = deleteDiscountTierDiscountCommand;
-            _updateDiscountCommand = updateDiscountCommand;
-            _updateCouponDiscountCommand = updateCouponDiscountCommand;
-            _updateDiscountBundleItemDiscountCommand = updateDiscountBundleItemDiscountCommand;
-            _updateDicountTierDiscountCommand = updateDicountTierDiscountCommand;
-            _useCouponDiscountCommand = useCouponDiscountCommand;
-            _getDiscountQuery = getDiscountQuery;
+            _toggleActivationDiscountCommand = toggleActivationDiscountCommand;
             _getDiscountDTOQuery = getDiscountDTOQuery;
-            _getCouponDiscountQuery = getCouponDiscountQuery;
-            _getDiscountBundleItemDiscountQuery = getDiscountBundleItemDiscountQuery;
-            _getDiscountTierDiscountQuery = getDiscountTierDiscountQuery;
             _listDiscountQuery = listDiscountQuery;
-            _listDiscountDTOQuery = listDiscountDTOQuery;
+            _createDiscountCommand = createDiscountCommand;
+            _deleteDiscountCommand = deleteDiscountCommand;
+            _updateDiscountCommand = updateDiscountCommand;
+            _getDiscountQuery = getDiscountQuery;
+            _listDiscountQuery = listDiscountQuery;
+            _createBatchCouponsDiscountCommand = createBatchCouponsDiscountCommand;
+            _deleteCouponDiscountCommand = deleteCouponDiscountCommand;
+            _updateCouponDiscountCommand = updateCouponDiscountCommand;
+            _getCouponDiscountQuery = getCouponDiscountQuery;
             _listCouponDiscountQuery = listCouponDiscountQuery;
+            _createDiscountBundleItemDiscountCommand = createDiscountBundleItemDiscountCommand;
+            _deleteDiscountBundleItemDiscountCommand = deleteDiscountBundleItemDiscountCommand;
+            _updateDiscountBundleItemDiscountCommand = updateDiscountBundleItemDiscountCommand;
+            _getDiscountBundleItemDiscountQuery = getDiscountBundleItemDiscountQuery;
             _listDiscountBundleItemDiscountQuery = listDiscountBundleItemDiscountQuery;
+            _createDiscountTierDiscountCommand = createDiscountTierDiscountCommand;
+            _deleteDiscountTierDiscountCommand= deleteDiscountTierDiscountCommand;
+            _updateDicountTierDiscountCommand = updateDicountTierDiscountCommand;
+            _getDiscountTierDiscountQuery = getDiscountTierDiscountQuery;
             _listDiscountTierDiscountQuery = listDiscountTierDiscountQuery;
         }
 
@@ -170,20 +170,19 @@ namespace Simple.Ecommerce.Api.Controllers
             return ResultHandler.HandleResult(this, result);
         }
 
+        [HttpPut("ToggleActivation/{id}/{isActive}")]
+        public async Task<ActionResult<bool>> ToggleActivation(int id, bool isActive)
+        {
+            var result = await _toggleActivationDiscountCommand.Execute(id, isActive);
+
+            return ResultHandler.HandleResult(this, result);
+        }
+
         [HttpPut("Coupon")]
         [Authorize]
         public async Task<ActionResult<CouponResponse>> UpdateCoupon([FromBody] CouponRequest request)
         {
             var result = await _updateCouponDiscountCommand.Execute(request);
-
-            return ResultHandler.HandleResult(this, result);
-        }
-
-        [HttpPut("Coupon/Use-Coupon/{token}")]
-        [Authorize]
-        public async Task<ActionResult<bool>> UseCoupon(string token)
-        {
-            var result = await _useCouponDiscountCommand.Execute(token);
 
             return ResultHandler.HandleResult(this, result);
         }
@@ -217,7 +216,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("DiscountDTO/{id}")]
         [Authorize]
-        public async Task<ActionResult<DiscountDTO>> GetDTO(int id)
+        public async Task<ActionResult<DiscountCompleteDTO>> GetDTO(int id)
         {
             var result = await _getDiscountDTOQuery.Execute(id);
 
@@ -262,7 +261,7 @@ namespace Simple.Ecommerce.Api.Controllers
 
         [HttpGet("DiscountDTO")]
         [Authorize]
-        public async Task<ActionResult<List<DiscountDTO>>> ListDTO()
+        public async Task<ActionResult<List<DiscountCompleteDTO>>> ListDTO()
         {
             var result = await _listDiscountDTOQuery.Execute();
 

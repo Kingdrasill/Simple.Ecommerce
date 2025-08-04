@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain.Entities.DiscountBundleItemEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Errors.BaseError;
@@ -9,13 +9,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
 {
     public class BundleItemsDiscountHandler : BaseOrderProcessingHandler
     {
-        private readonly IDiscountBundleItemRepository _discountBundleItemRepository;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
 
         public BundleItemsDiscountHandler(
-            IDiscountBundleItemRepository discountBundleItemRepository
+            IConfirmOrderUnitOfWork confirmOrderUow
         ) : base()
         {
-            _discountBundleItemRepository = discountBundleItemRepository;
+            _confirmOrderUoW = confirmOrderUow;
         }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
@@ -31,8 +31,12 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                 {
                     var discount = bundleDiscounts[index];
                     var sameBundleDiscounts = bundleDiscounts.Where(bd => bd.Id == discount.Id).ToList();
+                    var discountCoupon = sameBundleDiscounts.FirstOrDefault(i => i.Coupon is not null);
+                    CouponInProcess? couponInProcess = null;
+                    if (discountCoupon is not null)
+                        couponInProcess = discountCoupon.Coupon;
 
-                    var getBundleItems = await _discountBundleItemRepository.GetByDiscountId(discount.Id);
+                    var getBundleItems = await _confirmOrderUoW.DiscountBundleItems.GetByDiscountId(discount.Id);
                     if (getBundleItems.IsFailure)
                     {
                         throw new ResultException(new Error("BundleItemDiscountsHandler.NotFound", $"Os itens do pacote para o desconto {discount.Name} não foram encontrados!"));
@@ -80,10 +84,31 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.I
                                 ));
                             }
 
+                            int? couponId = couponInProcess is null ? null : couponInProcess.Id;
+                            string? couponCode = couponInProcess is null ? null : couponInProcess.Code;
                             for (var i = 0; i < bundleCount; i++)
                             {
-                                var publishEvent = orderInProcess.ApplyBundleItemDiscount(bundleDetails, discount.Id, discount.Name, discount.DiscountType);
+                                var publishEvent = orderInProcess.ApplyBundleItemDiscount(bundleDetails, discount.Id, discount.Name, discount.DiscountType, couponId, couponCode);
                                 Console.WriteLine($"\t[BundleItemDiscountsHandler] Desconto {discount.Name} aplicado ao pedido. Total descontado do pedido: {publishEvent.AmountDiscountedTotal:C}. Novo total do pedido: {publishEvent.CurrentTotal:C}.");
+                            }
+                            if (couponInProcess is not null)
+                            {
+                                var getCoupon = await _confirmOrderUoW.Coupons.Get(couponInProcess.Id);
+                                if (getCoupon.IsFailure)
+                                {
+                                    throw new ResultException(getCoupon.Errors!);
+                                }
+                                var coupon = getCoupon.GetValue();
+                                coupon.SetUsed(true);
+                                if (coupon.Validate() is { IsFailure: true } result)
+                                {
+                                    throw new ResultException(result.Errors!);
+                                }
+                                var updateResult = await _confirmOrderUoW.Coupons.Update(coupon);
+                                if (updateResult.IsFailure)
+                                {
+                                    throw new ResultException(updateResult.Errors!);
+                                }
                             }
                         }
                         else

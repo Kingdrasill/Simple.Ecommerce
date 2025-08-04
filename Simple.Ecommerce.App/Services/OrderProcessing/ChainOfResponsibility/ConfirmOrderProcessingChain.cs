@@ -1,4 +1,5 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
+using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.CouponsValidationHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.DiscountsValidationHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.ItemsBOGOHandler;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.ItemsBundleHandler;
@@ -20,6 +21,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility
         private readonly IOrderProcessingHandler _firstHandler;
 
         public ConfirmOrderProcessingChain(
+            CouponsValidationHandler couponsValidationHandler,
             DiscountsValidationHandler discountsValidationHandler,
             BOGOItemsDiscountHandler bogoItemsDiscountHandler,
             BundleItemsDiscountHandler bundleItemsDiscountHandler,
@@ -36,6 +38,8 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.ChainOfResponsibility
             shippingHandler
                 .SetNext(discountsValidationHandler);
             discountsValidationHandler
+                .SetNext(couponsValidationHandler);
+            couponsValidationHandler
                 .SetNext(simpleItemsDiscountHandler);
             simpleItemsDiscountHandler
                 .SetNext(tieredItemsDiscountHandler);

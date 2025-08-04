@@ -2,13 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Simple.Ecommerce.Api.Services;
 using Simple.Ecommerce.App.Interfaces.Commands.OrderCommands;
-using Simple.Ecommerce.App.Interfaces.Commands.OrderItemCommands;
 using Simple.Ecommerce.App.Interfaces.Queries.OrderQueries;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderContracts.PaymentInformations;
-using Simple.Ecommerce.Contracts.OrderItemContracts;
 
 namespace Simple.Ecommerce.Api.Controllers
 {
@@ -28,7 +26,6 @@ namespace Simple.Ecommerce.Api.Controllers
         private readonly IChangePaymentInformationOrderCommand _changePaymentMethodOrderCommand;
         private readonly IRemovePaymentMethodOrderCommand _removePaymentMethodOrderCommand;
         private readonly IRevertProcessedOrderCommand _revertProcessedOrderCommand;
-        private readonly IAddItemsOrderItemCommand _addItemsOrderItemCommand;
         private readonly IGetCompleteOrderQuery _getCompleteOrderQuery;
         private readonly IGetPaymentInformationOrderQuery _getPaymentMethodOrderQuery;
 
@@ -45,7 +42,6 @@ namespace Simple.Ecommerce.Api.Controllers
             IChangePaymentInformationOrderCommand changePaymentMethodOrderCommand,
             IRemovePaymentMethodOrderCommand removePaymentMethodOrderCommand,
             IRevertProcessedOrderCommand revertProcessedOrderCommand,
-            IAddItemsOrderItemCommand addItemsOrderItemCommand,
             IGetCompleteOrderQuery getCompleteOrderQuery,
             IGetPaymentInformationOrderQuery getPaymentMethodOrderQuery
         )
@@ -62,7 +58,6 @@ namespace Simple.Ecommerce.Api.Controllers
             _changePaymentMethodOrderCommand = changePaymentMethodOrderCommand;
             _removePaymentMethodOrderCommand = removePaymentMethodOrderCommand;
             _revertProcessedOrderCommand = revertProcessedOrderCommand;
-            _addItemsOrderItemCommand = addItemsOrderItemCommand;
             _getCompleteOrderQuery = getCompleteOrderQuery;
             _getPaymentMethodOrderQuery = getPaymentMethodOrderQuery;
         }
@@ -70,6 +65,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<OrderResponse>> Post([FromBody] OrderRequest request)
         {
+            if (request.CouponCode is not null && request.DiscountId is not null)
+            {
+                return BadRequest($"OrderController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto ({request.DiscountId}) ao mesmo tempo para um pedido!\n");
+            }
+
             var result = await _createOrderCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -88,6 +88,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<OrderResponse>> Put([FromBody] OrderRequest request)
         {
+            if (request.CouponCode is not null && request.DiscountId is not null)
+            {
+                return BadRequest($"OrderController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto ({request.DiscountId}) ao mesmo tempo para um pedido!\n");
+            }
+
             var result = await _updateOrderCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -103,8 +108,24 @@ namespace Simple.Ecommerce.Api.Controllers
         }
 
         [HttpPut("Confirm")]
-        public async Task<ActionResult<bool>> Confirm(OrderCompleteRequest request)
+        public async Task<ActionResult<bool>> Confirm([FromBody] OrderCompleteRequest request)
         {
+            if (request.CouponCode is not null && request.DiscountId is not null)
+            {
+                return BadRequest($"OrderController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto ({request.DiscountId}) ao mesmo tempo para um pedido!\n");
+            }
+
+            foreach (var item in request.OrderItems)
+            {
+                string message = "";
+                if (item.CouponCode is not null && item.ProductDiscountId is not null)
+                {
+                    message += $"Não se pode passar um código para coupon ({item.CouponCode}) e um desconto para produto ({item.ProductDiscountId}) ao mesmo tempo para o produto {item.ProductId}!\n";
+                }
+                if (!message.Equals(""))
+                    return BadRequest(message);
+            }
+
             var result = await _confirmNewOrderCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);
@@ -132,6 +153,11 @@ namespace Simple.Ecommerce.Api.Controllers
         [Authorize]
         public async Task<ActionResult<bool>> ChangeDiscount([FromBody] OrderDiscountRequest request)
         {
+            if (request.CouponCode is not null && request.DiscountId is not null)
+            {
+                return BadRequest($"OrderController.Conflict.Discount: Não se pode passar um código para coupon ({request.CouponCode}) e um desconto ({request.DiscountId}) ao mesmo tempo para um pedido!\n");
+            }
+
             var result = await _changeDiscountOrderCommand.Execute(request);
 
             return ResultHandler.HandleResult(this, result);

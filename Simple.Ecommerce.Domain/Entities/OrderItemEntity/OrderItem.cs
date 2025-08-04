@@ -1,4 +1,5 @@
-﻿using Simple.Ecommerce.Domain.Entities.DiscountEntity;
+﻿using Simple.Ecommerce.Domain.Entities.CouponEntity;
+using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.ProductEntity;
 using Simple.Ecommerce.Domain.EntityDeletionEvents;
@@ -16,6 +17,8 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
         public Product Product { get; private set; } = null!;
         public int OrderId { get; private set; }
         public Order Order { get; private set; } = null!;
+        public int? CouponId { get; private set; }
+        public Coupon? Coupon { get; private set; } = null;
         public int? DiscountId { get; private set; }
         public Discount? Discount { get; private set; } = null;
         [IgnoreDataMember, NotMapped]
@@ -23,19 +26,20 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
 
         public OrderItem() { }
 
-        private OrderItem(int id, decimal price, int quantity, int productId, int orderId, int? discountId)
+        private OrderItem(int id, decimal price, int quantity, int productId, int orderId, int? couponId, int? discountId)
         {
             Id = id;
             Price = price;
             Quantity = quantity;
             ProductId = productId;
             OrderId = orderId;
+            CouponId = couponId;
             DiscountId = discountId;
         }
 
-        public Result<OrderItem> Create(int id, decimal price, int quantity, int productId, int orderId, int? discountId)
+        public Result<OrderItem> Create(int id, decimal price, int quantity, int productId, int orderId, int? couponId, int? discountId)
         {
-            return new OrderItemValidator().Validate(new OrderItem(id, price, quantity, productId, orderId, discountId));
+            return new OrderItemValidator().Validate(new OrderItem(id, price, quantity, productId, orderId, couponId, discountId));
         }
 
         public Result<OrderItem> Validate()
@@ -43,7 +47,7 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
             return new OrderItemValidator().Validate(this);
         }
 
-        public void Update(int quantity, decimal price, int? discountId, bool overrideQuantity)
+        public void Update(int quantity, decimal price, int? couponId, int? discountId, bool overrideQuantity)
         {
             if (overrideQuantity)
             {
@@ -54,11 +58,13 @@ namespace Simple.Ecommerce.Domain.Entities.OrderItemEntity
                 Quantity += quantity;
             }
             Price = price;
+            CouponId = couponId;
             DiscountId = discountId;
         }
 
-        public void UpdateDiscountId(int? discountId)
+        public void UpdateDiscount(int? couponId, int? discountId)
         {
+            CouponId = couponId;
             DiscountId = discountId;
         }
 

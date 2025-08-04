@@ -5,6 +5,6 @@ namespace Simple.Ecommerce.App.Interfaces.Queries.DiscountQueries
 {
     public interface IGetDiscountDTOQuery
     {
-        Task<Result<DiscountDTO>> Execute(int id);
+        Task<Result<DiscountCompleteDTO>> Execute(int id);
     }
 }

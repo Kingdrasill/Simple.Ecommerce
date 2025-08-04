@@ -5,11 +5,14 @@ using Simple.Ecommerce.App.Interfaces.Services.Cryptography;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.App.Services.DiscountValidation.UseDiscountValidation;
 using Simple.Ecommerce.App.Services.OrderProcessing.Handlers;
+using Simple.Ecommerce.Contracts.CouponContracts;
+using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.OrderContracts;
 using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Contracts.OrderItemContracts.Discounts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
@@ -29,7 +32,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 {
     public class ConfirmNewOrderCommand : IConfirmNewOrderCommand
     {
-        private readonly IConfirmedNewOrderUnitOfWork _confirmNewOrderUoW;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
         private readonly ICardService _cardService;
         private readonly ICryptographyService _cryptographyService;
         private readonly ProcessConfirmedNewOrderCommandHandler _processConfirmedNewOrderCommandHandler;
@@ -37,7 +40,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
         private readonly ICacheHandler _cacheHandler;
 
         public ConfirmNewOrderCommand(
-            IConfirmedNewOrderUnitOfWork confirmNewOrderUoW,
+            IConfirmOrderUnitOfWork confirmOrderUoW,
             ICardService cardService,
             ICryptographyService cryptographyService,
             ProcessConfirmedNewOrderCommandHandler processConfirmedNewOrderCommandHandler,
@@ -45,7 +48,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             ICacheHandler cacheHandler
         )
         {
-            _confirmNewOrderUoW = confirmNewOrderUoW;
+            _confirmOrderUoW = confirmOrderUoW;
             _cardService = cardService;
             _cryptographyService = cryptographyService;
             _processConfirmedNewOrderCommandHandler = processConfirmedNewOrderCommandHandler;
@@ -55,7 +58,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
         public async Task<Result<OrderCompleteDTO>> Execute(OrderCompleteRequest request)
         {
-            await _confirmNewOrderUoW.BeginTransaction();
+            await _confirmOrderUoW.BeginTransaction();
             try
             {
                 var orderRequest = new OrderRequest(
@@ -63,6 +66,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                     request.OrderType,
                     request.Address,
                     request.PaymentInformation,
+                    CouponCode: request.CouponCode,
                     DiscountId: request.DiscountId,
                     Id: request.Id
                 );
@@ -71,7 +75,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 {
                     throw new ResultException(getOrderWithDiscount.Errors!);
                 }
-                var (order, userName, orderDiscount) = getOrderWithDiscount.GetValue();
+                var (order, userName, orderCoupon, orderDiscount) = getOrderWithDiscount.GetValue();
 
                 var orderItemsRequest = new OrderItemsRequest(
                     order.Id,
@@ -79,6 +83,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         item.Quantity,
                         item.ProductId,
                         order.Id,
+                        item.CouponCode,
                         item.ProductDiscountId
                     )).ToList()
                 );
@@ -91,23 +96,23 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
 
                 foreach (var item in orderItems)
                 {
-                    _confirmNewOrderUoW.OrderItems.Detach(item.Item1);
+                    _confirmOrderUoW.OrderItems.Detach(item.Item1);
                 }
 
-                var processNewCommand = new ProcessConfirmedNewOrderCommand(order, userName, orderDiscount, orderItems);
+                var processNewCommand = new ProcessConfirmedNewOrderCommand(order, userName, orderCoupon, orderDiscount, orderItems);
                 var processedResult = await _processConfirmedNewOrderCommandHandler.Handle(processNewCommand);
                 if (processedResult.IsFailure)
                 {
                     throw new ResultException(processedResult.Errors!);
                 }
 
-                var getCompleteOrder = await _confirmNewOrderUoW.Orders.GetCompleteOrder(order.Id);
+                var getCompleteOrder = await _confirmOrderUoW.Orders.GetCompleteOrder(order.Id);
                 if (getCompleteOrder.IsFailure)
                 {
                     throw new ResultException(getCompleteOrder.Errors!);
                 }
 
-                await _confirmNewOrderUoW.Commit();
+                await _confirmOrderUoW.Commit();
                 if (_useCache.Use)
                 {
                     _cacheHandler.SetItemStale<Order>();
@@ -118,20 +123,18 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
             }
             catch (ResultException rex) 
             {
-                await _confirmNewOrderUoW.Rollback();
+                await _confirmOrderUoW.Rollback();
                 return Result<OrderCompleteDTO>.Failure(rex.Errors!);
             }
             catch (Exception ex)
             {
-                await _confirmNewOrderUoW.Rollback();
+                await _confirmOrderUoW.Rollback();
                 return Result<OrderCompleteDTO>.Failure(new List<Error>{ new("ConfirmCompleteOrderCommand.Unknown", ex.Message) });
             }
         }
 
-        private async Task<Result<List<(OrderItem, string, Discount?)>>> IncludeOrderItems(OrderItemsRequest request)
+        private async Task<Result<List<(OrderItem, string, Coupon?, Discount?)>>> IncludeOrderItems(OrderItemsRequest request)
         {
-            List<OrderItemDiscountInfoDTO> orderItemsDiscountInfo = new();
-
             // Pegando todos os produtos do pedido
             var productIds = request.OrderItems.Select(item => item.ProductId).ToList();
             var duplicates = productIds
@@ -146,12 +149,12 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 {
                     errors.Add(new("ConfirmNewOrderCommand.Duplicate.OrderItem", $"O pedido não pode ter items duplicados para o produto {duplicate}!"));
                 }
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(errors);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
             }
-            var getProducts = await _confirmNewOrderUoW.Products.GetProductsByIds(productIds);
+            var getProducts = await _confirmOrderUoW.Products.GetProductsByIds(productIds);
             if (getProducts.IsFailure)
             {
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(getProducts.Errors!);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getProducts.Errors!);
             }
             var products = getProducts.GetValue();
             if (productIds.Count != products.Count)
@@ -164,16 +167,86 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         errors.Add(new("ConfirmNewOrderCommand.NotFound", $"O produto {productId} não foi encontrado!"));
                     }
                 }
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(errors);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
             }
             var productsMap = products.ToDictionary(p => p.Id);
 
-            // Pegando todos os produtosdescontos do pedido
+            // Pegando todos os cupons do pedido
+            var couponCodes = request.OrderItems.Where(item => item.CouponCode is not null).Select(item => item.CouponCode!).ToList();
+            var getCoupons = await _confirmOrderUoW.Coupons.ListByCodes(couponCodes);
+            if (getCoupons.IsFailure)
+            {
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getCoupons.Errors!);
+            }
+            var coupons = getCoupons.GetValue();
+            if (couponCodes.Count != coupons.Count)
+            {
+                List<Error> errors = new();
+                foreach (var couponCode in couponCodes)
+                {
+                    if (!coupons.Any(c => c.Code == couponCode))
+                    {
+                        errors.Add(new("ConfirmNewOrderCommand.NotFound", $"O cupom {couponCode} não foi encontrado!"));
+                    }
+                }
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
+            }
+            foreach (var coupon in coupons)
+            {
+                if (coupon.IsUsed)
+                {
+                    return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(new List<Error> { new("ConfirmCompleteOrderCommand.AlreadyUsed", $"O cupom {coupon.Code} já foi usado!") });
+                }
+            }
+            var couponsMap = coupons.ToDictionary(c => c.Code);
+
+            // Verificando se os produtos com cupons tem o desconto para produto aplicado
+            var productAndDiscountForCoupon = request.OrderItems
+                .Where(oi => oi.CouponCode is not null)
+                .Select(oi =>
+                {
+                    var coupon = couponsMap[oi.CouponCode!];
+                    return (ProductId: oi.ProductId, DiscountId: coupon.DiscountId, CouponCode: coupon.Code);
+                })
+                .Distinct()
+                .ToList();
+            var productAndDiscountForCouponMap = productAndDiscountForCoupon.ToDictionary(pdc => (pdc.ProductId, pdc.DiscountId));
+            var getProductDiscountFromCoupons = await _confirmOrderUoW.ProductDiscounts
+                .GetByProductIdsDiscountIds(productAndDiscountForCoupon.Select(i => (i.ProductId, i.DiscountId)).ToList());
+            if (getProductDiscountFromCoupons.IsFailure)
+            {
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getProductDiscountFromCoupons.Errors!);
+            }
+            var productDiscountFromCoupons = getProductDiscountFromCoupons.GetValue();
+            if (productAndDiscountForCoupon.Count != productDiscountFromCoupons.Count)
+            {
+                List<Error> errors = new();
+                foreach (var productAndDiscount in productAndDiscountForCoupon)
+                {
+                    if (!productDiscountFromCoupons.Any(c => c.ProductId == productAndDiscount.ProductId && c.DiscountId == productAndDiscount.DiscountId))
+                    {
+                        errors.Add(new("ConfirmNewOrderCommand.NoRelation", $"O desconto do cupom {productAndDiscount.CouponCode} não é para o produto {productAndDiscount.ProductId}!"));
+                    }
+                }
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
+            }
+
+            // Pegando os descontos dos cupons
+            var couponDiscountIds = coupons.Select(c => c.DiscountId).ToList();
+            var getCouponDiscounts = await _confirmOrderUoW.Discounts.GetDiscountsByIds(couponDiscountIds);
+            if (getCouponDiscounts.IsFailure)
+            {
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getCouponDiscounts.Errors!);
+            }
+            var couponDiscounts = getCouponDiscounts.GetValue();
+            var couponDiscountsMap = couponDiscounts.ToDictionary(d => d.Id);
+
+            // Pegando todos os descontos de produto do pedido
             var productDiscountIds = request.OrderItems.Where(item => item.ProductDiscountId is not null).Select(item => item.ProductDiscountId!.Value).ToList();
-            var getProductDiscounts = await _confirmNewOrderUoW.ProductDiscounts.GetProductDiscountsByIds(productDiscountIds);
+            var getProductDiscounts = await _confirmOrderUoW.ProductDiscounts.GetProductDiscountsByIds(productDiscountIds);
             if (getProductDiscounts.IsFailure)
             {
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(getProductDiscounts.Errors!);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getProductDiscounts.Errors!);
             }
             var productDiscounts = getProductDiscounts.GetValue();
             if (productDiscountIds.Count != productDiscounts.Count)
@@ -186,16 +259,16 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         errors.Add(new("ConfirmNewOrderCommand.NotFound", $"O desconto para o produto {productDiscountId} não foi encontrado!"));
                     }
                 }
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(errors);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
             }
             var productDiscountsMap = productDiscounts.ToDictionary(p => p.Id);
 
             // Pegando todos os descontos do pedido
             var discountIds = productDiscounts.Select(item => item.DiscountId).ToList();
-            var getDiscounts = await _confirmNewOrderUoW.Discounts.GetDiscountsByIds(discountIds);
+            var getDiscounts = await _confirmOrderUoW.Discounts.GetDiscountsByIds(discountIds);
             if (getDiscounts.IsFailure)
             {
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(getDiscounts.Errors!);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(getDiscounts.Errors!);
             }
             var discounts = getDiscounts.GetValue();
             if (discountIds.Count != discounts.Count)
@@ -208,28 +281,45 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                         errors.Add(new("ConfirmNewOrderCommand.NotFound", $"O desconto {discountId} não foi encontrado!"));
                     }
                 }
-                return Result<List<(OrderItem, string, Discount?)>>.Failure(errors);
+                return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(errors);
             }
             var discountsMap = discounts.ToDictionary(d => d.Id);
 
-            List<(OrderItem, string, Discount?)> orderItemsNamesDiscounts = new();
+            List<(OrderItem, string, Coupon?, Discount?)> orderItemsNamesDiscounts = new();
+            List<OrderItemInfoDTO> orderItemsDiscountInfo = new();
             foreach (var orderItemRequest in request.OrderItems)
             {
                 Product product = productsMap[orderItemRequest.ProductId];
+                Coupon? coupon = null;
                 Discount? discount = null;
-                if (orderItemRequest.ProductDiscountId is not null)
+                if (orderItemRequest.CouponCode is not null)
+                {
+                    coupon = couponsMap[orderItemRequest.CouponCode];
+                    discount = couponDiscountsMap[coupon.DiscountId];
+
+                    if (!productAndDiscountForCouponMap.TryGetValue((product.Id, coupon.DiscountId), out var productDiscount))
+                    {
+                        return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(
+                            new List<Error> { new("ConfirmNewOrderCommand.Conflict.ProductId", $"O cupom {coupon.Code} para o desconto {discount.Id} não é para o produto {product.Id}!") }
+                        );
+                    }
+                }
+                else if (orderItemRequest.ProductDiscountId is not null)
                 {
                     var productDiscount = productDiscountsMap[orderItemRequest.ProductDiscountId.Value];
                     if (productDiscount.ProductId != product.Id)
                     {
-                        return Result<List<(OrderItem, string, Discount?)>>.Failure(new List<Error>{ new("ConfirmNewOrderCommand.Conflict.ProductId", $"O desconto para produto {productDiscount.Id} é para o produto {productDiscount.ProductId} não para o produto {product.Id}!") });
+                        return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(new List<Error>{ new("ConfirmNewOrderCommand.Conflict.ProductId", $"O desconto para produto {productDiscount.Id} não é para o produto {product.Id}!") });
                     }
-
                     discount = discountsMap[productDiscount.DiscountId];
-                    var productValidation = await ProductDiscountValidation.Validate(_confirmNewOrderUoW.DiscountBundleItems, discount, product, orderItemsDiscountInfo, "ConfirmNewOrderCommand", product.Id);
+                }
+
+                if (discount is not null)
+                {
+                    var productValidation = await ProductDiscountValidation.Validate(_confirmOrderUoW.DiscountBundleItems, coupon, discount, product, orderItemsDiscountInfo, "ConfirmNewOrderCommand", product.Id);
                     if (productValidation.IsFailure)
                     {
-                        return Result<List<(OrderItem, string, Discount?)>>.Failure(productValidation.Errors!);
+                        return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Failure(productValidation.Errors!);
                     }
                 }
 
@@ -239,85 +329,107 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                     orderItemRequest.Quantity,
                     orderItemRequest.ProductId,
                     request.OrderId,
-                    discount is null ? null : discount.Id
+                    coupon?.Id,
+                    discount?.Id
                 );
                 if (instance.IsFailure)
                 {
-                    return Result<List<(OrderItem, string, Discount?) >>.Failure(instance.Errors!);
+                    return Result<List<(OrderItem, string, Coupon?, Discount?) >>.Failure(instance.Errors!);
                 }
 
-                var createResult = await _confirmNewOrderUoW.OrderItems.Create(instance.GetValue());
+                var createResult = await _confirmOrderUoW.OrderItems.Create(instance.GetValue());
                 if (createResult.IsFailure)
                 {
-                    return Result<List<(OrderItem, string, Discount?) >>.Failure(createResult.Errors!);
+                    return Result<List<(OrderItem, string, Coupon?, Discount?) >>.Failure(createResult.Errors!);
                 }
                 var orderItem = createResult.GetValue();
 
-                orderItemsDiscountInfo.Add(new OrderItemDiscountInfoDTO(
-                    orderItem.OrderId,
+                orderItemsDiscountInfo.Add(new OrderItemInfoDTO(
+                    orderItem.Id,
                     orderItem.ProductId,
-                    orderItem.DiscountId,
-                    discount is null ? null : discount.DiscountType
+                    discount is null 
+                        ? null 
+                        : new DiscountInfoDTO(
+                            discount.Id,
+                            discount.Name,
+                            discount.DiscountType
+                        ),
+                    coupon is null 
+                        ? null 
+                        : new CouponInfoDTO(
+                            coupon.Id,
+                            coupon.Code
+                        )
                 ));
 
-                orderItemsNamesDiscounts.Add((orderItem, product.Name, discount));
+                orderItemsNamesDiscounts.Add((orderItem, product.Name, coupon, discount));
             }
 
             foreach (var product in products)
-                _confirmNewOrderUoW.Products.Detach(product);
+                _confirmOrderUoW.Products.Detach(product);
+            foreach (var coupon in coupons)
+                _confirmOrderUoW.Coupons.Detach(coupon);
             foreach (var productDiscount in productDiscounts)
-                _confirmNewOrderUoW.ProductDiscounts.Detach(productDiscount);
+                _confirmOrderUoW.ProductDiscounts.Detach(productDiscount);
             foreach (var discount in discounts)
-                _confirmNewOrderUoW.Discounts.Detach(discount);
+                _confirmOrderUoW.Discounts.Detach(discount);
 
-            return Result<List<(OrderItem, string, Discount?)>>.Success(orderItemsNamesDiscounts);
+            return Result<List<(OrderItem, string, Coupon?, Discount?)>>.Success(orderItemsNamesDiscounts);
         }
 
-        private async Task<Result<(Order, string, Discount?)>> IncludeOrder(OrderRequest request)
+        private async Task<Result<(Order, string, Coupon?, Discount?)>> IncludeOrder(OrderRequest request)
         {
-            var getOrder = await _confirmNewOrderUoW.Orders.Get(request.Id);
+            var getOrder = await _confirmOrderUoW.Orders.Get(request.Id);
             if (getOrder.IsSuccess)
             {
-                return Result<(Order, string, Discount?)>.Failure(new List<Error>{ new("ConfirmCompleteOrderCommand.AlreadyExists", "O pedido já existe!") });
+                return Result<(Order, string, Coupon?, Discount?)>.Failure(new List<Error>{ new("ConfirmCompleteOrderCommand.AlreadyExists", "O pedido já existe!") });
             }
 
-            var getUser = await _confirmNewOrderUoW.Users.Get(request.UserId);
+            var getUser = await _confirmOrderUoW.Users.Get(request.UserId);
             if (getUser.IsFailure)
             {
-                return Result<(Order, string, Discount?)>.Failure(getUser.Errors!);
+                return Result<(Order, string, Coupon?, Discount?)>.Failure(getUser.Errors!);
+            }
+            var user = getUser.GetValue();
+
+            var couponCode = request.CouponCode;
+            var discountId = request.DiscountId;
+
+            Coupon? coupon = null;
+            var getCoupon = couponCode is null ? null : await _confirmOrderUoW.Coupons.GetByCode(couponCode);
+            if (getCoupon is not null)
+            {
+                if (getCoupon.IsFailure)
+                {
+                    return Result<(Order, string, Coupon?, Discount?)>.Failure(getCoupon.Errors!);
+                }
+                coupon = getCoupon.GetValue();
+                
+                if (coupon.IsUsed)
+                {
+                    return Result<(Order, string, Coupon?, Discount?)>.Failure(new List<Error> { new("ConfirmCompleteOrderCommand.AlreadyUsed", $"O cupom {couponCode} já foi usado!") });
+                }
+
+                discountId = coupon.DiscountId;
             }
 
-            var getDiscount = request.DiscountId is null ? null : await _confirmNewOrderUoW.Discounts.Get(request.DiscountId.Value);
+            Discount? discount = null;
+            var getDiscount = discountId is null ? null : await _confirmOrderUoW.Discounts.Get(discountId.Value);
             if (getDiscount is not null)
             {
                 if (getDiscount.IsFailure)
                 {
-                    return Result<(Order, string, Discount?)>.Failure(getDiscount.Errors!);
+                    return Result<(Order, string, Coupon?, Discount?)>.Failure(getDiscount.Errors!);
                 }
-                List<Error> errors = new();
-                var discount = getDiscount.GetValue();
+                discount = getDiscount.GetValue();
 
                 var simpleValidation = SimpleDiscountValidation.Validate(discount, DiscountScope.Order, "ConfirmCompleteOrderCommand", null);
                 if (simpleValidation.IsFailure)
                 {
-                    errors.AddRange(simpleValidation.Errors!);
-                }
-
-                if (errors.Count != 0)
-                {
-                    return Result<(Order, string, Discount?)>.Failure(errors);
-                }           
+                    return Result<(Order, string, Coupon?, Discount?)>.Failure(simpleValidation.Errors!);
+                }         
             }
 
-            var address = new Address(
-                request.Address.Number,
-                request.Address.Street,
-                request.Address.Neighbourhood,
-                request.Address.City,
-                request.Address.Country,
-                request.Address.Complement,
-                request.Address.CEP
-            );
             PaymentInformation? paymentInformation = null;
             if(request.PaymentInformation is not null)
             {
@@ -334,21 +446,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                     case (PaymentMethod.CreditCard or PaymentMethod.DebitCard):
                         var isValid = _cardService.IsValidCardNumber(request.PaymentInformation.PaymentKey!);
                         if (isValid.IsFailure)
-                            return Result<(Order, string, Discount?)>.Failure(isValid.Errors!);
+                            return Result<(Order, string, Coupon?, Discount?)>.Failure(isValid.Errors!);
                         
                         var cardFlagResult = _cardService.GetCardFlag(request.PaymentInformation.PaymentKey!);
                         if (cardFlagResult.IsFailure)
-                            return Result<(Order, string, Discount?)>.Failure(cardFlagResult.Errors!);
+                            return Result<(Order, string, Coupon?, Discount?)>.Failure(cardFlagResult.Errors!);
                         cardFlag = cardFlagResult.GetValue();
 
                         var encryptedKeyResult = _cryptographyService.Encrypt(request.PaymentInformation.PaymentKey!);
                         if (!encryptedKeyResult.IsFailure)
-                            return Result<(Order, string, Discount?)>.Failure(encryptedKeyResult.Errors!);
+                            return Result<(Order, string, Coupon?, Discount?)>.Failure(encryptedKeyResult.Errors!);
                         encryptedKey = encryptedKeyResult.GetValue();
                         last4Digits = request.PaymentInformation.PaymentKey![^4..];
                         break;
                     default:
-                        return Result<(Order, string, Discount?)>.Failure(new List<Error> { new("CreateOrderCommand.InvalidPaymentMethod", "O método de pagamento do pedido não válido.") });
+                        return Result<(Order, string, Coupon?, Discount?)>.Failure(new List<Error> { new("CreateOrderCommand.InvalidPaymentMethod", "O método de pagamento do pedido não válido.") });
                 }
                 paymentInformation = new PaymentInformation(
                     request.PaymentInformation.PaymentMethod,
@@ -364,32 +476,43 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 request.Id,
                 request.UserId,
                 request.OrderType,
-                address,
+                new Address(
+                    request.Address.Number,
+                    request.Address.Street,
+                    request.Address.Neighbourhood,
+                    request.Address.City,
+                    request.Address.Country,
+                    request.Address.Complement,
+                    request.Address.CEP
+                ),
                 null,
                 null,
                 false,
                 "Created",
-                request.DiscountId,
+                coupon is null ? null : coupon.Id,
+                discount is null ? null : discount.Id,
                 OrderLock.Unlock,
                 paymentInformation
             );
             if (instance.IsFailure)
             {
-                return Result<(Order, string, Discount?)>.Failure(instance.Errors!);
+                return Result<(Order, string, Coupon?, Discount?)>.Failure(instance.Errors!);
             }
 
-            var createResult = await _confirmNewOrderUoW.Orders.Create(instance.GetValue());
+            var createResult = await _confirmOrderUoW.Orders.Create(instance.GetValue());
             if (createResult.IsFailure)
             {
-                return Result<(Order, string, Discount?)>.Failure(createResult.Errors!);
+                return Result<(Order, string, Coupon?, Discount?)>.Failure(createResult.Errors!);
             }
             var order = createResult.GetValue();
 
-            _confirmNewOrderUoW.Users.Detach(getUser.GetValue());
-            if (getDiscount is not null)
-                _confirmNewOrderUoW.Discounts.Detach(getDiscount.GetValue());
+            _confirmOrderUoW.Users.Detach(user);
+            if (coupon is not null)
+                _confirmOrderUoW.Coupons.Detach(coupon);
+            if (discount is not null)
+                _confirmOrderUoW.Discounts.Detach(discount);
 
-            return Result<(Order, string, Discount?)>.Success((order, getUser.GetValue().Name, getDiscount is null ? null : getDiscount.GetValue()));
+            return Result<(Order, string, Coupon?, Discount?)>.Success((order, user.Name, coupon, discount));
         }
     }
 }

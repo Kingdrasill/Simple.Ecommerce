@@ -16,18 +16,21 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
     {
         private readonly IOrderRepository _repository;
         private readonly IDiscountRepository _discountRepository;
+        private readonly ICouponRepository _couponRepository;
         private readonly UseCache _useCache;
         private readonly ICacheHandler _cacheHandler;
 
         public ChangeDiscountOrderCommand(
             IOrderRepository repository, 
             IDiscountRepository discountRepository,
+            ICouponRepository couponRepository,
             UseCache useCache, 
             ICacheHandler cacheHandler
         )
         {
             _repository = repository;
             _discountRepository = discountRepository;
+            _couponRepository = couponRepository;
             _useCache = useCache;
             _cacheHandler = cacheHandler;
         }
@@ -46,11 +49,34 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 return Result<bool>.Failure(new List<Error> { new("ChangeDiscountOrderCommand.OrderLocked", "Alterações que afetem o preço do pedido estão bloqueadas para este pedido.") });
             }
 
-            var getDiscount = request.DiscountId is null ? null : await _discountRepository.Get(request.DiscountId.Value);
+            var couponCode = request.CouponCode;
+            var discountId = request.DiscountId;
+
+            int? couponId = null;
+            var getCoupon = couponCode is null ? null : await _couponRepository.GetByCode(couponCode);
+            if (getCoupon is not null)
+            {
+                if (getCoupon.IsFailure)
+                {
+                    return Result<bool>.Failure(getCoupon.Errors!);
+                }
+                var coupon = getCoupon.GetValue();
+
+                if (coupon.IsUsed)
+                {
+                    return Result<bool>.Failure(new List<Error> { new("ChangeDiscountOrderCommand.AlreadyUsed", "O cupom passado já foi usado!") });
+                }
+
+                couponId = coupon.Id;
+                discountId = coupon.DiscountId;
+            }
+            var getDiscount = discountId is null ? null : await _discountRepository.Get(discountId.Value);
             if (getDiscount is not null)
             {
                 if (getDiscount.IsFailure)
+                {
                     return Result<bool>.Failure(getDiscount.Errors!);
+                }
 
                 var simpleValidation = SimpleDiscountValidation.Validate(getDiscount.GetValue(), DiscountScope.Order, "ChangeDiscountOrderCommand", null);
                 if (simpleValidation.IsFailure)
@@ -59,7 +85,7 @@ namespace Simple.Ecommerce.App.UseCases.OrderCases.Commands
                 }
             }
 
-            order.UpdateDiscountId(request.DiscountId);
+            order.UpdateDiscount(couponId, discountId);
             order.UpdateStatus("Altered", order.OrderLock);
             if (order.Validate() is { IsFailure:  true } result)
             {

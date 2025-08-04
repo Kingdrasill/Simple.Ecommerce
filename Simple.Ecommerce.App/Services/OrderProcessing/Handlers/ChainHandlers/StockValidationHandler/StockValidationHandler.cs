@@ -1,4 +1,4 @@
-﻿using Simple.Ecommerce.App.Interfaces.Data;
+﻿using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.StockEvent;
@@ -8,13 +8,13 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.S
 {
     public class StockValidationHandler : BaseOrderProcessingHandler
     {
-        private readonly IProductRepository _productRepository;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
 
         public StockValidationHandler(
-            IProductRepository productRepository
+            IConfirmOrderUnitOfWork confirmOrderUoW
         ) : base() 
         { 
-            _productRepository = productRepository;
+            _confirmOrderUoW = confirmOrderUoW;
         }
 
         public override async Task Handle(OrderInProcess orderInProcess, bool skipDiscounts = false)
@@ -22,7 +22,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.S
             Console.WriteLine("\t[StockValidationHandler] Validando estoque e reservando itens...");
             foreach (var item in orderInProcess.Items)
             {
-                var getProduct = await _productRepository.Get(item.ProductId);
+                var getProduct = await _confirmOrderUoW.Products.Get(item.ProductId);
                 if (getProduct.IsFailure)
                 {
                     throw new ResultException(new Error("StockValidationHandler.NotFound", $"O produto {item.ProductName} não foi encontrado no estoque!"));
@@ -40,7 +40,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers.ChainHandlers.S
                     throw new ResultException(result.Errors!);
                 }
 
-                var updateProduct = await _productRepository.Update(product, true);
+                var updateProduct = await _confirmOrderUoW.Products.Update(product, true);
                 if (updateProduct.IsFailure)
                 {
                     throw new ResultException(new Error("StockValidationHandler.StockChange", $"Não foi possível alterar o estoque do produto {item.ProductName}!"));

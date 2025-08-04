@@ -1,6 +1,7 @@
 ﻿using Simple.Ecommerce.App.Interfaces.Services.OrderProcessing;
 using Simple.Ecommerce.App.Interfaces.Services.UnitOfWork;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.DiscountEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Entities.OrderItemEntity;
@@ -9,23 +10,24 @@ using Simple.Ecommerce.Domain.Errors.BaseError;
 using Simple.Ecommerce.Domain.Exceptions.ResultException;
 using Simple.Ecommerce.Domain.OrderProcessing.Commands;
 using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderEvent;
+using Simple.Ecommerce.Domain.OrderProcessing.Events.OrderProcessEvent;
 using Simple.Ecommerce.Domain.OrderProcessing.Models;
 
 namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
 {
     public class ProcessConfirmedNewOrderCommandHandler : IOrderProcessingCommandHandler<ProcessConfirmedNewOrderCommand, Result<bool>>
     {
-        private readonly IConfirmedNewOrderUnitOfWork _confirmedNewOrderUoW;
+        private readonly IConfirmOrderUnitOfWork _confirmOrderUoW;
         private readonly IOrderProcessingDispatcher _orderDispatcher;
         private readonly IOrderProcessingChain _confirmChain;
 
         public ProcessConfirmedNewOrderCommandHandler(
-            IConfirmedNewOrderUnitOfWork confirmedNewOrderUoW, 
+            IConfirmOrderUnitOfWork confirmOrderUoW, 
             IOrderProcessingDispatcher orderDispatcher, 
             IOrderProcessingChain confirmChain
         )
         {
-            _confirmedNewOrderUoW = confirmedNewOrderUoW;
+            _confirmOrderUoW = confirmOrderUoW;
             _orderDispatcher = orderDispatcher;
             _confirmChain = confirmChain;
         }
@@ -35,8 +37,9 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             // Pegando os dados do command
             var order = command.Order;
             var userName = command.UserName;
+            var orderCoupon = command.OrderCoupon;
             var orderDiscount = command.OrderDiscount;
-            var orderItems = command.OrderItemWithDiscounts;
+            var completeOrderItems = command.CompleteOrderItems;
 
             Console.WriteLine($"\n[ProcessConfirmedNewOrderCommandHandler] Começando o processamento do pedido {order.Id}.");
             try
@@ -49,10 +52,10 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Criando o pedido em processamento    
-                var orderInProcess = CreateOrderInProcess(order, orderDiscount, orderItems);
+                var orderInProcess = CreateOrderInProcess(order, orderCoupon, orderDiscount, completeOrderItems);
 
                 // Criando e enviando o pedido de início do processamento do pedido
-                Console.WriteLine($"[ProcessConfirmedNewOrderCommandHandler] Processando o pedido {order.Id} com {orderItems.Count} itens diferentes.");
+                Console.WriteLine($"[ProcessConfirmedNewOrderCommandHandler] Processando o pedido {order.Id} com {completeOrderItems.Count} itens diferentes.");
                 await _orderDispatcher.Dispatch(new OrderProcessingStartedEvent(
                     order.Id,
                     order.UserId,
@@ -88,7 +91,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Atualizando os itens existentes do pedido com os dados processados
-                var orderItemsById = orderItems.Select(o => o.Item1).ToList().ToDictionary(i => i.Id);
+                var orderItemsById = completeOrderItems.Select(o => o.Item1).ToList().ToDictionary(i => i.Id);
                 var updateResult = await UpdateExistingItems(order.Id, orderInProcess, orderItemsById);
                 if (updateResult.IsFailure)
                 {
@@ -119,7 +122,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     Console.WriteLine($"[ProcessConfirmedOrderCommandHandler] Falha ao atualizar o status pedido {order.Id}.");
                     throw new ResultException(ppResult.Errors!);
                 }
-                var updateOrderResult = await _confirmedNewOrderUoW.Orders.Update(order, true);
+                var updateOrderResult = await _confirmOrderUoW.Orders.Update(order, true);
                 if (updateOrderResult.IsFailure)
                 {
                     Console.WriteLine();
@@ -127,7 +130,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 }
 
                 // Salvando as alterações em pedido e itens do pedido
-                await _confirmedNewOrderUoW.SaveChanges();
+                await _confirmOrderUoW.SaveChanges();
 
                 return Result<bool>.Success(true);
             }
@@ -147,14 +150,14 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             }
         }
 
-        private OrderInProcess CreateOrderInProcess(Order order, Discount? orderDiscount, List<(OrderItem orderItem, string productName, Discount? orderItemDiscount)> orderItemWithDiscounts)
+        private OrderInProcess CreateOrderInProcess(Order order, Coupon? orderCoupon, Discount? orderDiscount, List<(OrderItem orderItem, string productName, Coupon? orderItemCoupon, Discount? orderItemDiscount)> completeOrderItems)
         {
-            var unAppliedDiscounts = new List<OrderDiscountInProcess>();
+            var unAppliedDiscounts = new List<DiscountInProcess>();
             var orderItemsInProcess = new List<OrderItemInProcess>();
 
             if (orderDiscount is not null)
             {
-                unAppliedDiscounts.Add(new OrderDiscountInProcess(
+                unAppliedDiscounts.Add(new DiscountInProcess(
                     orderDiscount.Id,
                     order.Id,
                     orderDiscount.Name,
@@ -164,14 +167,23 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     orderDiscount.Value,
                     orderDiscount.ValidFrom,
                     orderDiscount.ValidTo,
-                    orderDiscount.IsActive
-                ));
+                    orderDiscount.IsActive,
+                    orderCoupon is null 
+                        ? null 
+                        : new CouponInProcess(
+                            orderCoupon.Id,
+                            orderCoupon.DiscountId,
+                            orderCoupon.Code,
+                            orderCoupon.ExpirationAt,
+                            orderCoupon.IsUsed
+                        )));
             }
 
-            foreach (var item in orderItemWithDiscounts)
+            foreach (var item in completeOrderItems)
             {
                 var orderItem = item.orderItem;
                 var productName = item.productName;
+                var orderItemCoupon = item.orderItemCoupon;
                 var orderItemDiscount = item.orderItemDiscount;
                 orderItemsInProcess.Add(new OrderItemInProcess(
                     orderItem.Id,
@@ -182,7 +194,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 ));
                 if (orderItemDiscount is not null)
                 {
-                    unAppliedDiscounts.Add(new OrderDiscountInProcess(
+                    unAppliedDiscounts.Add(new DiscountInProcess(
                         orderItemDiscount.Id,
                         orderItem.Id,
                         orderItemDiscount.Name,
@@ -192,12 +204,20 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         orderItemDiscount.Value,
                         orderItemDiscount.ValidFrom,
                         orderItemDiscount.ValidTo,
-                        orderItemDiscount.IsActive
-                    ));
+                        orderItemDiscount.IsActive,
+                        orderItemCoupon is null 
+                            ? null 
+                            : new CouponInProcess(
+                                orderItemCoupon.Id,
+                                orderItemCoupon.DiscountId,
+                                orderItemCoupon.Code,
+                                orderItemCoupon.ExpirationAt,
+                                orderItemCoupon.IsUsed
+                            )));
                 }
             }
 
-            var originalTotalPrice = orderItemWithDiscounts.Sum(item => item.orderItem.Quantity * item.orderItem.Price);
+            var originalTotalPrice = completeOrderItems.Sum(item => item.orderItem.Quantity * item.orderItem.Price);
             return new OrderInProcess(
                 order.Id,
                 order.UserId,
@@ -226,6 +246,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                         freeItem.Quantity,
                         freeItem.ProductId,
                         orderId,
+                        freeItem.AppliedDiscount.CouponId,
                         freeItem.AppliedDiscount.DiscountId
                     );
                     if (instance.IsFailure)
@@ -248,6 +269,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                             item.Quantity,
                             item.ProductId,
                             orderId,
+                            item.AppliedDiscount.CouponId,
                             item.AppliedDiscount.DiscountId
                         );
                         if (instance.IsFailure)
@@ -262,7 +284,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
             var newItemsErros = new List<Error>();
             foreach (var newItem in newOrderItems)
             {
-                var createItemResult = await _confirmedNewOrderUoW.OrderItems.Create(newItem, true);
+                var createItemResult = await _confirmOrderUoW.OrderItems.Create(newItem, true);
                 if (createItemResult.IsFailure)
                 {
                     newItemsErros.AddRange(createItemResult.Errors!);
@@ -288,6 +310,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                 originalItem.Update(
                     processedItem.Quantity,
                     processedItem.CurrentPrice,
+                    processedItem.AppliedDiscount is null ? null : processedItem.AppliedDiscount.CouponId,
                     processedItem.AppliedDiscount is null ? null : processedItem.AppliedDiscount.DiscountId,
                     true
                 );
@@ -296,7 +319,7 @@ namespace Simple.Ecommerce.App.Services.OrderProcessing.Handlers
                     throw new ResultException(result.Errors!);
                 }
 
-                var updateResult = await _confirmedNewOrderUoW.OrderItems.Update(originalItem, true);
+                var updateResult = await _confirmOrderUoW.OrderItems.Update(originalItem, true);
                 if (updateResult.IsFailure)
                 {
                     updatedItemsErros.AddRange(updateResult.Errors!);

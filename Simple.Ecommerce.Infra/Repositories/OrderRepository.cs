@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Simple.Ecommerce.App.Interfaces.Data;
 using Simple.Ecommerce.Contracts.AddressContracts;
+using Simple.Ecommerce.Contracts.CouponContracts;
 using Simple.Ecommerce.Contracts.DiscountContracts;
 using Simple.Ecommerce.Contracts.DiscountTierContracts;
 using Simple.Ecommerce.Contracts.OrderContracts.CompleteDTO;
@@ -8,6 +9,7 @@ using Simple.Ecommerce.Contracts.OrderContracts.Discounts;
 using Simple.Ecommerce.Contracts.OrderItemContracts;
 using Simple.Ecommerce.Contracts.PaymentInformationContracts;
 using Simple.Ecommerce.Domain;
+using Simple.Ecommerce.Domain.Entities.CouponEntity;
 using Simple.Ecommerce.Domain.Entities.OrderEntity;
 using Simple.Ecommerce.Domain.Enums.Discount;
 using Simple.Ecommerce.Domain.Enums.PaymentMethod;
@@ -22,15 +24,17 @@ namespace Simple.Ecommerce.Infra.Repositories
         private readonly IGenericCreateRepository<Order> _createRepository;
         private readonly IGenericDeleteRepository<Order> _deleteRepository;
         private readonly IGenericDetachRepository<Order> _detachRepository;
+        private readonly IGenericDetachRepository<Coupon> _detachCouponRepository;
         private readonly IGenericGetRepository<Order> _getRepository;
         private readonly IGenericListRepository<Order> _listRepository;
         private readonly IGenericUpdateRepository<Order> _updateRepository;
 
         public OrderRepository(
-            TesteDbContext context, 
-            IGenericCreateRepository<Order> createRepository, 
-            IGenericDeleteRepository<Order> deleteRepository, 
+            TesteDbContext context,
+            IGenericCreateRepository<Order> createRepository,
+            IGenericDeleteRepository<Order> deleteRepository,
             IGenericDetachRepository<Order> detachRepository,
+            IGenericDetachRepository<Coupon> detachCouponRepository,
             IGenericGetRepository<Order> getRepository, 
             IGenericListRepository<Order> listRepository, 
             IGenericUpdateRepository<Order> updateRepository
@@ -40,6 +44,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             _createRepository = createRepository;
             _deleteRepository = deleteRepository;
             _detachRepository = detachRepository;
+            _detachCouponRepository = detachCouponRepository;
             _getRepository = getRepository;
             _listRepository = listRepository;
             _updateRepository = updateRepository;
@@ -60,7 +65,7 @@ namespace Simple.Ecommerce.Infra.Repositories
             var order = await _context.Orders.FirstOrDefaultAsync(p => p.Id == id && !p.Deleted);
             if (order is null)
             {
-                return Result<bool>.Failure(new List<Error> { new Error("NotFound", "Pedido não encontrado!") });
+                return Result<bool>.Failure(new List<Error> { new Error("Order.NotFound", "O pedido não foi encontrado!") });
             }
 
             order.UpdatePaymentInformation(null);
@@ -92,6 +97,8 @@ namespace Simple.Ecommerce.Infra.Repositories
                 join u in _context.Users on o.UserId equals u.Id
                 join d in _context.Discounts on o.DiscountId equals d.Id into discountJoin
                 from dj in discountJoin.DefaultIfEmpty()
+                join c in _context.Coupons on o.CouponId equals c.Id into couponJoin
+                from cj in couponJoin.DefaultIfEmpty()
                 where o.Id == id && !o.Deleted
                 select new
                 {
@@ -107,13 +114,25 @@ namespace Simple.Ecommerce.Infra.Repositories
                         dj.ValidFrom,
                         dj.ValidTo,
                         dj.IsActive,
-                        null
+                        null,
+                        cj != null ? new CouponItemDTO(
+                            cj.Id,
+                            cj.DiscountId,
+                            cj.Code
+                        ) : null
                     ) : null
                 }).FirstOrDefaultAsync();
 
             if (order is null)
             {
-                return Result<OrderCompleteDTO>.Failure(new List<Error> { new("NotFound", "Pedido não encontrado!") });
+                return Result<OrderCompleteDTO>.Failure(new List<Error> { new("Order.NotFound", "O pedido não foi encontrado!") });
+            }
+            else if (order.AppliedDiscount is not null &&  order.AppliedDiscount.Coupon is not null)
+            {
+                if (order.AppliedDiscount.Id != order.AppliedDiscount.Coupon.DiscountId)
+                {
+                    return Result<OrderCompleteDTO>.Failure(new List<Error> { new("Order.Conflict.Discount", $"O desconto do pedido {order.AppliedDiscount.Id} é diferente do desconto do cupom do pedido {order.AppliedDiscount.Coupon.DiscountId}!") });
+                }
             }
 
             var orderItemsData = await (
@@ -121,13 +140,32 @@ namespace Simple.Ecommerce.Infra.Repositories
                 join p in _context.Products on oi.ProductId equals p.Id
                 join d in _context.Discounts on oi.DiscountId equals d.Id into discountJoin
                 from dj in discountJoin.DefaultIfEmpty()
+                join c in _context.Coupons on oi.CouponId equals c.Id into couponJoin
+                from cj in couponJoin.DefaultIfEmpty()
                 where oi.OrderId == id && !oi.Deleted
                 select new
                 {
                     OrderItem = oi,
                     ProductName = p.Name,
-                    Discount = dj
+                    Discount = dj,
+                    Coupon = cj
                 }).ToListAsync();
+
+            foreach (var item in orderItemsData)
+            {
+                if (item.Discount is not null && item.Coupon is not null)
+                {
+                    List<Error> errors = new();
+                    if (item.Discount.Id != item.Coupon.DiscountId)
+                    {
+                        errors.Add(new("Order.Conflict.Discount", $"O desconto {item.Discount.Id} do item do pedido {item.OrderItem.Id} é diferente do desconto do seu cupom {item.Coupon.DiscountId}!"));
+                    }
+                    if (errors.Any())
+                    {
+                        return Result<OrderCompleteDTO>.Failure(errors);
+                    }
+                }
+            }
 
             var tieredDiscountIds = orderItemsData
                 .Where(oi => oi.Discount != null && oi.Discount.DiscountType == DiscountType.Tiered)
@@ -158,11 +196,11 @@ namespace Simple.Ecommerce.Infra.Repositories
 
             foreach (var item in orderItemsData)
             {
-                DiscountItemDTO discountItemDTO = null;
+                DiscountItemDTO discountItemDTO = null!;
 
                 if (item.Discount != null)
                 {
-                    List<DiscountTierResponse> tiers = null;
+                    List<DiscountTierResponse> tiers = null!;
                     if (item.Discount.DiscountType == DiscountType.Tiered)
                     {
                         groupedTiers.TryGetValue(item.Discount.Id, out tiers);
@@ -183,7 +221,12 @@ namespace Simple.Ecommerce.Infra.Repositories
                             item.Discount.ValidFrom,
                             item.Discount.ValidTo,
                             item.Discount.IsActive,
-                            tiers
+                            tiers,
+                            item.Coupon != null ? new CouponItemDTO(
+                                item.Coupon.Id,
+                                item.Coupon.DiscountId,
+                                item.Coupon.Code
+                            ) : null
                         );
                         items.Add(new OrderItemDTO(
                             item.OrderItem.Id,
@@ -222,6 +265,11 @@ namespace Simple.Ecommerce.Infra.Repositories
                                 item.Discount.ValidFrom,
                                 item.Discount.ValidTo,
                                 item.Discount.IsActive,
+                                item.Coupon != null ? new CouponItemDTO(
+                                    item.Coupon.Id,
+                                    item.Coupon.DiscountId,
+                                    item.Coupon.Code
+                                ) : null,
                                 new List<BundleItemDTO>{
                                     new BundleItemDTO(
                                         item.OrderItem.Id,
@@ -286,26 +334,59 @@ namespace Simple.Ecommerce.Infra.Repositories
             return Result<OrderCompleteDTO>.Success(resultDTO);
         }
 
-        public async Task<Result<OrderDiscountDTO?>> GetDiscountDTOById(int id)
+        public async Task<Result<OrderDiscountDTO>> GetDiscountDTO(int id)
         {
             var result = await (
                 from o in _context.Orders
-                join d in _context.Discounts on o.DiscountId equals d.Id
+                join d in _context.Discounts on o.DiscountId equals d.Id into discountJoin
+                from dj in discountJoin.DefaultIfEmpty()
+                join c in _context.Coupons on o.CouponId equals c.Id into couponJoin
+                from cj in couponJoin.DefaultIfEmpty()
                 where o.Id == id && !o.Deleted
-                select new OrderDiscountDTO(
+                select new
+                {
                     o.Id,
-                    d.Id,
-                    d.Name,
-                    d.DiscountType,
-                    d.DiscountScope,
-                    d.DiscountValueType,
-                    d.Value,
-                    d.ValidFrom,
-                    d.ValidTo,
-                    d.IsActive
-                )).FirstOrDefaultAsync();
+                    Discount = dj,
+                    Coupon = cj
+                }).FirstOrDefaultAsync();
 
-            return Result<OrderDiscountDTO?>.Success(result);
+            if (result is null)
+            {
+                return Result<OrderDiscountDTO>.Failure(new List<Error> { new("Order.NotFound", "O pedido não foi encontrado!") });
+            }
+
+            if (result.Coupon is not null && result.Discount is not null)
+            {
+                if (result.Coupon.DiscountId != result.Discount.Id)
+                {
+                    return Result<OrderDiscountDTO>.Failure(new List<Error> { new("Order.Conflict.DiscountId", "O cupom aplicado ao pedido não pertence ao desconto associado ao pedido!") });
+                }
+                _detachCouponRepository.Detach(_context, result.Coupon);
+            }
+
+            return Result<OrderDiscountDTO>.Success(new OrderDiscountDTO(
+                result.Id,
+                result.Discount == null
+                    ? null
+                    : new DiscountDTO(
+                        result.Discount.Id,
+                        result.Discount.Name,
+                        result.Discount.DiscountType,
+                        result.Discount.DiscountScope,
+                        result.Discount.DiscountValueType,
+                        result.Discount.Value,
+                        result.Discount.ValidFrom,
+                        result.Discount.ValidTo,
+                        result.Discount.IsActive,
+                        result.Coupon == null
+                            ? null
+                            : new CouponDTO(
+                                result.Coupon.Id,
+                                result.Coupon.DiscountId,
+                                result.Coupon.Code,
+                                result.Coupon.ExpirationAt,
+                                result.Coupon.IsUsed
+                            ))));
         }
 
         public async Task<Result<bool>> GetFirstPurchase(int userId)

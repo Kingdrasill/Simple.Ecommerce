@@ -3,6 +3,7 @@
     public record OrderDiscountRequest
     (
         int OrderId,
+        string? CouponCode = null,
         int? DiscountId = null
     );
 }
